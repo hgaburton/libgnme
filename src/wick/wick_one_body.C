@@ -1,6 +1,6 @@
 #include <cassert>
 #include <algorithm>
-#include "../utils/lowdin_pair.h"
+#include "lowdin_pair.h"
 #include "wick.h"
 
 namespace libnome {

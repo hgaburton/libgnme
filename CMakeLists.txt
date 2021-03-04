@@ -44,6 +44,7 @@ if(DOXYGEN_FOUND)
         COMMENT "Doxygen documentation" VERBATIM)
 endif(DOXYGEN_FOUND)
 
+target_include_directories(nome PUBLIC "${PROJECT_SOURCE_DIR}/include/libnome")
 target_link_libraries(nome ${ARMADILLO_LIBRARIES})
 
 if(CMAKE_RUN_FROM_CONFIGURE)

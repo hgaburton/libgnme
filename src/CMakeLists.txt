@@ -5,7 +5,8 @@ set(SRC
     wick/wick_overlap.C
     wick/wick_one_body.C
     wick/wick_two_body.C
+    cat.C
 )
 
-add_library(nome SHARED ${SRC})
+add_library(nome STATIC ${SRC})
 install(TARGETS nome DESTINATION lib)
