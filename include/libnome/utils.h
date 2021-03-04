@@ -70,19 +70,6 @@ void gscf_noci_density(
     const size_t nmo, const size_t nbsf, const size_t nelec, const size_t nstates,
     arma::Mat<Tc> &P); 
 
-/** \brief Solve the generalised eigenvalue problem
-    \param dim Dimensions of the eigenvalue target matrices
-    \param M Matrix to be diagonalised
-    \param S Corresponding overlap matrix of generalised eigenvalue problem
-    \param X Orthogonalisation transformation matrix to be identified
-    \param eigval Vector of eigenvalues
-    \param eigvec Matrix with eigenvectors as columns
-    \param thresh Threshold for null space in overlap matrix
- **/
-template<typename T>
-void gen_eig_sym(
-    const size_t dim, arma::Mat<T> &M, arma::Mat<T> &S, arma::Mat<T> &X, 
-    arma::Col<double> &eigval, arma::Mat<T> &eigvec, double thresh);
 
 } // namespace libnome
 

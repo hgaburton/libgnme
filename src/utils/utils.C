@@ -256,28 +256,4 @@ template void gscf_noci_density(
     arma::Cube<std::complex<double> > C, const arma::Col<std::complex<double> > Anoci, const arma::Mat<double> metric, 
     const size_t nmo, const size_t nbsf, const size_t nelec, const size_t nstates, arma::Mat<std::complex<double> > &P);
 
-template<typename T>
-void gen_eig_sym(
-    const size_t dim, arma::Mat<T> &M, arma::Mat<T> &S, arma::Mat<T> &X, 
-    arma::Col<double> &eigval, arma::Mat<T> &eigvec, double thresh)
-{
-    // Check the input
-    assert(M.n_rows == dim && M.n_cols == dim); 
-    assert(S.n_rows == dim && S.n_cols == dim); 
-
-    // Solve the generalised eigenvalue problem
-    size_t n_span;// = libgscf::compute_xmat(dim, S, thresh, X);
-    arma::Mat<T> ortho_M = X.t() * M * X;
-    arma::eig_sym(eigval, eigvec, ortho_M, "dc");
-
-    // Transform back to original space
-    eigvec = X * eigvec;
-}
-template void gen_eig_sym(
-    const size_t dim, arma::Mat<double> &M, arma::Mat<double> &S, arma::Mat<double> &X, 
-    arma::Col<double> &eigval, arma::Mat<double> &eigvec, double thresh);
-template void gen_eig_sym(
-    const size_t dim, arma::Mat<std::complex<double> > &M, arma::Mat<std::complex<double> > &S, arma::Mat<std::complex<double> > &X, 
-    arma::Col<double> &eigval, arma::Mat<std::complex<double> > &eigvec, double thresh);
-
 } // namespace libnome

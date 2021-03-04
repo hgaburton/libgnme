@@ -1,4 +1,5 @@
 set(SRC
+    utils/linalg.C
     utils/utils.C
     utils/lowdin_pair.C
     wick/wick.C
