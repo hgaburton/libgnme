@@ -1,0 +1,117 @@
+#!/bin/bash 
+
+# Configuration script for building LIBGNOME
+#
+# Use './configure help' to see available options
+
+GNOMESRC=$( cd "$(dirname "$0")"; pwd )
+GNOMEBIN=$PWD
+[ -z "$GNOMEBUILD" ] && GNOMEBUILD="build"
+
+# Set defaults
+CC0=
+CFLAGS=
+CXX0=
+CXXFLAGS=
+CMAKE_GENERATOR="Unix Makefiles"
+INSTALL_PREFIX=
+
+print_help() {
+    echo "To configure GNOME, run"
+    echo "$0 [options]"
+    echo ""
+    echo "Compilers (choose one):"
+    echo " * gcc           -- GNU compilers (gcc/g++/gfortran)"
+    echo " * intel         -- Intel compilers (icc/icpc/ifort)"
+    echo " * clang         -- LLVM//Clang compilers (clang/clang++/gfortran)"
+    echo " * pgi           -- Portland Group compilers (pgcc/pgCC/pgf90)"
+}
+
+set_compilers() {
+    if [ -n "$CC0" ]; then
+        echo "Error: Choose only one compiler option."
+        exit 1
+    fi
+    CC0=$1
+    CXX0=$2
+}
+
+CONFIGURE_ARGS=$*
+
+while [ $# -gt 0 ]; do
+    case $1 in 
+        -h|-?|--help|help ) print_help
+                            exit 1
+                            ;;
+        gcc | gnu )         set_compilers "gcc" "g++"
+                            ;;
+        intel )             set_compilers "icc" "icpc"
+                            ;;
+        clang )             set_compilers "clang" "clang++"
+                            ;;
+        pgi )               set_compilers "gpcc" "pgCC"
+                            ;;
+        CC=*)               CC="${1#CC=}"
+                            ;;
+        CFLAGS=*)           CFLAGS="${1#CFLAGS=}"
+                            ;;
+        CXX=*)              CXX="${1#CXX=}"
+                            ;;
+        CXXFLAGS=*)         CXXFLAGS="${1#CXXFLAGS=}"
+                            ;;
+        --with-openmp )
+                            WITH_OPENMP=1
+                            ;;
+        --without-openmp )
+                            WITH_OPENMP=0
+                            ;;
+        * )                 echo "Unknown option: $1"
+                            print_help
+                            exit 1
+    esac
+    shift
+done
+
+echo "GNOME configured by `whoami`@`hostname`" > configure.log
+date >> configure.log
+echo "" >> configure.log
+echo "$0 $CONFIGURE_ARGS" >> configure.log
+echo "" >> configure.log
+echo "PWD=$PWD" >> configure.log
+echo "CC=$CC" >> configure.log
+echo "CFLAGS=$CFLAGS" >> configure.log
+echo "CXX=$CXX" >> configure.log
+echo "CXXFLAGS=$CXXFLAGS" >> configure.log
+echo "" >> configure.log
+
+CC0_SPEC=1
+if [ -z "$CC0" ]; then
+    CC0_SPEC=0
+    set_compilers "gcc" "g++"
+fi
+if [ -n "$CC" ] || [ -n "$CXX" ]; then
+    if [ $CC0_SPEC -eq 0 ]; then
+        CC0=$CC
+        CXX0=$CXX
+    fi
+fi
+
+if [ -z "$INSTALL_PREFIX" ]; then
+    INSTALL_PREFIX=$GNOMEBIN
+fi
+
+mkdir -p "$GNOMEBIN/$GNOMEBUILD"
+cd "$GNOMEBIN/$GNOMEBUILD"
+
+if [ -e CMakeCache.txt ]; then
+    rm CMakeCache.txt
+fi
+
+CXX="$CXX0" cmake3 \
+-D CMAKE_C_COMPILER="$CC0" -D CMAKE_C_FLAGS="$CFLAGS" \
+-D CMAKE_CXX_COMPILER="$CXX0" -D CMAKE_CXX_FLAGS="$CXXFLAGS" \
+-D CMAKE_INSTALL_PREFIX="$INSTALL_PREFIX" \
+-D CMAKE_RUN_FROM_CONFIGURE=1 \
+-D WITH_OPENMP="$WITH_OPENMP" \
+"$GNOMESRC" 2>&1 | tee -a ../configure.log
+exit ${PIPESTATUS[0]}
