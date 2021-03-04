@@ -1,19 +1,19 @@
 #include <cassert>
 #include <algorithm>
-#include <libnoci/wick/noci_kernels.h>
-#include "noci_wick.h"
+#include "../utils/lowdin_pair.h"
+#include "wick.h"
 
-namespace libnoci {
+namespace libnome {
 
 template<typename Tc, typename Tf, typename Tb>
-void noci_wick<Tc,Tf,Tb>::setup_two_body(arma::Mat<Tb> &II)
+void wick<Tc,Tf,Tb>::setup_two_body(arma::Mat<Tb> &II)
 {
-    // Save access to two-body integrals
-    m_avII = libqints::array_view<Tb>(II.memptr(), II.n_elem);
-
     // Check input
     assert(II.n_rows == m_nbsf * m_nbsf);
     assert(II.n_cols == m_nbsf * m_nbsf);
+
+    // Save access to two-body integrals
+    m_II = II;
 
     // Build J/K matrices
     arma::field<arma::Mat<Tc> > Ja(2), Jb(2), Ka(2), Kb(2);
@@ -34,15 +34,15 @@ void noci_wick<Tc,Tf,Tb>::setup_two_body(arma::Mat<Tb> &II)
         for(size_t t=0; t < m_nbsf; t++)
         {
             // Coulomb matrices
-            Ja(0)(s,t) += II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMa(0)(n,m); 
-            Ja(1)(s,t) += II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMa(1)(n,m); 
-            Jb(0)(s,t) += II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMb(0)(n,m); 
-            Jb(1)(s,t) += II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMb(1)(n,m); 
+            Ja(0)(s,t) += m_II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMa(0)(n,m); 
+            Ja(1)(s,t) += m_II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMa(1)(n,m); 
+            Jb(0)(s,t) += m_II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMb(0)(n,m); 
+            Jb(1)(s,t) += m_II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMb(1)(n,m); 
             // Exchange matrices
-            Ka(0)(s,t) += II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMa(0)(n,m);
-            Ka(1)(s,t) += II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMa(1)(n,m);
-            Kb(0)(s,t) += II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMb(0)(n,m);
-            Kb(1)(s,t) += II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMb(1)(n,m);
+            Ka(0)(s,t) += m_II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMa(0)(n,m);
+            Ka(1)(s,t) += m_II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMa(1)(n,m);
+            Kb(0)(s,t) += m_II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMb(0)(n,m);
+            Kb(1)(s,t) += m_II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMb(1)(n,m);
         }
     }
 
@@ -134,7 +134,7 @@ void noci_wick<Tc,Tf,Tb>::setup_two_body(arma::Mat<Tb> &II)
 }
 
 template<typename Tc, typename Tf, typename Tb>
-void noci_wick<Tc,Tf,Tb>::same_spin_two_body(
+void wick<Tc,Tf,Tb>::same_spin_two_body(
     arma::umat &xhp, arma::umat &whp,
     Tc &V, bool alpha)
 {
@@ -148,9 +148,9 @@ void noci_wick<Tc,Tf,Tb>::same_spin_two_body(
     // Inform if we can't handle that excitation
     if(nx * nw > 2 || nx + nw > 2)
     {
-        std::cout << "noci_wick::same_spin_two_body: Bra excitations = " << nx << std::endl;
-        std::cout << "noci_wick::same_spin_two_body: Ket excitations = " << nw << std::endl;
-        throw std::runtime_error("noci_wick::same_spin_two_body: Requested excitation level not yet implemented");
+        std::cout << "wick::same_spin_two_body: Bra excitations = " << nx << std::endl;
+        std::cout << "wick::same_spin_two_body: Ket excitations = " << nw << std::endl;
+        throw std::runtime_error("wick::same_spin_two_body: Requested excitation level not yet implemented");
     }
 
     // Get referemce to relevant X matrices for this spin
@@ -174,9 +174,6 @@ void noci_wick<Tc,Tf,Tb>::same_spin_two_body(
 
     // Get reference to number of zeros for this spin
     const size_t &nz = alpha ? m_nza : m_nzb; 
-
-    // Get access to two-electron integrals
-    arma::Mat<Tb> II(libqints::arrays<Tb>::ptr(m_avII), m_nbsf*m_nbsf, m_nbsf*m_nbsf, false, true);
 
     // Check we don't have a non-zero element
     if(nz > nw + nx + 2) return;
@@ -222,7 +219,7 @@ void noci_wick<Tc,Tf,Tb>::same_spin_two_body(
             for(size_t r=0; r<m_nbsf; r++)
             for(size_t s=0; s<m_nbsf; s++)
             {
-                V += II(p*m_nbsf+q,r*m_nbsf+s)  
+                V += m_II(p*m_nbsf+q,r*m_nbsf+s)  
                    * (xCX(2+m[0])(a,p) * xCX(2+m[1])(b,r) - xCX(2+m[0])(a,r) * xCX(2+m[1])(b,p))
                    * (xXC(0+m[2])(q,i) * xXC(0+m[3])(s,j) - xXC(0+m[2])(s,i) * xXC(0+m[3])(q,j));
             }
@@ -244,7 +241,7 @@ void noci_wick<Tc,Tf,Tb>::same_spin_two_body(
             for(size_t r=0; r<m_nbsf; r++)
             for(size_t s=0; s<m_nbsf; s++)
             {
-                V += II(p*m_nbsf+q,r*m_nbsf+s)  
+                V += m_II(p*m_nbsf+q,r*m_nbsf+s)  
                    * (wCX(0+m[0])(i,p) * wCX(0+m[1])(j,r) - wCX(0+m[0])(i,r) * wCX(0+m[1])(j,p))
                    * (wXC(2+m[2])(q,a) * wXC(2+m[3])(s,b) - wXC(2+m[2])(s,a) * wXC(2+m[3])(q,b));
             }
@@ -265,7 +262,7 @@ void noci_wick<Tc,Tf,Tb>::same_spin_two_body(
             for(size_t r=0; r<m_nbsf; r++)
             for(size_t s=0; s<m_nbsf; s++)
             {
-                V += II(p*m_nbsf+q,r*m_nbsf+s)  
+                V += m_II(p*m_nbsf+q,r*m_nbsf+s)  
                    * (xCX(2+m[0])(a,p) * wCX(0+m[1])(j,r) - xCX(2+m[0])(a,r) * wCX(0+m[1])(j,p))
                    * (xXC(0+m[2])(q,i) * wXC(2+m[3])(s,b) - xXC(0+m[2])(s,i) * wXC(2+m[3])(q,b));
             }
@@ -274,7 +271,7 @@ void noci_wick<Tc,Tf,Tb>::same_spin_two_body(
 }
 
 template<typename Tc, typename Tf, typename Tb>
-void noci_wick<Tc,Tf,Tb>::diff_spin_two_body(
+void wick<Tc,Tf,Tb>::diff_spin_two_body(
     arma::umat &xahp, arma::umat &xbhp,
     arma::umat &wahp, arma::umat &wbhp,
     Tc &V)
@@ -290,15 +287,12 @@ void noci_wick<Tc,Tf,Tb>::diff_spin_two_body(
     size_t nx = nxa + nxb;
     size_t nw = nwa + nwb;
 
-    // Get access to two-electron integrals
-    arma::Mat<Tb> II(libqints::arrays<Tb>::ptr(m_avII), m_nbsf*m_nbsf, m_nbsf*m_nbsf, false, true);
-
     // Inform if we can't handle that excitation
     if(nx * nw > 2 || nx + nw > 2)
     {
-        std::cout << "noci_wick::diff_spin_two_body: Bra excitations = " << nx << std::endl;
-        std::cout << "noci_wick::diff_spin_two_body: Ket excitations = " << nw << std::endl;
-        throw std::runtime_error("noci_wick::diff_spin_two_body: Requested excitation level not yet implemented");
+        std::cout << "wick::diff_spin_two_body: Bra excitations = " << nx << std::endl;
+        std::cout << "wick::diff_spin_two_body: Ket excitations = " << nw << std::endl;
+        throw std::runtime_error("wick::diff_spin_two_body: Requested excitation level not yet implemented");
     }
     
     // < X | V | W > 
@@ -388,18 +382,7 @@ void noci_wick<Tc,Tf,Tb>::diff_spin_two_body(
                    + m_xxXb(mb[0])(b,j) * m_xxXVbXa(2+ma[0],mb[1],ma[1])(a,i);
                 arma::Col<Tc> LHS = arma::vectorise(m_xXCa(ma[1]).col(i) * m_xCXa(2+ma[0]).row(a));
                 arma::Col<Tc> RHS = arma::vectorise(m_xXCb(mb[1]).col(j) * m_xCXb(2+mb[0]).row(b));
-                V += arma::as_scalar(LHS.st() * II * RHS);
-                //for(size_t r=0; r<m_nbsf; r++)
-                //for(size_t s=0; s<m_nbsf; s++)
-                //{
-                //    arma::Col<Tc> tmp = II.col(r*m_nbsf+s) * m_xCXb(2+mb[0])(b,r) * m_xXCb(mb[1])(s,j);
-                //    for(size_t p=0; p<m_nbsf; p++)
-                //    for(size_t q=0; q<m_nbsf; q++)
-                //    {
-                //        V += II(p*m_nbsf+q,r*m_nbsf+s) * m_xCXa(2+ma[0])(a,p) * m_xXCa(ma[1])(q,i) 
-                //                                         * m_xCXb(2+mb[0])(b,r) * m_xXCb(mb[1])(s,j);
-                //    }
-                //}
+                V += arma::as_scalar(LHS.st() * m_II * RHS);
             } while(std::prev_permutation(ma.begin(), ma.end()));
             } while(std::prev_permutation(mb.begin(), mb.end()));
         }
@@ -445,7 +428,7 @@ void noci_wick<Tc,Tf,Tb>::diff_spin_two_body(
                 for(size_t r=0; r<m_nbsf; r++)
                 for(size_t s=0; s<m_nbsf; s++)
                 {
-                    V += II(p*m_nbsf+q,r*m_nbsf+s) * m_wCXa(ma[0])(i,p) * m_wXCa(2+ma[1])(q,a) 
+                    V += m_II(p*m_nbsf+q,r*m_nbsf+s) * m_wCXa(ma[0])(i,p) * m_wXCa(2+ma[1])(q,a) 
                                                      * m_wCXb(mb[0])(j,r) * m_wXCb(2+mb[1])(s,b);
                 }
             } while(std::prev_permutation(ma.begin(), ma.end()));
@@ -485,7 +468,7 @@ void noci_wick<Tc,Tf,Tb>::diff_spin_two_body(
                 for(size_t r=0; r<m_nbsf; r++)
                 for(size_t s=0; s<m_nbsf; s++)
                 {
-                    V += II(p*m_nbsf+q,r*m_nbsf+s) * m_wCXa(0+ma[0])(j,p) * m_wXCa(2+ma[1])(q,b) 
+                    V += m_II(p*m_nbsf+q,r*m_nbsf+s) * m_wCXa(0+ma[0])(j,p) * m_wXCa(2+ma[1])(q,b) 
                                                      * m_xCXb(2+mb[0])(a,r) * m_xXCb(0+mb[1])(s,i);
                 }
             } while(std::prev_permutation(ma.begin(), ma.end()));
@@ -507,7 +490,7 @@ void noci_wick<Tc,Tf,Tb>::diff_spin_two_body(
                 for(size_t r=0; r<m_nbsf; r++)
                 for(size_t s=0; s<m_nbsf; s++)
                 {
-                    V += II(p*m_nbsf+q,r*m_nbsf+s) * m_wCXb(0+mb[0])(j,p) * m_wXCb(2+mb[1])(q,b) 
+                    V += m_II(p*m_nbsf+q,r*m_nbsf+s) * m_wCXb(0+mb[0])(j,p) * m_wXCb(2+mb[1])(q,b) 
                                                      * m_xCXa(2+ma[0])(a,r) * m_xXCa(0+ma[1])(s,i);
                 }
             } while(std::prev_permutation(ma.begin(), ma.end()));
@@ -531,8 +514,9 @@ void noci_wick<Tc,Tf,Tb>::diff_spin_two_body(
     }
 }
 
-template class noci_wick<double, double, double>;
-template class noci_wick<std::complex<double>, double, double>;
-template class noci_wick<std::complex<double>, std::complex<double>, double>;
-template class noci_wick<std::complex<double>, std::complex<double>, std::complex<double> >;
-}
+template class wick<double, double, double>;
+template class wick<std::complex<double>, double, double>;
+template class wick<std::complex<double>, std::complex<double>, double>;
+template class wick<std::complex<double>, std::complex<double>, std::complex<double> >;
+
+} // namespace libnome

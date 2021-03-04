@@ -1,13 +1,12 @@
-#ifndef LIBNOCI_NOCI_WICK_H 
-#define LIBNOCI_NOCI_WICK_H
+#ifndef LIBNOME_WICK_H 
+#define LIBNOME_WICK_H
 
 #include <armadillo>
-#include <libqints/arrays/arrays.h>
 
-namespace libnoci {
+namespace libnome {
 
 template<typename Tc, typename Tf, typename Tb>
-class noci_wick
+class wick
 {
 private:
     /* Useful constants */
@@ -18,7 +17,7 @@ private:
     const arma::Mat<Tb> &m_metric; //!< Basis overlap metric
 
     double m_Vc; //!< constant component
-    libqints::array_view<Tb> m_avII; //!< View of two-electron integrals
+    arma::Mat<Tb> m_II; //!< Two-body integrals
 
     // One-body MO matrices
     bool m_one_body = false;
@@ -107,14 +106,14 @@ private:
 public:
     /** \brief Constructor
      **/
-    noci_wick(
+    wick(
         const size_t nbsf, const size_t nmo, 
         const size_t nalpha, const size_t nbeta, 
         const arma::Mat<Tb> &metric, double Vc=0) :
         m_nbsf(nbsf), m_nmo(nmo), m_nalpha(nalpha), m_nbeta(nbeta), m_metric(metric), m_Vc(Vc)
     { }
 
-    virtual ~noci_wick() { }
+    virtual ~wick() { }
 
     virtual void setup(
         arma::Mat<Tc> Cx, arma::Mat<Tc> Cw); 
@@ -161,6 +160,6 @@ private:
         Tc &V);
 };
 
-} // namespace libnoci
+} // namespace libnome
 
-#endif // LIBNOCI_NOCI_WICK_H
+#endif // LIBNOME_WICK_H

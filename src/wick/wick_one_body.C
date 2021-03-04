@@ -1,12 +1,12 @@
 #include <cassert>
 #include <algorithm>
-#include <libnoci/wick/noci_kernels.h>
-#include "noci_wick.h"
+#include "../utils/lowdin_pair.h"
+#include "wick.h"
 
-namespace libnoci {
+namespace libnome {
 
 template<typename Tc, typename Tf, typename Tb>
-void noci_wick<Tc,Tf,Tb>::setup_one_body(arma::Mat<Tf> Fa, arma::Mat<Tf> Fb) 
+void wick<Tc,Tf,Tb>::setup_one_body(arma::Mat<Tf> Fa, arma::Mat<Tf> Fb) 
 {
     // Check input
     assert(Fa.n_rows == m_nbsf);
@@ -54,7 +54,7 @@ void noci_wick<Tc,Tf,Tb>::setup_one_body(arma::Mat<Tf> Fa, arma::Mat<Tf> Fb)
 }
 
 template<typename Tc, typename Tf, typename Tb>
-void noci_wick<Tc,Tf,Tb>::spin_one_body(
+void wick<Tc,Tf,Tb>::spin_one_body(
     arma::umat &xhp, arma::umat &whp,
     Tc &F, bool alpha)
 {
@@ -68,9 +68,9 @@ void noci_wick<Tc,Tf,Tb>::spin_one_body(
     // Inform if we can't handle that excitation
     if(nx > 2 || nw > 2 || (nx+nw) > 4)
     {
-        std::cout << "noci_wick::spin_one_body: Bra excitations = " << nx << std::endl;
-        std::cout << "noci_wick::spin_one_body: Ket excitations = " << nw << std::endl;
-        throw std::runtime_error("noci_wick::spin_one_body: Requested excitation level not yet implemented");
+        std::cout << "wick::spin_one_body: Bra excitations = " << nx << std::endl;
+        std::cout << "wick::spin_one_body: Ket excitations = " << nw << std::endl;
+        throw std::runtime_error("wick::spin_one_body: Requested excitation level not yet implemented");
     }
 
     // Get reference to relevant X matrices for this spin
@@ -270,8 +270,9 @@ void noci_wick<Tc,Tf,Tb>::spin_one_body(
     }
 }
 
-template class noci_wick<double, double, double>;
-template class noci_wick<std::complex<double>, double, double>;
-template class noci_wick<std::complex<double>, std::complex<double>, double>;
-template class noci_wick<std::complex<double>, std::complex<double>, std::complex<double> >;
-}
+template class wick<double, double, double>;
+template class wick<std::complex<double>, double, double>;
+template class wick<std::complex<double>, std::complex<double>, double>;
+template class wick<std::complex<double>, std::complex<double>, std::complex<double> >;
+
+} // namespace libnome

@@ -1,18 +1,18 @@
 #include <cassert>
-#include "noci_wick.h"
-#include <libnoci/wick/noci_kernels.h>
+#include "wick.h"
+#include "../utils/lowdin_pair.h"
 
-namespace libnoci {
+namespace libnome {
 
 template<typename Tc, typename Tf, typename Tb>
-void noci_wick<Tc,Tf,Tb>::setup(
+void wick<Tc,Tf,Tb>::setup(
     arma::Mat<Tc> Cw, arma::Mat<Tc> Cx) 
 {
     setup_orbitals(Cw,Cx);
 }
 
 template<typename Tc, typename Tf, typename Tb>
-void noci_wick<Tc,Tf,Tb>::setup(
+void wick<Tc,Tf,Tb>::setup(
     arma::Mat<Tc> Cw, arma::Mat<Tc> Cx, 
     arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb)
 {
@@ -21,7 +21,7 @@ void noci_wick<Tc,Tf,Tb>::setup(
 }
 
 template<typename Tc, typename Tf, typename Tb>
-void noci_wick<Tc,Tf,Tb>::setup(
+void wick<Tc,Tf,Tb>::setup(
     arma::Mat<Tc> Cw, arma::Mat<Tc> Cx, 
     arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb, 
     arma::Mat<Tb> &II)
@@ -32,7 +32,7 @@ void noci_wick<Tc,Tf,Tb>::setup(
 }
 
 template<typename Tc, typename Tf, typename Tb>
-void noci_wick<Tc,Tf,Tb>::setup(
+void wick<Tc,Tf,Tb>::setup(
     arma::Mat<Tc> Cw, arma::Mat<Tc> Cx, 
     arma::Mat<Tb> &II)
 {
@@ -41,7 +41,7 @@ void noci_wick<Tc,Tf,Tb>::setup(
 }
 
 template<typename Tc, typename Tf, typename Tb>
-void noci_wick<Tc,Tf,Tb>::evaluate_overlap(
+void wick<Tc,Tf,Tb>::evaluate_overlap(
     arma::umat &xahp, arma::umat &xbhp,
     arma::umat &wahp, arma::umat &wbhp,
     Tc &S)
@@ -55,7 +55,7 @@ void noci_wick<Tc,Tf,Tb>::evaluate_overlap(
 }
 
 template<typename Tc, typename Tf, typename Tb>
-void noci_wick<Tc,Tf,Tb>::evaluate_one_body_spin(
+void wick<Tc,Tf,Tb>::evaluate_one_body_spin(
     arma::umat &xhp, arma::umat &whp, 
     Tc &S, Tc &V, bool alpha)
 {
@@ -78,7 +78,7 @@ void noci_wick<Tc,Tf,Tb>::evaluate_one_body_spin(
 }
 
 template<typename Tc, typename Tf, typename Tb>
-void noci_wick<Tc,Tf,Tb>::evaluate(
+void wick<Tc,Tf,Tb>::evaluate(
     arma::umat &xahp, arma::umat &xbhp,
     arma::umat &wahp, arma::umat &wbhp,
     Tc &S, Tc &V)
@@ -120,8 +120,9 @@ void noci_wick<Tc,Tf,Tb>::evaluate(
     }
 }
 
-template class noci_wick<double, double, double>;
-template class noci_wick<std::complex<double>, double, double>;
-template class noci_wick<std::complex<double>, std::complex<double>, double>;
-template class noci_wick<std::complex<double>, std::complex<double>, std::complex<double> >;
-}
+template class wick<double, double, double>;
+template class wick<std::complex<double>, double, double>;
+template class wick<std::complex<double>, std::complex<double>, double>;
+template class wick<std::complex<double>, std::complex<double>, std::complex<double> >;
+
+} // namespace libnome
