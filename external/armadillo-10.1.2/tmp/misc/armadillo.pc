@@ -1,0 +1,9 @@
+libdir=/u/thchem/newc6131/local/armadillo/10.1.2/lib64
+includedir=/u/thchem/newc6131/local/armadillo/10.1.2/include
+
+Name: armadillo
+Description: Fast C++ matrix library with syntax similar to MATLAB and Octave
+URL: http://arma.sourceforge.net
+Version: 10.1.2
+Cflags: -I${includedir}
+Libs: -L${libdir} -larmadillo
