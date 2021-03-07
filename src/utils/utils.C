@@ -9,8 +9,7 @@ std::complex<double> conj2(std::complex<double> x) { return std::conj(x); }
 
 } // unnamed namespace
 
-namespace libnome {
-
+namespace libgnme {
 
 template<typename Tc, typename Tb>
 void rscf_noci_density(
@@ -256,4 +255,4 @@ template void gscf_noci_density(
     arma::Cube<std::complex<double> > C, const arma::Col<std::complex<double> > Anoci, const arma::Mat<double> metric, 
     const size_t nmo, const size_t nbsf, const size_t nelec, const size_t nstates, arma::Mat<std::complex<double> > &P);
 
-} // namespace libnome
+} // namespace libgnme

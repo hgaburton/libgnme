@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Define project
-project(libnome VERSION 0.0.1 LANGUAGES CXX)
+project(libgne VERSION 0.0.1 LANGUAGES CXX)
 
 # Setup CMake
 message(STATUS "CMake ${CMAKE_VERSION}")
@@ -38,14 +38,14 @@ if(DOXYGEN_FOUND)
     configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in"
         "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" @ONLY)
-    add_custom_target(nome_docs
+    add_custom_target(gnme_docs
         "${DOXYGEN_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         COMMENT "Doxygen documentation" VERBATIM)
 endif(DOXYGEN_FOUND)
 
-target_include_directories(nome PUBLIC "${PROJECT_SOURCE_DIR}/include/libnome")
-target_link_libraries(nome ${ARMADILLO_LIBRARIES})
+target_include_directories(gnme PUBLIC "${PROJECT_SOURCE_DIR}/include/libgnme")
+target_link_libraries(gnme ${ARMADILLO_LIBRARIES})
 
 if(CMAKE_RUN_FROM_CONFIGURE)
     message(STATUS "Install location: ${CMAKE_INSTALL_PREFIX}")

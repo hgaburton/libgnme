@@ -1,7 +1,7 @@
 #include <cassert>
 #include "lowdin_pair.h"
 
-namespace libnome {
+namespace libgnme {
 
 template<typename Tc, typename Ti>
 void lowdin_pair(
@@ -79,4 +79,4 @@ template void reduced_overlap<std::complex<double> >(
     arma::Col<std::complex<double> > Sxx, arma::Col<std::complex<double> >& invSxx, 
     std::complex<double>& reduced_Ov, size_t& nZeros, arma::uvec& zeros, double thresh);
 
-} // namespace libnome
+} // namespace libgnme

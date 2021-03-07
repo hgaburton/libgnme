@@ -1,7 +1,7 @@
 #include "linalg.h"
 #include <cassert>
 
-namespace libnome {
+namespace libgnme {
 
 template<typename T>
 size_t orthogonalisation_matrix(size_t dim, const arma::Mat<T> &M, double thresh, arma::Mat<T> &X)
@@ -47,6 +47,10 @@ void gen_eig_sym(
 
     // Transform back to original space
     eigvec = X * eigvec;
+
+    // Sort eigenvalues small to high
+    eigvec = eigvec.cols(arma::stable_sort_index(eigval));
+    eigval = arma::sort(eigval);
 }
 template void gen_eig_sym(
     const size_t dim, arma::Mat<double> &M, arma::Mat<double> &S, arma::Mat<double> &X, 
@@ -55,4 +59,4 @@ template void gen_eig_sym(
     const size_t dim, arma::Mat<std::complex<double> > &M, arma::Mat<std::complex<double> > &S, arma::Mat<std::complex<double> > &X, 
     arma::Col<double> &eigval, arma::Mat<std::complex<double> > &eigvec, double thresh);
 
-} // namespace libnome
+} // namespace libgnme

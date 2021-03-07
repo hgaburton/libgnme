@@ -3,7 +3,7 @@
 #include "lowdin_pair.h"
 #include "wick.h"
 
-namespace libnome {
+namespace libgnme {
 
 template<typename Tc, typename Tf, typename Tb>
 void wick<Tc,Tf,Tb>::setup_one_body(arma::Mat<Tf> Fa, arma::Mat<Tf> Fb) 
@@ -275,4 +275,4 @@ template class wick<std::complex<double>, double, double>;
 template class wick<std::complex<double>, std::complex<double>, double>;
 template class wick<std::complex<double>, std::complex<double>, std::complex<double> >;
 
-} // namespace libnome
+} // namespace libgnme

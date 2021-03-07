@@ -1,12 +1,12 @@
 #!/bin/bash 
 
-# Configuration script for building LIBGNOME
+# Configuration script for building LIBGNME
 #
 # Use './configure help' to see available options
 
-GNOMESRC=$( cd "$(dirname "$0")"; pwd )
-GNOMEBIN=$PWD
-[ -z "$GNOMEBUILD" ] && GNOMEBUILD="build"
+GNMESRC=$( cd "$(dirname "$0")"; pwd )
+GNMEBIN=$PWD
+[ -z "$GNMEBUILD" ] && GNMEBUILD="build"
 
 # Set defaults
 CC0=
@@ -17,7 +17,7 @@ CMAKE_GENERATOR="Unix Makefiles"
 INSTALL_PREFIX=
 
 print_help() {
-    echo "To configure GNOME, run"
+    echo "To configure GNME, run"
     echo "$0 [options]"
     echo ""
     echo "Compilers (choose one):"
@@ -72,7 +72,7 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-echo "GNOME configured by `whoami`@`hostname`" > configure.log
+echo "GNME configured by `whoami`@`hostname`" > configure.log
 date >> configure.log
 echo "" >> configure.log
 echo "$0 $CONFIGURE_ARGS" >> configure.log
@@ -97,11 +97,11 @@ if [ -n "$CC" ] || [ -n "$CXX" ]; then
 fi
 
 if [ -z "$INSTALL_PREFIX" ]; then
-    INSTALL_PREFIX=$GNOMEBIN
+    INSTALL_PREFIX=$GNMEBIN
 fi
 
-mkdir -p "$GNOMEBIN/$GNOMEBUILD"
-cd "$GNOMEBIN/$GNOMEBUILD"
+mkdir -p "$GNMEBIN/$GNMEBUILD"
+cd "$GNMEBIN/$GNMEBUILD"
 
 if [ -e CMakeCache.txt ]; then
     rm CMakeCache.txt
@@ -113,5 +113,5 @@ CXX="$CXX0" cmake3 \
 -D CMAKE_INSTALL_PREFIX="$INSTALL_PREFIX" \
 -D CMAKE_RUN_FROM_CONFIGURE=1 \
 -D WITH_OPENMP="$WITH_OPENMP" \
-"$GNOMESRC" 2>&1 | tee -a ../configure.log
+"$GNMESRC" 2>&1 | tee -a ../configure.log
 exit ${PIPESTATUS[0]}
