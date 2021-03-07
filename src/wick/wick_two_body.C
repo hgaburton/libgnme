@@ -257,15 +257,14 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
             V += V0(m[0]+m[1]) * (xxX(m[2])(a,i) * wwX(m[3])(j,b) + xwX(2+m[2])(a,b) * wxX(m[3])(j,i));
             V += 2.0 * (wwX(m[0])(j,b) * xxXVX(2+m[1],m[2],0+m[3])(a,i) + wxX(0+m[0])(j,i) * xwXVX(2+m[1],m[2],2+m[3])(a,b));
             V += 2.0 * (xxX(m[0])(a,i) * wwXVX(0+m[1],m[2],2+m[3])(j,b) - xwX(2+m[0])(a,b) * wxXVX(0+m[1],m[2],0+m[3])(j,i));
-            for(size_t p=0; p<m_nbsf; p++)
-            for(size_t q=0; q<m_nbsf; q++)
-            for(size_t r=0; r<m_nbsf; r++)
-            for(size_t s=0; s<m_nbsf; s++)
-            {
-                V += m_II(p*m_nbsf+q,r*m_nbsf+s)  
-                   * (xCX(2+m[0])(a,p) * wCX(0+m[1])(j,r) - xCX(2+m[0])(a,r) * wCX(0+m[1])(j,p))
-                   * (xXC(0+m[2])(q,i) * wXC(2+m[3])(s,b) - xXC(0+m[2])(s,i) * wXC(2+m[3])(q,b));
-            }
+
+            arma::Col<Tc> LHS = arma::vectorise(xXC(0+m[2]).col(i) * xCX(2+m[0]).row(a));
+            arma::Col<Tc> RHS = arma::vectorise(wXC(2+m[3]).col(b) * wCX(0+m[1]).row(j));
+            V += 2.0 * arma::as_scalar(LHS.st() * m_II * RHS);
+
+            LHS = arma::vectorise(xXC(0+m[2]).col(i) * wCX(0+m[0]).row(j));
+            RHS = arma::vectorise(wXC(2+m[3]).col(b) * xCX(2+m[1]).row(a));
+            V -= 2.0 * arma::as_scalar(LHS.st() * m_II * RHS);
         } while(std::prev_permutation(m.begin(), m.end()));
     }
 }
@@ -463,14 +462,9 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
                 V += m_Vab(ma[0],mb[0]) * m_xxXb(mb[1])(a,i) * m_wwXa(ma[1])(j,b)
                    + m_wwXa(ma[0])(j,b) * m_xxXVaXb(2+mb[0],ma[1],0+mb[1])(a,i)
                    + m_xxXb(mb[0])(a,i) * m_wwXVbXa(0+ma[0],mb[1],2+ma[1])(j,b);
-                for(size_t p=0; p<m_nbsf; p++)
-                for(size_t q=0; q<m_nbsf; q++)
-                for(size_t r=0; r<m_nbsf; r++)
-                for(size_t s=0; s<m_nbsf; s++)
-                {
-                    V += m_II(p*m_nbsf+q,r*m_nbsf+s) * m_wCXa(0+ma[0])(j,p) * m_wXCa(2+ma[1])(q,b) 
-                                                     * m_xCXb(2+mb[0])(a,r) * m_xXCb(0+mb[1])(s,i);
-                }
+                arma::Col<Tc> LHS = arma::vectorise(m_wXCa(2+ma[1]).col(b) * m_wCXa(0+ma[0]).row(j));
+                arma::Col<Tc> RHS = arma::vectorise(m_xXCb(0+mb[1]).col(i) * m_xCXb(2+mb[0]).row(a));
+                V += arma::as_scalar(LHS.st() * m_II * RHS);
             } while(std::prev_permutation(ma.begin(), ma.end()));
             } while(std::prev_permutation(mb.begin(), mb.end()));
         }
@@ -485,14 +479,9 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
                 V += m_Vab(ma[0],mb[0]) * m_xxXa(ma[1])(a,i) * m_wwXb(mb[1])(j,b)
                    + m_wwXb(0+mb[0])(j,b) * m_xxXVbXa(2+ma[0],mb[1],0+ma[1])(a,i)
                    + m_xxXa(0+ma[0])(a,i) * m_wwXVaXb(0+mb[0],ma[1],2+mb[1])(j,b);
-                for(size_t p=0; p<m_nbsf; p++)
-                for(size_t q=0; q<m_nbsf; q++)
-                for(size_t r=0; r<m_nbsf; r++)
-                for(size_t s=0; s<m_nbsf; s++)
-                {
-                    V += m_II(p*m_nbsf+q,r*m_nbsf+s) * m_wCXb(0+mb[0])(j,p) * m_wXCb(2+mb[1])(q,b) 
-                                                     * m_xCXa(2+ma[0])(a,r) * m_xXCa(0+ma[1])(s,i);
-                }
+                arma::Col<Tc> LHS = arma::vectorise(m_wXCb(2+mb[1]).col(b) * m_wCXb(0+mb[0]).row(j));
+                arma::Col<Tc> RHS = arma::vectorise(m_xXCa(0+ma[1]).col(i) * m_xCXa(2+ma[0]).row(a));
+                V += arma::as_scalar(LHS.st() * m_II * RHS);
             } while(std::prev_permutation(ma.begin(), ma.end()));
             } while(std::prev_permutation(mb.begin(), mb.end()));
 
