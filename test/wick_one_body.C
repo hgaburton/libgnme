@@ -1,14 +1,13 @@
 #include <iostream>
-#include <libnome/cat.h>
 #include <armadillo>
-#include <libnome/lowdin_pair.h>
-#include <libnome/wick.h>
+#include <libgnme/lowdin_pair.h>
+#include <libgnme/wick.h>
 #include <iomanip>
-#include <libnome/linalg.h>
+#include <libgnme/linalg.h>
 
 typedef std::complex<double> cx_double;
 
-using namespace libnome;
+using namespace libgnme;
 
 namespace {
 
@@ -33,13 +32,13 @@ void lowdin_one_body(
     arma::Col<T> inv_Sxx_b(noccb, arma::fill::zeros);
     size_t nZeros_a = 0, nZeros_b = 0;
     arma::uvec zeros_a(Sxx_a.n_elem), zeros_b(Sxx_b.n_elem);
-    libnome::lowdin_pair(Cx_a, Cw_a, Sxx_a, Smat);
-    libnome::lowdin_pair(Cx_b, Cw_b, Sxx_b, Smat);
+    libgnme::lowdin_pair(Cx_a, Cw_a, Sxx_a, Smat);
+    libgnme::lowdin_pair(Cx_b, Cw_b, Sxx_b, Smat);
 
     // Compute reduced overlap
     T reduced_Ov = 1.0;
-    libnome::reduced_overlap(Sxx_a, inv_Sxx_a, reduced_Ov, nZeros_a, zeros_a);
-    libnome::reduced_overlap(Sxx_b, inv_Sxx_b, reduced_Ov, nZeros_b, zeros_b);
+    libgnme::reduced_overlap(Sxx_a, inv_Sxx_a, reduced_Ov, nZeros_a, zeros_a);
+    libgnme::reduced_overlap(Sxx_b, inv_Sxx_b, reduced_Ov, nZeros_b, zeros_b);
 
     if((nZeros_a + nZeros_b) == 0)
     {   
@@ -86,7 +85,7 @@ template void lowdin_one_body(
 template<typename T>
 int wick_one_body(double thresh)
 {
-    std::cout << "  libnome::wick_one_body(" << thresh << ")" << std::endl;
+    std::cout << "  libgnme::wick_one_body(" << thresh << ")" << std::endl;
 
     // Define dimensions
     size_t nbsf = 5, nmo = 5, ndets = 3, nocca = 2, noccb = 2;
@@ -115,9 +114,8 @@ int wick_one_body(double thresh)
 
     // Get a one-body Hamiltonian
     arma::Mat<T> ha(nbsf, nbsf, arma::fill::randn);
-    arma::Mat<T> hb(nbsf, nbsf, arma::fill::randn);
     ha += ha.t();
-    hb += hb.t();
+    arma::Mat<T> hb = ha;
 
     // Define "reference" occupation numbers
     arma::uvec ref_occa(nocca);
@@ -160,6 +158,12 @@ int wick_one_body(double thresh)
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
             lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
+            // one-body RDM
+            arma::Mat<T> RDM;
+            T srdm = 0.0, frdm = 0.0;
+            mb.evaluate_1rdm(xahp, xbhp, wahp, wbhp, srdm, RDM);
+            frdm = arma::dot(ha, RDM.st());
+
             // Test overlap result
             if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
             { 
@@ -173,6 +177,14 @@ int wick_one_body(double thresh)
             { 
                 std::cout <<  "< [" << ix << "] | F | [" << iw << "] > " << std::endl;
                 std::cout << "F_wick   = " << std::setprecision(16) << fwick << std::endl;
+                std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
+                return 1;
+            }
+            // Test 1RDM result
+            if(std::abs(frdm - flowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout <<  "< [" << ix << "] | F | [" << iw << "] > " << std::endl;
+                std::cout << "F_rdm    = " << std::setprecision(16) << frdm << std::endl;
                 std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
                 return 1;
             }
@@ -200,6 +212,12 @@ int wick_one_body(double thresh)
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
             lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
+            // one-body RDM
+            arma::Mat<T> RDM;
+            T srdm = 0.0, frdm = 0.0;
+            mb.evaluate_1rdm(xahp, xbhp, wahp, wbhp, srdm, RDM);
+            frdm = arma::dot(ha, RDM.st());
+
             // Test overlap result
             if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
             { 
@@ -208,10 +226,19 @@ int wick_one_body(double thresh)
                 std::cout << "S_lowdin = " << std::setprecision(16) << slowdin << std::endl;
                 return 1;
             }
+            // Test Wick's theorem result
             if(std::abs(fwick - flowdin) > std::pow(0.1, thresh))
             { 
                 std::cout <<  "< [" << ix << "]_{" << i << "}^{" << a << "} | F | [" << iw << "] > " << std::endl;
                 std::cout << "F_wick   = " << std::setprecision(16) << fwick << std::endl;
+                std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
+                return 1;
+            }
+            // Test 1RDM result
+            if(std::abs(frdm - flowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout <<  "< [" << ix << "]_{" << i << "}^{" << a << "} | F | [" << iw << "] > " << std::endl;
+                std::cout << "F_rdm    = " << std::setprecision(16) << frdm << std::endl;
                 std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
                 return 1;
             }
@@ -239,6 +266,12 @@ int wick_one_body(double thresh)
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
             lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
+            // one-body RDM
+            arma::Mat<T> RDM;
+            T srdm = 0.0, frdm = 0.0;
+            mb.evaluate_1rdm(xahp, xbhp, wahp, wbhp, srdm, RDM);
+            frdm = arma::dot(ha, RDM.st());
+
             // Test overlap result
             if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
             { 
@@ -252,6 +285,14 @@ int wick_one_body(double thresh)
             { 
                 std::cout <<  "< [" << ix << "] | F | [" << iw << "]_{" << i << "}^{" << a << "} > " << std::endl;
                 std::cout << "F_wick   = " << std::setprecision(16) << fwick << std::endl;
+                std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
+                return 1;
+            }
+            // Test 1RDM result
+            if(std::abs(frdm - flowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout <<  "< [" << ix << "] | F | [" << iw << "]_{" << i << "}^{" << a << "} > " << std::endl;
+                std::cout << "F_rdm    = " << std::setprecision(16) << frdm << std::endl;
                 std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
                 return 1;
             }
@@ -283,6 +324,12 @@ int wick_one_body(double thresh)
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
             lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
+            // one-body RDM
+            arma::Mat<T> RDM;
+            T srdm = 0.0, frdm = 0.0;
+            mb.evaluate_1rdm(xahp, xbhp, wahp, wbhp, srdm, RDM);
+            frdm = arma::dot(ha, RDM.st());
+
             // Test overlap result
             if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
             { 
@@ -298,6 +345,15 @@ int wick_one_body(double thresh)
                 std::cout << "< [" << ix << "] | F | [" 
                           << iw << "]_{" << i <<"," << j << "}^{" << a << "," << b << "} >" << std::endl;
                 std::cout << "F_wick   = " << std::setprecision(16) << fwick << std::endl;
+                std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
+                return 1;
+            }
+            // Test 1RDM result
+            if(std::abs(frdm - flowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout << "< [" << ix << "] | F | [" 
+                          << iw << "]_{" << i <<"," << j << "}^{" << a << "," << b << "} >" << std::endl;
+                std::cout << "F_rdm    = " << std::setprecision(16) << frdm << std::endl;
                 std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
                 return 1;
             }
@@ -329,6 +385,12 @@ int wick_one_body(double thresh)
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
             lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
+            // one-body RDM
+            arma::Mat<T> RDM;
+            T srdm = 0.0, frdm = 0.0;
+            mb.evaluate_1rdm(xahp, xbhp, wahp, wbhp, srdm, RDM);
+            frdm = arma::dot(ha, RDM.st());
+
             // Test overlap result
             if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
             { 
@@ -344,6 +406,15 @@ int wick_one_body(double thresh)
                 std::cout <<  "< [" << ix << "]_" << i << "^" << a 
                           << " | F | [" << iw << "]_" << j << "^" << b << " >" << std::endl;
                 std::cout << "F_wick   = " << std::setprecision(16) << fwick << std::endl;
+                std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
+                return 1;
+            }
+            // Test 1RDM result
+            if(std::abs(frdm - flowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout <<  "< [" << ix << "]_" << i << "^" << a 
+                          << " | F | [" << iw << "]_" << j << "^" << b << " >" << std::endl;
+                std::cout << "F_rdm    = " << std::setprecision(16) << frdm << std::endl;
                 std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
                 return 1;
             }
@@ -375,6 +446,12 @@ int wick_one_body(double thresh)
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
             lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
+            // one-body RDM
+            arma::Mat<T> RDM;
+            T srdm = 0.0, frdm = 0.0;
+            mb.evaluate_1rdm(xahp, xbhp, wahp, wbhp, srdm, RDM);
+            frdm = arma::dot(ha, RDM.st());
+
             // Test overlap result
             if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
             { 
@@ -385,11 +462,11 @@ int wick_one_body(double thresh)
                 return 1;
             }
             // Test two-body result
-            if(std::abs(fwick - flowdin) > std::pow(0.1, thresh))
+            if(std::abs(frdm - flowdin) > std::pow(0.1, thresh))
             { 
                 std::cout << "< [" << ix << "]_{" << i <<"," << j << "}^{" << a << "," << b 
                           << "} | F | [" << iw << "] >" << std::endl;
-                std::cout << "F_wick   = " << std::setprecision(16) << fwick << std::endl;
+                std::cout << "F_rdm    = " << std::setprecision(16) << frdm << std::endl;
                 std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
                 return 1;
             }
@@ -421,6 +498,12 @@ int wick_one_body(double thresh)
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
             lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
+            // one-body RDM
+            arma::Mat<T> RDM;
+            T srdm = 0.0, frdm = 0.0;
+            mb.evaluate_1rdm(xahp, xbhp, wahp, wbhp, srdm, RDM);
+            frdm = arma::dot(ha, RDM.st());
+
             // Test overlap result
             if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
             { 
@@ -436,6 +519,15 @@ int wick_one_body(double thresh)
                 std::cout << "< [" << ix << "]_{" << i <<"," << j << "}^{" << a << "," << b 
                           << "} | F | [" << iw << "] >" << std::endl;
                 std::cout << "F_wick   = " << std::setprecision(16) << fwick << std::endl;
+                std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
+                return 1;
+            }
+            // Test 1RDM
+            if(std::abs(frdm - flowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout << "< [" << ix << "]_{" << i <<"," << j << "}^{" << a << "," << b 
+                          << "} | F | [" << iw << "] >" << std::endl;
+                std::cout << "F_rdm    = " << std::setprecision(16) << frdm << std::endl;
                 std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
                 return 1;
             }
@@ -467,6 +559,12 @@ int wick_one_body(double thresh)
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
             lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
+            // one-body RDM
+            arma::Mat<T> RDM;
+            T srdm = 0.0, frdm = 0.0;
+            mb.evaluate_1rdm(xahp, xbhp, wahp, wbhp, srdm, RDM);
+            frdm = arma::dot(ha, RDM.st());
+
             // Test overlap result
             if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
             { 
@@ -482,6 +580,15 @@ int wick_one_body(double thresh)
                 std::cout << "< [" << ix << "]_{" << i <<"," << j << "}^{" << a << "," << b 
                           << "} | F | [" << iw << "] >" << std::endl;
                 std::cout << "F_wick   = " << std::setprecision(16) << fwick << std::endl;
+                std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
+                return 1;
+            }
+            // Test 1RDM result
+            if(std::abs(frdm - flowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout << "< [" << ix << "]_{" << i <<"," << j << "}^{" << a << "," << b 
+                          << "} | F | [" << iw << "] >" << std::endl;
+                std::cout << "F_rdm    = " << std::setprecision(16) << frdm << std::endl;
                 std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
                 return 1;
             }
@@ -517,6 +624,12 @@ int wick_one_body(double thresh)
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
             lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
+            // one-body RDM
+            arma::Mat<T> RDM;
+            T srdm = 0.0, frdm = 0.0;
+            mb.evaluate_1rdm(xahp, xbhp, wahp, wbhp, srdm, RDM);
+            frdm = arma::dot(ha, RDM.st());
+
             // Test overlap result
             if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
             { 
@@ -532,6 +645,15 @@ int wick_one_body(double thresh)
                 std::cout << "< [" << ix << "]_{" << i <<"," << j << "}^{" << a << "," << b 
                           << "} | F | [" << iw << "]_{" << k << "}^{" << c << "} >" << std::endl;
                 std::cout << "F_wick   = " << std::setprecision(16) << fwick << std::endl;
+                std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
+                return 1;
+            }
+            // Test 1RDM result
+            if(std::abs(frdm - flowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout << "< [" << ix << "]_{" << i <<"," << j << "}^{" << a << "," << b 
+                          << "} | F | [" << iw << "]_{" << k << "}^{" << c << "} >" << std::endl;
+                std::cout << "F_rdm    = " << std::setprecision(16) << frdm << std::endl;
                 std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
                 return 1;
             }
@@ -567,6 +689,12 @@ int wick_one_body(double thresh)
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
             lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
+            // one-body RDM
+            arma::Mat<T> RDM;
+            T srdm = 0.0, frdm = 0.0;
+            mb.evaluate_1rdm(xahp, xbhp, wahp, wbhp, srdm, RDM);
+            frdm = arma::dot(ha, RDM.st());
+
             // Test overlap result
             if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
             { 
@@ -582,6 +710,15 @@ int wick_one_body(double thresh)
                 std::cout << "< [" << ix << "]_{" << k << "}^{" << c
                           << "} | F | [" << iw << "]_{" << i <<"," << j << "}^{" << a << "," << b << "} >" << std::endl;
                 std::cout << "F_wick   = " << std::setprecision(16) << fwick << std::endl;
+                std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
+                return 1;
+            }
+            // Test 1RDM result
+            if(std::abs(frdm - flowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout << "< [" << ix << "]_{" << k << "}^{" << c
+                          << "} | F | [" << iw << "]_{" << i <<"," << j << "}^{" << a << "," << b << "} >" << std::endl;
+                std::cout << "F_rdm    = " << std::setprecision(16) << frdm << std::endl;
                 std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
                 return 1;
             }
@@ -621,6 +758,12 @@ int wick_one_body(double thresh)
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
             lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
+            // one-body RDM
+            arma::Mat<T> RDM;
+            T srdm = 0.0, frdm = 0.0;
+            mb.evaluate_1rdm(xahp, xbhp, wahp, wbhp, srdm, RDM);
+            frdm = arma::dot(ha, RDM.st());
+
             // Test overlap result
             if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
             { 
@@ -638,6 +781,16 @@ int wick_one_body(double thresh)
                         << "} | F | [" << iw << "]_{" << k << "," << l << "}^{" << c << "," << d 
                         << "} >" << std::endl;
                 std::cout << "F_wick   = " << std::setprecision(16) << fwick << std::endl;
+                std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
+                return 1;
+            }
+            // Test 1RDM result
+            if(std::abs(frdm - flowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout << "< [" << ix << "]_{" << i << "," << j << "}^{" << a << "," << b 
+                        << "} | F | [" << iw << "]_{" << k << "," << l << "}^{" << c << "," << d 
+                        << "} >" << std::endl;
+                std::cout << "F_rdm    = " << std::setprecision(16) << frdm << std::endl;
                 std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
                 return 1;
             }
@@ -669,6 +822,12 @@ int wick_one_body(double thresh)
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
             lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
+            // one-body RDM
+            arma::Mat<T> RDM;
+            T srdm = 0.0, frdm = 0.0;
+            mb.evaluate_1rdm(xahp, xbhp, wahp, wbhp, srdm, RDM);
+            frdm = arma::dot(ha, RDM.st());
+
             // Test overlap result
             if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
             { 
@@ -684,6 +843,15 @@ int wick_one_body(double thresh)
                 std::cout <<  "< [" << ix << "]_" << i << "^" << a 
                           << " | F | [" << iw << "]_" << j << "^" << b << " >" << std::endl;
                 std::cout << "F_wick   = " << std::setprecision(16) << fwick << std::endl;
+                std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
+                return 1;
+            }
+            // Test 1RDM approach
+            if(std::abs(frdm - flowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout <<  "< [" << ix << "]_" << i << "^" << a 
+                          << " | F | [" << iw << "]_" << j << "^" << b << " >" << std::endl;
+                std::cout << "F_rdm    = " << std::setprecision(16) << frdm << std::endl;
                 std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
                 return 1;
             }
@@ -719,6 +887,12 @@ int wick_one_body(double thresh)
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
             lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
+            // one-body RDM
+            arma::Mat<T> RDM;
+            T srdm = 0.0, frdm = 0.0;
+            mb.evaluate_1rdm(xahp, xbhp, wahp, wbhp, srdm, RDM);
+            frdm = arma::dot(ha, RDM.st());
+
             // Test overlap result
             if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
             { 
@@ -728,12 +902,21 @@ int wick_one_body(double thresh)
                 std::cout << "S_lowdin = " << std::setprecision(16) << slowdin << std::endl;
                 return 1;
             }
-            // Test overlap result
+            // Test wick's theorem
             if(std::abs(fwick - flowdin) > std::pow(0.1, thresh))
             { 
                 std::cout << "< [" << ix << "]_{" << k << "}^{" << c
                           << "} | F | [" << iw << "]_{" << i <<"," << j << "}^{" << a << "," << b << "} >" << std::endl;
                 std::cout << "F_wick   = " << std::setprecision(16) << fwick << std::endl;
+                std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
+                return 1;
+            }
+            // Test 1RDM
+            if(std::abs(frdm - flowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout << "< [" << ix << "]_{" << k << "}^{" << c
+                          << "} | F | [" << iw << "]_{" << i <<"," << j << "}^{" << a << "," << b << "} >" << std::endl;
+                std::cout << "F_rdm    = " << std::setprecision(16) << frdm << std::endl;
                 std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
                 return 1;
             }
@@ -773,6 +956,12 @@ int wick_one_body(double thresh)
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
             lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
+            // one-body RDM
+            arma::Mat<T> RDM;
+            T srdm = 0.0, frdm = 0.0;
+            mb.evaluate_1rdm(xahp, xbhp, wahp, wbhp, srdm, RDM);
+            frdm = arma::dot(ha, RDM.st());
+
             // Test overlap result
             if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
             { 
@@ -790,6 +979,16 @@ int wick_one_body(double thresh)
                         << "} | F | [" << iw << "]_{" << k << "," << l << "}^{" << c << "," << d 
                         << "} >" << std::endl;
                 std::cout << "F_wick   = " << std::setprecision(16) << fwick << std::endl;
+                std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
+                return 1;
+            }
+            // Test one-body RDM
+            if(std::abs(frdm - flowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout << "< [" << ix << "]_{" << i << "," << j << "}^{" << a << "," << b 
+                        << "} | F | [" << iw << "]_{" << k << "," << l << "}^{" << c << "," << d 
+                        << "} >" << std::endl;
+                std::cout << "F_rdm    = " << std::setprecision(16) << frdm << std::endl;
                 std::cout << "F_lowdin = " << std::setprecision(16) << flowdin << std::endl;
                 return 1;
             }

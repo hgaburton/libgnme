@@ -101,34 +101,6 @@ void wick<Tc,Tf,Tb>::setup_two_body(arma::Mat<Tb> &II)
         m_xxXVbXa(x,z,y) = m_xxXa(x) * m_Cxa.t() * Jb(z) * m_Cxa * m_xxXa(y);
     }
 
-    // Initiate transformed coefficient matrices 
-    m_xCXa.set_size(4); m_wCXa.set_size(4);
-    m_xCXb.set_size(4); m_wCXb.set_size(4);
-    m_xXCa.set_size(4); m_wXCa.set_size(4);
-    m_xXCb.set_size(4); m_wXCb.set_size(4);
-    
-    // Construct transformed coefficient matrices
-    for(size_t i=0; i<2; i++)
-    {
-        m_xCXa(i) = m_Cxa.t() * m_metric * m_wxMa(i);
-        m_xCXb(i) = m_Cxb.t() * m_metric * m_wxMb(i);
-        m_wCXa(i) = m_Cwa.t() * m_metric * m_wxMa(i);
-        m_wCXb(i) = m_Cwb.t() * m_metric * m_wxMb(i);
-        m_xXCa(i) = m_wxMa(i) * m_metric * m_Cxa;
-        m_xXCb(i) = m_wxMb(i) * m_metric * m_Cxb;
-        m_wXCa(i) = m_wxMa(i) * m_metric * m_Cwa;
-        m_wXCb(i) = m_wxMb(i) * m_metric * m_Cwb;
-
-        m_xCXa(2+i) = (1-i) * m_Cxa.t() - m_Cxa.t() * m_metric * m_wxMa(i);
-        m_xCXb(2+i) = (1-i) * m_Cxb.t() - m_Cxb.t() * m_metric * m_wxMb(i);
-        m_wCXa(2+i) = (1-i) * m_Cwa.t() - m_Cwa.t() * m_metric * m_wxMa(i);
-        m_wCXb(2+i) = (1-i) * m_Cwb.t() - m_Cwb.t() * m_metric * m_wxMb(i);
-        m_xXCa(2+i) = (1-i) * m_Cxa - m_wxMa(i) * m_metric * m_Cxa;
-        m_xXCb(2+i) = (1-i) * m_Cxb - m_wxMb(i) * m_metric * m_Cxb;
-        m_wXCa(2+i) = (1-i) * m_Cwa - m_wxMa(i) * m_metric * m_Cwa;
-        m_wXCb(2+i) = (1-i) * m_Cwb - m_wxMb(i) * m_metric * m_Cwb;
-    }
-
     // Setup control variable to indicate one-body initialised
     m_two_body = true;
 }

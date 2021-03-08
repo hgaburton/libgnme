@@ -29,10 +29,10 @@ void wick<Tc,Tf,Tb>::setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw)
     arma::Col<Tc> Sxx_b(m_nbeta, arma::fill::zeros);
     arma::Col<Tc> inv_Sxx_a(m_nalpha, arma::fill::zeros); 
     arma::Col<Tc> inv_Sxx_b(m_nbeta, arma::fill::zeros); 
-    lowdin_pair(Cx_a, Cw_a, Sxx_a, m_metric);
-    lowdin_pair(Cx_b, Cw_b, Sxx_b, m_metric);
-    reduced_overlap(Sxx_a, inv_Sxx_a, m_redSa, m_nza, zeros_a);
-    reduced_overlap(Sxx_b, inv_Sxx_b, m_redSb, m_nzb, zeros_b);
+    lowdin_pair(Cx_a, Cw_a, Sxx_a, m_metric,1e-20);
+    lowdin_pair(Cx_b, Cw_b, Sxx_b, m_metric,1e-20);
+    reduced_overlap(Sxx_a, inv_Sxx_a, m_redSa, m_nza, zeros_a,1e-8);
+    reduced_overlap(Sxx_b, inv_Sxx_b, m_redSb, m_nzb, zeros_b,1e-8);
 
     // Construct co-density
     m_wxMa.set_size(2);
@@ -82,6 +82,34 @@ void wick<Tc,Tf,Tb>::setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw)
         m_wxXb(i+2) = - m_Cwb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cxb; 
         m_xwXb(i+2) = - m_Cxb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cwb; 
         m_xxXb(i+2) = - m_Cxb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cxb; 
+    }
+
+    // Initiate transformed coefficient matrices 
+    m_xCXa.set_size(4); m_wCXa.set_size(4);
+    m_xCXb.set_size(4); m_wCXb.set_size(4);
+    m_xXCa.set_size(4); m_wXCa.set_size(4);
+    m_xXCb.set_size(4); m_wXCb.set_size(4);
+    
+    // Construct transformed coefficient matrices
+    for(size_t i=0; i<2; i++)
+    {
+        m_xCXa(i) = m_Cxa.t() * m_metric * m_wxMa(i);
+        m_xCXb(i) = m_Cxb.t() * m_metric * m_wxMb(i);
+        m_wCXa(i) = m_Cwa.t() * m_metric * m_wxMa(i);
+        m_wCXb(i) = m_Cwb.t() * m_metric * m_wxMb(i);
+        m_xXCa(i) = m_wxMa(i) * m_metric * m_Cxa;
+        m_xXCb(i) = m_wxMb(i) * m_metric * m_Cxb;
+        m_wXCa(i) = m_wxMa(i) * m_metric * m_Cwa;
+        m_wXCb(i) = m_wxMb(i) * m_metric * m_Cwb;
+
+        m_xCXa(2+i) = (1-i) * m_Cxa.t() - m_Cxa.t() * m_metric * m_wxMa(i);
+        m_xCXb(2+i) = (1-i) * m_Cxb.t() - m_Cxb.t() * m_metric * m_wxMb(i);
+        m_wCXa(2+i) = (1-i) * m_Cwa.t() - m_Cwa.t() * m_metric * m_wxMa(i);
+        m_wCXb(2+i) = (1-i) * m_Cwb.t() - m_Cwb.t() * m_metric * m_wxMb(i);
+        m_xXCa(2+i) = (1-i) * m_Cxa - m_wxMa(i) * m_metric * m_Cxa;
+        m_xXCb(2+i) = (1-i) * m_Cxb - m_wxMb(i) * m_metric * m_Cxb;
+        m_wXCa(2+i) = (1-i) * m_Cwa - m_wxMa(i) * m_metric * m_Cwa;
+        m_wXCb(2+i) = (1-i) * m_Cwb - m_wxMb(i) * m_metric * m_Cwb;
     }
 }
 

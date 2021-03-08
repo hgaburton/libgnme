@@ -140,11 +140,19 @@ public:
         arma::umat &wa_hp, arma::umat &wb_hp,
         Tc &S, Tc &M);
 
+    virtual void evaluate_1rdm(
+        arma::umat &xa_hp, arma::umat &xb_hp,
+        arma::umat &wa_hp, arma::umat &wb_hp,
+        Tc &S, arma::Mat<Tc> &P);
+
+
 private:
     virtual void setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw);
     virtual void setup_one_body(arma::Mat<Tf> Ha, arma::Mat<Tf> Hb);
     virtual void setup_two_body(arma::Mat<Tb> &II);
 
+    virtual void spin_1rdm(
+        arma::umat &x_hp, arma::umat &w_hp, arma::Mat<Tc> &P, bool alpha);
     virtual void spin_overlap(
         arma::umat &x_hp, arma::umat &w_hp,
         Tc &S, bool alpha);
