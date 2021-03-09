@@ -138,7 +138,8 @@ int wick_one_body(double thresh)
 
         // Setup matrix builder
         wick<T,T,double> mb(nbsf, nmo, nocca, noccb, S);
-        mb.setup(C.slice(ix), C.slice(iw), ha, hb);
+        mb.setup_orbitals(C.slice(ix), C.slice(iw));
+        mb.add_one_body(ha);
 
         // Reference coupling
         //std::cout << "< X       | W       > Ref   - Ref" << std::endl;

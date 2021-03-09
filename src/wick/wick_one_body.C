@@ -6,7 +6,13 @@
 namespace libgnme {
 
 template<typename Tc, typename Tf, typename Tb>
-void wick<Tc,Tf,Tb>::setup_one_body(arma::Mat<Tf> Fa, arma::Mat<Tf> Fb) 
+void wick<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &F) 
+{
+    add_one_body(F,F);
+}
+
+template<typename Tc, typename Tf, typename Tb>
+void wick<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb) 
 {
     // Check input
     assert(Fa.n_rows == m_nbsf);

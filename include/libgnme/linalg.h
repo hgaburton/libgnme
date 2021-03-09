@@ -11,6 +11,7 @@ namespace libgnme {
     \param M Input matrix
     \param thresh Threshold for zero eigenvalues
     \param[out] X Orthogonalisation matrix
+    \ingroup gnme_utils
 **/
 template<typename T>
 size_t orthogonalisation_matrix(size_t dim, const arma::Mat<T> &M, double thresh, arma::Mat<T> &X);
@@ -23,6 +24,7 @@ size_t orthogonalisation_matrix(size_t dim, const arma::Mat<T> &M, double thresh
     \param eigval Vector of eigenvalues
     \param eigvec Matrix with eigenvectors as columns
     \param thresh Threshold for null space in overlap matrix
+    \ingroup gnme_utils
  **/
 template<typename T>
 void gen_eig_sym(

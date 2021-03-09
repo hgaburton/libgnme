@@ -6,14 +6,14 @@
 namespace libgnme {
 
 template<typename Tc, typename Tf, typename Tb>
-void wick<Tc,Tf,Tb>::setup_two_body(arma::Mat<Tb> &II)
+void wick<Tc,Tf,Tb>::add_two_body(arma::Mat<Tb> &V)
 {
     // Check input
-    assert(II.n_rows == m_nbsf * m_nbsf);
-    assert(II.n_cols == m_nbsf * m_nbsf);
+    assert(V.n_rows == m_nbsf * m_nbsf);
+    assert(V.n_cols == m_nbsf * m_nbsf);
 
     // Save access to two-body integrals
-    m_II = II;
+    m_II = V;
 
     // Build J/K matrices
     arma::field<arma::Mat<Tc> > Ja(2), Jb(2), Ka(2), Kb(2);

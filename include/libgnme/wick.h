@@ -5,6 +5,12 @@
 
 namespace libgnme {
 
+/** \brief Implementation of the Extended Non-Orthogonal Wick's Theorem
+    \tparam Tc Type defining orbital coefficients
+    \tparam Tf Type defining one-body matrix elements
+    \tparam Tb Type defining basis functions
+    \ingroup gnme_wick
+ **/
 template<typename Tc, typename Tf, typename Tb>
 class wick
 {
@@ -104,7 +110,13 @@ private:
     arma::field<arma::Mat<Tc> > m_xxXFXb;
 
 public:
-    /** \brief Constructor
+    /** \brief Constructor for the object
+        \param nbsf Number of basis functions
+        \param nmo Number of linearly independent molecular orbitals
+        \param nalpha Number of high-spin electrons
+        \param nbeta Number of low-spin electrons
+        \param metric Overlap matrix of the basis functions
+        \param Vc Constant term in the corresponding operator
      **/
     wick(
         const size_t nbsf, const size_t nmo, 
@@ -113,20 +125,35 @@ public:
         m_nbsf(nbsf), m_nmo(nmo), m_nalpha(nalpha), m_nbeta(nbeta), m_metric(metric), m_Vc(Vc)
     { }
 
+    /** \brief Destructor **/
     virtual ~wick() { }
 
-    virtual void setup(
-        arma::Mat<Tc> Cx, arma::Mat<Tc> Cw); 
-    virtual void setup(
-        arma::Mat<Tc> Cx, arma::Mat<Tc> Cw, 
-        arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb);
-    virtual void setup(
-        arma::Mat<Tc> Cx, arma::Mat<Tc> Cw, 
-        arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb, 
-        arma::Mat<Tb> &II);
-    virtual void setup(
-        arma::Mat<Tc> Cx, arma::Mat<Tc> Cw, 
-        arma::Mat<Tb> &II);
+    /** \brief Setup orbitals associated with the reference determinants
+        \param Cx Molecular orbital coefficients for the bra state
+        \param Cw Molecular orbital coefficients for the ket state
+     **/
+    virtual void setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw);
+
+    /** \name Routines to add one- or two-body operators to the object **/
+    ///@{
+    
+    /** \brief Add a one-body operator with spin-restricted integrals 
+        \param F One-body integrals in AO basis
+     **/
+    virtual void add_one_body(arma::Mat<Tf> &F);
+
+    /** \brief Add a one-body operator with spin-unrestricted integrals 
+        \param Fa One-body integrals for high-spin component in AO basis
+        \param Fb One-body integrals for low-spin component in AO basis
+     **/
+    virtual void add_one_body(arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb);
+
+    /** \brief Add a two-body operator with spin-restricted integrals
+        \param V Two-body integrals in AO basis. These are represented as matrices in chemists
+                  notation, e.g. (ij|kl) = V(i*nbsf+j,k*nbsf+l)
+     **/
+    virtual void add_two_body(arma::Mat<Tb> &V);
+    ///@}
 
     virtual void evaluate_overlap(
         arma::umat &xa_hp, arma::umat &xb_hp,
@@ -147,10 +174,6 @@ public:
 
 
 private:
-    virtual void setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw);
-    virtual void setup_one_body(arma::Mat<Tf> Ha, arma::Mat<Tf> Hb);
-    virtual void setup_two_body(arma::Mat<Tb> &II);
-
     virtual void spin_1rdm(
         arma::umat &x_hp, arma::umat &w_hp, arma::Mat<Tc> &P, bool alpha);
     virtual void spin_overlap(
