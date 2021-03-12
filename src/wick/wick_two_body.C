@@ -3,6 +3,18 @@
 #include "lowdin_pair.h"
 #include "wick.h"
 
+namespace {
+
+template<typename T>
+bool matrix_equal(arma::Mat<T> &M1, arma::Mat<T> &M2)
+{
+    // Check if matrices have the same size
+    if(M1.n_rows != M2.n_rows || M1.n_cols != M2.n_cols) return false;
+    return arma::norm(M1 - M2) == 0;
+}
+
+} // unnamed namespace
+
 namespace libgnme {
 
 template<typename Tc, typename Tf, typename Tb>
@@ -12,10 +24,18 @@ void wick<Tc,Tf,Tb>::add_two_body(arma::Mat<Tb> &V)
     assert(V.n_rows == m_nbsf * m_nbsf);
     assert(V.n_cols == m_nbsf * m_nbsf);
 
-    // Save access to two-body integrals
+    // Save two-body integrals
     m_II = V;
 
-    // Build J/K matrices
+    // Setup control variable to indicate one-body initialised
+    m_two_body = true;
+}
+
+
+template<typename Tc, typename Tf, typename Tb>
+void wick<Tc,Tf,Tb>::setup_two_body()
+{
+    // Initialise J/K matrices
     arma::field<arma::Mat<Tc> > Ja(2), Jb(2), Ka(2), Kb(2);
     for(size_t i=0; i<2; i++)
     {
@@ -49,12 +69,12 @@ void wick<Tc,Tf,Tb>::add_two_body(arma::Mat<Tb> &V)
     // Alpha-Alpha V terms
     m_Vaa.resize(3); m_Vaa.zeros();
     m_Vaa(0) = arma::dot(Ja(0).st() - Ka(0).st(), m_wxMa(0));
-    m_Vaa(1) = 2.0 * arma::dot(Ja(0).st() - Ka(0).st(), m_wxMa(1)); //+ arma::dot(Ja(1).st() - Ka(1).st(), m_wxMa(0));
+    m_Vaa(1) = 2.0 * arma::dot(Ja(0).st() - Ka(0).st(), m_wxMa(1));
     m_Vaa(2) = arma::dot(Ja(1).st() - Ka(1).st(), m_wxMa(1));
     // Beta-Beta V terms
     m_Vbb.resize(3); m_Vbb.zeros();
     m_Vbb(0) = arma::dot(Jb(0).st() - Kb(0).st(), m_wxMb(0));
-    m_Vbb(1) = 2.0 * arma::dot(Jb(0).st() - Kb(0).st(), m_wxMb(1)); //  + arma::dot(Jb(1).st() - Kb(1).st(), m_wxMb(0));
+    m_Vbb(1) = 2.0 * arma::dot(Jb(0).st() - Kb(0).st(), m_wxMb(1));
     m_Vbb(2) = arma::dot(Jb(1).st() - Kb(1).st(), m_wxMb(1));
     // Alpha-Beta V terms
     m_Vab.resize(2,2); m_Vab.zeros();
@@ -100,9 +120,6 @@ void wick<Tc,Tf,Tb>::add_two_body(arma::Mat<Tb> &V)
         m_xwXVbXa(x,z,y) = m_xxXa(x) * m_Cxa.t() * Jb(z) * m_Cxa * m_xwXa(y);
         m_xxXVbXa(x,z,y) = m_xxXa(x) * m_Cxa.t() * Jb(z) * m_Cxa * m_xxXa(y);
     }
-
-    // Setup control variable to indicate one-body initialised
-    m_two_body = true;
 }
 
 template<typename Tc, typename Tf, typename Tb>

@@ -123,6 +123,10 @@ int wick_one_body(double thresh)
     for(size_t k=0; k<nocca; k++) ref_occa(k) = k;
     for(size_t k=0; k<noccb; k++) ref_occb(k) = k;
 
+    // Setup matrix builder
+    wick<T,T,double> mb(nbsf, nmo, nocca, noccb, S);
+    mb.add_one_body(ha);
+
     // Loop over pairs to construct matrix elements
     for(size_t iw=0 ; iw < ndets ; iw++) 
     for(size_t ix=iw ; ix < ndets ; ix++) 
@@ -136,10 +140,7 @@ int wick_one_body(double thresh)
         arma::Mat<T> Sa = Cx_a.t() * S * Cw_a;
         arma::Mat<T> Sb = Cx_b.t() * S * Cw_b;
 
-        // Setup matrix builder
-        wick<T,T,double> mb(nbsf, nmo, nocca, noccb, S);
         mb.setup_orbitals(C.slice(ix), C.slice(iw));
-        mb.add_one_body(ha);
 
         // Reference coupling
         //std::cout << "< X       | W       > Ref   - Ref" << std::endl;

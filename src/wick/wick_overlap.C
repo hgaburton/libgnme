@@ -111,6 +111,10 @@ void wick<Tc,Tf,Tb>::setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw)
         m_wXCa(2+i) = (1-i) * m_Cwa - m_wxMa(i) * m_metric * m_Cwa;
         m_wXCb(2+i) = (1-i) * m_Cwb - m_wxMb(i) * m_metric * m_Cwb;
     }
+
+    // Setup relevant one- and two-body terms 
+    if(m_one_body) setup_one_body();
+    if(m_two_body) setup_two_body();
 }
 
 template<typename Tc, typename Tf, typename Tb>

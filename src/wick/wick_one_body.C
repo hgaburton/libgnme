@@ -3,6 +3,18 @@
 #include "lowdin_pair.h"
 #include "wick.h"
 
+namespace {
+
+template<typename T>
+bool matrix_equal(arma::Mat<T> &M1, arma::Mat<T> &M2)
+{
+    // Check if matrices have the same size
+    if(M1.n_rows != M2.n_rows || M1.n_cols != M2.n_cols) return false;
+    return arma::norm(M1 - M2) == 0;
+}
+
+} // unnamed namespace
+
 namespace libgnme {
 
 template<typename Tc, typename Tf, typename Tb>
@@ -20,9 +32,21 @@ void wick<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb)
     assert(Fb.n_rows == m_nbsf);
     assert(Fb.n_cols == m_nbsf);
 
+    // Save a copy of matrices
+    m_Fa = Fa;
+    m_Fb = Fb;
+
+    // Setup control variable to indicate one-body initialised
+    m_one_body = true;
+}
+
+
+template<typename Tc, typename Tf, typename Tb>
+void wick<Tc,Tf,Tb>::setup_one_body()
+{
     // Transform one-body matrix to X MO basis
-    arma::Mat<Tc> xxFa = m_Cxa.t() * Fa * m_Cxa;
-    arma::Mat<Tc> xxFb = m_Cxb.t() * Fb * m_Cxb;
+    arma::Mat<Tc> xxFa = m_Cxa.t() * m_Fa * m_Cxa;
+    arma::Mat<Tc> xxFb = m_Cxb.t() * m_Fb * m_Cxb;
 
     // Construct 'F0' terms
     m_F0a.resize(2); 
@@ -54,9 +78,6 @@ void wick<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb)
         m_xwXFXb(x,y) = m_xxXb(x) * xxFb * m_xwXb(y);
         m_xxXFXb(x,y) = m_xxXb(x) * xxFb * m_xxXb(y);
     }
-
-    // Setup control variable to indicate one-body initialised
-    m_one_body = true;
 }
 
 template<typename Tc, typename Tf, typename Tb>

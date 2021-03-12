@@ -23,6 +23,8 @@ private:
     const arma::Mat<Tb> &m_metric; //!< Basis overlap metric
 
     double m_Vc; //!< constant component
+    arma::Mat<Tf> m_Fa; //!< Fock matrices
+    arma::Mat<Tf> m_Fb; //!< Fock matrices
     arma::Mat<Tb> m_II; //!< Two-body integrals
 
     // One-body MO matrices
@@ -87,7 +89,6 @@ private:
     arma::field<arma::Mat<Tc> > m_xCXb;
     arma::field<arma::Mat<Tc> > m_wCXa;
     arma::field<arma::Mat<Tc> > m_wCXb;
-
 
     // Hold the 'XC' and 'YC' matrices
     arma::field<arma::Mat<Tc> > m_xXCa;
@@ -189,6 +190,9 @@ private:
         arma::umat &xa_hp, arma::umat &xb_hp, 
         arma::umat &wa_hp, arma::umat &wb_hp, 
         Tc &V);
+
+    virtual void setup_one_body();
+    virtual void setup_two_body();
 };
 
 } // namespace libgnme

@@ -4,35 +4,6 @@
 
 namespace libgnme {
 
-//template<typename Tc, typename Tf, typename Tb>
-//void wick<Tc,Tf,Tb>::setup(
-//    arma::Mat<Tc> Cw, arma::Mat<Tc> Cx, 
-//    arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb)
-//{
-//    setup_orbitals(Cw,Cx);
-//    setup_one_body(Fa,Fb);
-//}
-//
-//template<typename Tc, typename Tf, typename Tb>
-//void wick<Tc,Tf,Tb>::setup(
-//    arma::Mat<Tc> Cw, arma::Mat<Tc> Cx, 
-//    arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb, 
-//    arma::Mat<Tb> &II)
-//{
-//    setup_orbitals(Cw,Cx);
-//    setup_one_body(Fa,Fb);
-//    setup_two_body(II);
-//}
-//
-//template<typename Tc, typename Tf, typename Tb>
-//void wick<Tc,Tf,Tb>::setup(
-//    arma::Mat<Tc> Cw, arma::Mat<Tc> Cx, 
-//    arma::Mat<Tb> &II)
-//{
-//    setup_orbitals(Cw,Cx);
-//    setup_two_body(II);
-//}
-
 template<typename Tc, typename Tf, typename Tb>
 void wick<Tc,Tf,Tb>::evaluate_overlap(
     arma::umat &xahp, arma::umat &xbhp,
