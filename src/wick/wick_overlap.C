@@ -172,15 +172,6 @@ void wick<Tc,Tf,Tb>::spin_overlap(
     size_t nx = xhp.n_rows; // Bra excitations
     size_t nw = whp.n_rows; // Ket excitations
 
-    // Inform if we can't handle that excitation
-    //if(nx > 2 || nw > 2 || (nx+nw) > 4)
-    //{
-    //    std::cout << "wick::spin_overlap: Bra excitations = " << nx << std::endl;
-    //    std::cout << "wick::spin_overlap: Ket excitations = " << nw << std::endl;
-    //    throw std::runtime_error(
-    //       "wick::spin_overlap: Requested excitation level not yet implemented");
-    //} 
-
     // Get reference to number of zeros for this spin
     const size_t &nz = alpha ? m_nza : m_nzb; 
 
@@ -236,116 +227,6 @@ void wick<Tc,Tf,Tb>::spin_overlap(
     whp -= m_nmo;
 
     return;
-
-    // Old version
-    /*
-    S = 0.0;
-
-    // Get reference to relevant X matrices for this spin
-    const arma::field<arma::Mat<Tc> > &wwX = alpha ? m_wwXa : m_wwXb;
-    const arma::field<arma::Mat<Tc> > &wxX = alpha ? m_wxXa : m_wxXb;
-    const arma::field<arma::Mat<Tc> > &xwX = alpha ? m_xwXa : m_xwXb;
-    const arma::field<arma::Mat<Tc> > &xxX = alpha ? m_xxXa : m_xxXb;
-    
-    // Evaluate the corresponding element
-    // < X | W >
-    if(nx == 0 and nw == 0)
-    {
-        S = nz == 0 ? 1.0 : 0.0;
-    }
-    // < X_i^a | W >
-    else if(nx == 1 and nw == 0)
-    {
-        size_t i = xhp(0,0), a = xhp(0,1);
-        S = X(nz)(a,i);
-    }
-    // < X | W_i^a >
-    else if(nx == 0 and nw == 1)
-    {
-        size_t i = whp(0,0) + m_nmo, a = whp(0,1) + m_nmo;
-        S = X(nz)(i,a);
-    }
-    // < X_{ij}^{ab} | W > 
-    else if(nx == 2 and nw == 0)
-    {
-        size_t i = xhp(0,0), a = xhp(0,1);
-        size_t j = xhp(1,0), b = xhp(1,1);
-        // Distribute the NZ zeros among 2 contractions
-        std::vector<size_t> m(nz, 1); m.resize(2, 0); 
-        do {
-            S += X(m[0])(b,j) * X(m[1])(a,i) - X(m[0])(b,i) * X(m[1])(a,j); 
-        } while(std::prev_permutation(m.begin(), m.end()));
-    }
-    // < X | W_{ij}^{ab} > 
-    else if(nx == 0 and nw == 2)
-    {   
-        size_t i = whp(0,0) + m_nmo, a = whp(0,1) + m_nmo;
-        size_t j = whp(1,0) + m_nmo, b = whp(1,1) + m_nmo;
-        // Distribute the NZ zeros among 2 contractions
-        std::vector<size_t> m(nz, 1); m.resize(2, 0); 
-        do {
-            S += X(m[0])(j,b) * X(m[1])(i,a) - X(m[0])(j,a) * X(m[1])(i,b); 
-            //S += X(m[0])(j,b) * X(m[1])(i,a) - X(m[0])(j,a) * X(m[1])(i,b); 
-        } while(std::prev_permutation(m.begin(), m.end()));
-    }
-    // < X_i^a | W_j^b > 
-    else if(nx == 1 and nw == 1)
-    {   
-        size_t i = xhp(0,0), a = xhp(0,1);
-        size_t j = whp(0,0) + m_nmo, b = whp(0,1) + m_nmo;
-        // Distribute the NZ zeros among 2 contractions
-        std::vector<size_t> m(nz, 1); m.resize(2, 0); 
-        do {
-            S += X(m[0])(a,i) * X(m[1])(j,b) + X(m[0])(j,i) * Y(m[1])(a,b); 
-        } while(std::prev_permutation(m.begin(), m.end()));
-    }
-    // < X_{ij}^{ab} | W_k^c >
-    else if(nx == 2 and nw == 1)
-    {
-        size_t i = xhp(0,0), a = xhp(0,1);
-        size_t j = xhp(1,0), b = xhp(1,1);
-        size_t k = whp(0,0) + m_nmo, c = whp(0,1) + m_nmo;
-        // Distribute the NZ zeros among 3 contractions
-        std::vector<size_t> m(nz, 1); m.resize(3, 0); 
-        do {
-            S += X(m[0])(k,c) * (X(m[1])(a,i) * X(m[2])(b,j) - X(m[1])(a,j) * X(m[2])(b,i))
-               + Y(m[0])(a,c) * (X(m[1])(k,i) * X(m[2])(b,j) - X(m[1])(k,j) * X(m[2])(b,i))
-               + Y(m[0])(b,c) * (X(m[1])(k,j) * X(m[2])(a,i) - X(m[1])(k,i) * X(m[2])(a,j));
-        } while(std::prev_permutation(m.begin(), m.end()));
-    }
-    // < X_k^c | W_{ij}^{ab} >
-    else if(nx == 1 and nw == 2)
-    {
-        size_t i = whp(0,0) + m_nmo, a = whp(0,1) + m_nmo;
-        size_t j = whp(1,0) + m_nmo, b = whp(1,1) + m_nmo;
-        size_t k = xhp(0,0), c = xhp(0,1);
-        // Distribute the NZ zeros among 3 contractions
-        std::vector<size_t> m(nz, 1); m.resize(3, 0); 
-        do {
-            S += X(m[0])(c,k) * (X(m[1])(i,a) * X(m[2])(j,b) - X(m[1])(j,a) * X(m[2])(i,b))
-               + Y(m[0])(c,a) * (X(m[1])(i,k) * X(m[2])(j,b) - X(m[1])(j,k) * X(m[2])(i,b))
-               + Y(m[0])(c,b) * (X(m[1])(j,k) * X(m[2])(i,a) - X(m[1])(i,k) * X(m[2])(j,a));
-        } while(std::prev_permutation(m.begin(), m.end()));
-    }
-    // < X_{ij}^{ab} | W_{kl}^{cd} >
-    else if(nx == 2 and nw == 2)
-    {
-        size_t i = xhp(0,0), a = xhp(0,1);
-        size_t j = xhp(1,0), b = xhp(1,1);
-        size_t k = whp(0,0) + m_nmo, c = whp(0,1) + m_nmo;
-        size_t l = whp(1,0) + m_nmo, d = whp(1,1) + m_nmo;
-        // Distribute the NZ zeros among 4 contractions
-        std::vector<size_t> m(nz, 1); m.resize(4, 0); 
-        do {
-            S += (X(m[0])(a,i) * X(m[1])(b,j) - X(m[0])(a,j) * X(m[1])(b,i)) * (X(m[2])(k,c) * X(m[3])(l,d) - X(m[2])(k,d) * X(m[3])(l,c))
-               + (Y(m[0])(a,c) * X(m[1])(b,j) - Y(m[0])(b,c) * X(m[1])(a,j)) * (X(m[2])(k,i) * X(m[3])(l,d) - X(m[2])(l,i) * X(m[3])(k,d))
-               + (Y(m[0])(a,d) * X(m[1])(b,j) - Y(m[0])(b,d) * X(m[1])(a,j)) * (X(m[2])(l,i) * X(m[3])(k,c) - X(m[2])(k,i) * X(m[3])(l,c))
-               + (Y(m[0])(a,c) * X(m[1])(b,i) - Y(m[0])(b,c) * X(m[1])(a,i)) * (X(m[2])(l,j) * X(m[3])(k,d) - X(m[2])(k,j) * X(m[3])(l,d))
-               + (Y(m[0])(a,d) * X(m[1])(b,i) - Y(m[0])(b,d) * X(m[1])(a,i)) * (X(m[2])(k,j) * X(m[3])(l,c) - X(m[2])(l,j) * X(m[3])(k,c))
-               + (Y(m[0])(a,c) * Y(m[1])(b,d) - Y(m[0])(b,c) * Y(m[1])(a,d)) * (X(m[2])(k,i) * X(m[3])(l,j) - X(m[2])(l,i) * X(m[3])(k,j));
-        } while(std::prev_permutation(m.begin(), m.end()));
-    }
-    */
 }
 
 template class wick<double, double, double>;
