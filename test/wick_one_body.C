@@ -127,9 +127,10 @@ int wick_one_body(double thresh)
     wick<T,T,double> mb(nbsf, nmo, nocca, noccb, S);
     mb.add_one_body(ha);
 
+
     // Loop over pairs to construct matrix elements
     for(size_t iw=0 ; iw < ndets ; iw++) 
-    for(size_t ix=iw ; ix < ndets ; ix++) 
+    for(size_t ix=iw+1 ; ix < ndets ; ix++) 
     {
         // Get access to coefficients
         arma::Mat<T> Cx_a(C.slice(ix).colptr(0), nbsf, nmo, true, true);
@@ -309,8 +310,8 @@ int wick_one_body(double thresh)
         {
             arma::umat xahp(0,2), xbhp(0,2);
             arma::umat wahp(2,2), wbhp(0,2);
-            wahp(0,0) = i; wahp(0,1) = a;
-            wahp(1,0) = j; wahp(1,1) = b;
+            wahp(0,0) = j; wahp(0,1) = b;
+            wahp(1,0) = i; wahp(1,1) = a;
 
             // Wick test
             T swick = 0.0, fwick = 0.0;

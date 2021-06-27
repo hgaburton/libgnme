@@ -56,6 +56,49 @@ void wick<Tc,Tf,Tb>::setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw)
     for(size_t i=0; i < m_nzb; i++)
         m_wxMb(1) += Cw_b.col(zeros_b(i)) * Cx_b.col(zeros_b(i)).t();
 
+    // Initialise X contraction arrays
+    m_Xa.set_size(2); m_Xb.set_size(2);
+    for(size_t i=0; i<2; i++)
+    {
+        // Initialise the memory
+        m_Xa(i).set_size(2*m_nmo,2*m_nmo); m_Xa(i).zeros();
+        m_Xb(i).set_size(2*m_nmo,2*m_nmo); m_Xb(i).zeros();
+
+        // Compute alpha terms
+        m_Xa(i).submat(0,0, m_nmo-1,m_nmo-1)             = m_Cxa.t() * m_metric * m_wxMa(i) * m_metric * m_Cxa; // xx
+        m_Xa(i).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)       = m_Cxa.t() * m_metric * m_wxMa(i) * m_metric * m_Cwa; // xw
+        m_Xa(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)       = m_Cwa.t() * m_metric * m_wxMa(i) * m_metric * m_Cxa; // wx
+        m_Xa(i).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1) = m_Cwa.t() * m_metric * m_wxMa(i) * m_metric * m_Cwa; // ww
+
+        // Compute beta terms
+        m_Xb(i).submat(0,0, m_nmo-1,m_nmo-1)             = m_Cxb.t() * m_metric * m_wxMb(i) * m_metric * m_Cxb; // xx
+        m_Xb(i).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)       = m_Cxb.t() * m_metric * m_wxMb(i) * m_metric * m_Cwb; // xw
+        m_Xb(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)       = m_Cwb.t() * m_metric * m_wxMb(i) * m_metric * m_Cxb; // wx
+        m_Xb(i).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1) = m_Cwb.t() * m_metric * m_wxMb(i) * m_metric * m_Cwb; // ww
+    }
+
+    // Intialise Y contraction arrays
+    m_Ya.set_size(2); m_Yb.set_size(2);
+    for(size_t i=0; i<2; i++)
+    {
+        // Initialise the memory
+        m_Ya(i).set_size(2*m_nmo,2*m_nmo); m_Ya(i).zeros();
+        m_Yb(i).set_size(2*m_nmo,2*m_nmo); m_Yb(i).zeros();
+
+        // Compute alpha terms
+        m_Ya(i).submat(0,0, m_nmo-1,m_nmo-1)             = - m_Cxa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cxa; // xx
+        m_Ya(i).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)       = - m_Cxa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cwa; // xw
+        m_Ya(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)       = - m_Cwa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cxa; // wx
+        m_Ya(i).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1) = - m_Cwa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cwa; // ww
+
+        // Compute beta terms
+        m_Yb(i).submat(0,0, m_nmo-1,m_nmo-1)             = - m_Cxb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cxb; // xx
+        m_Yb(i).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)       = - m_Cxb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cwb; // xw
+        m_Yb(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)       = - m_Cwb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cxb; // wx
+        m_Yb(i).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1) = - m_Cwb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cwb; // ww
+    }
+ 
+    // TODO: Refactor these into oblivion!
     // Initialise contraction arrays 
     m_wwXa.set_size(4); m_xwXa.set_size(4);
     m_wxXa.set_size(4); m_xxXa.set_size(4);
@@ -130,27 +173,81 @@ void wick<Tc,Tf,Tb>::spin_overlap(
     size_t nw = whp.n_rows; // Ket excitations
 
     // Inform if we can't handle that excitation
-    if(nx > 2 || nw > 2 || (nx+nw) > 4)
-    {
-        std::cout << "wick::spin_overlap: Bra excitations = " << nx << std::endl;
-        std::cout << "wick::spin_overlap: Ket excitations = " << nw << std::endl;
-        throw std::runtime_error(
-           "wick::spin_overlap: Requested excitation level not yet implemented");
-    } 
+    //if(nx > 2 || nw > 2 || (nx+nw) > 4)
+    //{
+    //    std::cout << "wick::spin_overlap: Bra excitations = " << nx << std::endl;
+    //    std::cout << "wick::spin_overlap: Ket excitations = " << nw << std::endl;
+    //    throw std::runtime_error(
+    //       "wick::spin_overlap: Requested excitation level not yet implemented");
+    //} 
+
+    // Get reference to number of zeros for this spin
+    const size_t &nz = alpha ? m_nza : m_nzb; 
+
+    // Get reference to relevant X/Y matrices for this spin
+    const arma::field<arma::Mat<Tc> > &X = alpha ? m_Xa : m_Xb;
+    const arma::field<arma::Mat<Tc> > &Y = alpha ? m_Ya : m_Yb;
+
+    // Check we don't have a non-zero element
+    if(nz > nw + nx) return;
+
+    // Shift w indices
+    // TODO: Do we want to keep this?
+    whp += m_nmo;
+
+    // Test the determinantal version
+    if(nx == 0 and nw == 0)
+    {   // No excitations, so return simple overlap
+        S = nz == 0 ? 1.0 : 0.0;
+    }
+    else if(nx == 1 and nw == 0)
+    {   // One excitation doesn't require determinant
+        S = X(nz)(xhp(0,1),xhp(0,0));
+    }
+    else if(nx == 0 and nw == 1)
+    {   // One excitation doesn't require determinant
+        S = X(nz)(whp(0,0),whp(0,1));
+    }
+    else
+    {   // General case does require determinant
+        // Get row/column indices for particle/holes
+        arma::uvec rows = arma::join_cols(xhp.col(1),whp.col(0));
+        arma::uvec cols = arma::join_cols(xhp.col(0),whp.col(1));
+
+        // Construct matrix for no zero overlaps
+        arma::Mat<Tc> D    = arma::trimatl(X(0).submat(rows,cols))
+                           - arma::trimatu(Y(0).submat(rows,cols),1);
+        // Construct matrix with all zero overlaps
+        arma::Mat<Tc> Dbar = arma::trimatl(X(1).submat(rows,cols)) 
+                           - arma::trimatu(Y(1).submat(rows,cols),1);
+
+        // Distribute nz zeros among columns of D 
+        // This corresponds to inserting nz columns of Dbar into D for every
+        // permutations of the nz zeros.
+        std::vector<size_t> m(nz, 1); m.resize(nx+nw, 0); 
+        arma::Col<size_t> ind(&m[0], m.size(), false, true);
+        do {
+            S += arma::det(D * arma::diagmat(1-ind) + Dbar * arma::diagmat(ind));
+        } while(std::prev_permutation(m.begin(), m.end()));
+    }
+
+    // Shift w indices
+    // TODO: Do we want to keep this?
+    whp -= m_nmo;
+
+    return;
+
+    // Old version
+    /*
+    S = 0.0;
 
     // Get reference to relevant X matrices for this spin
     const arma::field<arma::Mat<Tc> > &wwX = alpha ? m_wwXa : m_wwXb;
     const arma::field<arma::Mat<Tc> > &wxX = alpha ? m_wxXa : m_wxXb;
     const arma::field<arma::Mat<Tc> > &xwX = alpha ? m_xwXa : m_xwXb;
     const arma::field<arma::Mat<Tc> > &xxX = alpha ? m_xxXa : m_xxXb;
-
-    // Get reference to number of zeros for this spin
-    const size_t &nz = alpha ? m_nza : m_nzb; 
-
-    // Check we don't have a non-zero element
-    if(nz > nw + nx) return;
     
-    /* Evaluate the corresponding element */
+    // Evaluate the corresponding element
     // < X | W >
     if(nx == 0 and nw == 0)
     {
@@ -160,13 +257,13 @@ void wick<Tc,Tf,Tb>::spin_overlap(
     else if(nx == 1 and nw == 0)
     {
         size_t i = xhp(0,0), a = xhp(0,1);
-        S = xxX(nz)(a,i);
+        S = X(nz)(a,i);
     }
     // < X | W_i^a >
     else if(nx == 0 and nw == 1)
     {
-        size_t i = whp(0,0), a = whp(0,1);
-        S = wwX(nz)(i,a);
+        size_t i = whp(0,0) + m_nmo, a = whp(0,1) + m_nmo;
+        S = X(nz)(i,a);
     }
     // < X_{ij}^{ab} | W > 
     else if(nx == 2 and nw == 0)
@@ -176,29 +273,30 @@ void wick<Tc,Tf,Tb>::spin_overlap(
         // Distribute the NZ zeros among 2 contractions
         std::vector<size_t> m(nz, 1); m.resize(2, 0); 
         do {
-            S += xxX(m[0])(b,j) * xxX(m[1])(a,i) - xxX(m[0])(b,i) * xxX(m[1])(a,j); 
+            S += X(m[0])(b,j) * X(m[1])(a,i) - X(m[0])(b,i) * X(m[1])(a,j); 
         } while(std::prev_permutation(m.begin(), m.end()));
     }
     // < X | W_{ij}^{ab} > 
     else if(nx == 0 and nw == 2)
     {   
-        size_t i = whp(0,0), a = whp(0,1);
-        size_t j = whp(1,0), b = whp(1,1);
+        size_t i = whp(0,0) + m_nmo, a = whp(0,1) + m_nmo;
+        size_t j = whp(1,0) + m_nmo, b = whp(1,1) + m_nmo;
         // Distribute the NZ zeros among 2 contractions
         std::vector<size_t> m(nz, 1); m.resize(2, 0); 
         do {
-            S += wwX(m[0])(j,b) * wwX(m[1])(i,a) - wwX(m[0])(j,a) * wwX(m[1])(i,b); 
+            S += X(m[0])(j,b) * X(m[1])(i,a) - X(m[0])(j,a) * X(m[1])(i,b); 
+            //S += X(m[0])(j,b) * X(m[1])(i,a) - X(m[0])(j,a) * X(m[1])(i,b); 
         } while(std::prev_permutation(m.begin(), m.end()));
     }
     // < X_i^a | W_j^b > 
     else if(nx == 1 and nw == 1)
     {   
         size_t i = xhp(0,0), a = xhp(0,1);
-        size_t j = whp(0,0), b = whp(0,1);
+        size_t j = whp(0,0) + m_nmo, b = whp(0,1) + m_nmo;
         // Distribute the NZ zeros among 2 contractions
         std::vector<size_t> m(nz, 1); m.resize(2, 0); 
         do {
-            S += xxX(m[0])(a,i) * wwX(m[1])(j,b) + wxX(m[0])(j,i) * xwX(2+m[1])(a,b); 
+            S += X(m[0])(a,i) * X(m[1])(j,b) + X(m[0])(j,i) * Y(m[1])(a,b); 
         } while(std::prev_permutation(m.begin(), m.end()));
     }
     // < X_{ij}^{ab} | W_k^c >
@@ -206,27 +304,27 @@ void wick<Tc,Tf,Tb>::spin_overlap(
     {
         size_t i = xhp(0,0), a = xhp(0,1);
         size_t j = xhp(1,0), b = xhp(1,1);
-        size_t k = whp(0,0), c = whp(0,1);
+        size_t k = whp(0,0) + m_nmo, c = whp(0,1) + m_nmo;
         // Distribute the NZ zeros among 3 contractions
         std::vector<size_t> m(nz, 1); m.resize(3, 0); 
         do {
-            S += wwX(0+m[0])(k,c) * (xxX(m[1])(a,i) * xxX(m[2])(b,j) - xxX(m[1])(a,j) * xxX(m[2])(b,i))
-               + xwX(2+m[0])(a,c) * (wxX(m[1])(k,i) * xxX(m[2])(b,j) - wxX(m[1])(k,j) * xxX(m[2])(b,i))
-               + xwX(2+m[0])(b,c) * (wxX(m[1])(k,j) * xxX(m[2])(a,i) - wxX(m[1])(k,i) * xxX(m[2])(a,j));
+            S += X(m[0])(k,c) * (X(m[1])(a,i) * X(m[2])(b,j) - X(m[1])(a,j) * X(m[2])(b,i))
+               + Y(m[0])(a,c) * (X(m[1])(k,i) * X(m[2])(b,j) - X(m[1])(k,j) * X(m[2])(b,i))
+               + Y(m[0])(b,c) * (X(m[1])(k,j) * X(m[2])(a,i) - X(m[1])(k,i) * X(m[2])(a,j));
         } while(std::prev_permutation(m.begin(), m.end()));
     }
     // < X_k^c | W_{ij}^{ab} >
     else if(nx == 1 and nw == 2)
     {
-        size_t i = whp(0,0), a = whp(0,1);
-        size_t j = whp(1,0), b = whp(1,1);
+        size_t i = whp(0,0) + m_nmo, a = whp(0,1) + m_nmo;
+        size_t j = whp(1,0) + m_nmo, b = whp(1,1) + m_nmo;
         size_t k = xhp(0,0), c = xhp(0,1);
         // Distribute the NZ zeros among 3 contractions
         std::vector<size_t> m(nz, 1); m.resize(3, 0); 
         do {
-            S += xxX(0+m[0])(c,k) * (wwX(m[1])(i,a) * wwX(m[2])(j,b) - wwX(m[1])(j,a) * wwX(m[2])(i,b))
-               + xwX(2+m[0])(c,a) * (wxX(m[1])(i,k) * wwX(m[2])(j,b) - wxX(m[1])(j,k) * wwX(m[2])(i,b))
-               + xwX(2+m[0])(c,b) * (wxX(m[1])(j,k) * wwX(m[2])(i,a) - wxX(m[1])(i,k) * wwX(m[2])(j,a));
+            S += X(m[0])(c,k) * (X(m[1])(i,a) * X(m[2])(j,b) - X(m[1])(j,a) * X(m[2])(i,b))
+               + Y(m[0])(c,a) * (X(m[1])(i,k) * X(m[2])(j,b) - X(m[1])(j,k) * X(m[2])(i,b))
+               + Y(m[0])(c,b) * (X(m[1])(j,k) * X(m[2])(i,a) - X(m[1])(i,k) * X(m[2])(j,a));
         } while(std::prev_permutation(m.begin(), m.end()));
     }
     // < X_{ij}^{ab} | W_{kl}^{cd} >
@@ -234,19 +332,20 @@ void wick<Tc,Tf,Tb>::spin_overlap(
     {
         size_t i = xhp(0,0), a = xhp(0,1);
         size_t j = xhp(1,0), b = xhp(1,1);
-        size_t k = whp(0,0), c = whp(0,1);
-        size_t l = whp(1,0), d = whp(1,1);
+        size_t k = whp(0,0) + m_nmo, c = whp(0,1) + m_nmo;
+        size_t l = whp(1,0) + m_nmo, d = whp(1,1) + m_nmo;
         // Distribute the NZ zeros among 4 contractions
         std::vector<size_t> m(nz, 1); m.resize(4, 0); 
         do {
-            S += (xxX(0+m[0])(a,i) * xxX(0+m[1])(b,j) - xxX(0+m[0])(a,j) * xxX(0+m[1])(b,i)) * (wwX(m[2])(k,c) * wwX(m[3])(l,d) - wwX(m[2])(k,d) * wwX(m[3])(l,c))
-               + (xwX(2+m[0])(a,c) * xxX(0+m[1])(b,j) - xwX(2+m[0])(b,c) * xxX(0+m[1])(a,j)) * (wxX(m[2])(k,i) * wwX(m[3])(l,d) - wxX(m[2])(l,i) * wwX(m[3])(k,d))
-               + (xwX(2+m[0])(a,d) * xxX(0+m[1])(b,j) - xwX(2+m[0])(b,d) * xxX(0+m[1])(a,j)) * (wxX(m[2])(l,i) * wwX(m[3])(k,c) - wxX(m[2])(k,i) * wwX(m[3])(l,c))
-               + (xwX(2+m[0])(a,c) * xxX(0+m[1])(b,i) - xwX(2+m[0])(b,c) * xxX(0+m[1])(a,i)) * (wxX(m[2])(l,j) * wwX(m[3])(k,d) - wxX(m[2])(k,j) * wwX(m[3])(l,d))
-               + (xwX(2+m[0])(a,d) * xxX(0+m[1])(b,i) - xwX(2+m[0])(b,d) * xxX(0+m[1])(a,i)) * (wxX(m[2])(k,j) * wwX(m[3])(l,c) - wxX(m[2])(l,j) * wwX(m[3])(k,c))
-               + (xwX(2+m[0])(a,c) * xwX(2+m[1])(b,d) - xwX(2+m[0])(b,c) * xwX(2+m[1])(a,d)) * (wxX(m[2])(k,i) * wxX(m[3])(l,j) - wxX(m[2])(l,i) * wxX(m[3])(k,j));
+            S += (X(m[0])(a,i) * X(m[1])(b,j) - X(m[0])(a,j) * X(m[1])(b,i)) * (X(m[2])(k,c) * X(m[3])(l,d) - X(m[2])(k,d) * X(m[3])(l,c))
+               + (Y(m[0])(a,c) * X(m[1])(b,j) - Y(m[0])(b,c) * X(m[1])(a,j)) * (X(m[2])(k,i) * X(m[3])(l,d) - X(m[2])(l,i) * X(m[3])(k,d))
+               + (Y(m[0])(a,d) * X(m[1])(b,j) - Y(m[0])(b,d) * X(m[1])(a,j)) * (X(m[2])(l,i) * X(m[3])(k,c) - X(m[2])(k,i) * X(m[3])(l,c))
+               + (Y(m[0])(a,c) * X(m[1])(b,i) - Y(m[0])(b,c) * X(m[1])(a,i)) * (X(m[2])(l,j) * X(m[3])(k,d) - X(m[2])(k,j) * X(m[3])(l,d))
+               + (Y(m[0])(a,d) * X(m[1])(b,i) - Y(m[0])(b,d) * X(m[1])(a,i)) * (X(m[2])(k,j) * X(m[3])(l,c) - X(m[2])(l,j) * X(m[3])(k,c))
+               + (Y(m[0])(a,c) * Y(m[1])(b,d) - Y(m[0])(b,c) * Y(m[1])(a,d)) * (X(m[2])(k,i) * X(m[3])(l,j) - X(m[2])(l,i) * X(m[3])(k,j));
         } while(std::prev_permutation(m.begin(), m.end()));
     }
+    */
 }
 
 template class wick<double, double, double>;

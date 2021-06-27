@@ -1,4 +1,4 @@
-CXX_FLAGS=icpc -Wall -std=c++11 -O3
+CXX_FLAGS=icpc -Wall -std=c++11 -g3
 CXX_INCLUDE=-I/u/thchem/newc6131/code/libgnme/include -I/u/thchem/newc6131/code/libgnme/external/armadillo-10.1.2/include
 CXX_LD_PATH=-L/opt/intel/compilers_and_libraries_2019.1.144/linux/mkl/lib/intel64_lin -L/opt/intel/compilers_and_libraries_2019.1.144/linux/compiler/lib/intel64_lin -L/u/thchem/newc6131/code/libgnme/lib 
 

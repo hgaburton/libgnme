@@ -57,6 +57,14 @@ private:
     arma::field<arma::Mat<Tc> > m_wxXb;
     arma::field<arma::Mat<Tc> > m_xwXb;
     arma::field<arma::Mat<Tc> > m_xxXb;
+
+    // Hold the 'X' super matrices
+    arma::field<arma::Mat<Tc> > m_Xa;
+    arma::field<arma::Mat<Tc> > m_Xb;
+
+    // Hold the 'Y' super matrices
+    arma::field<arma::Mat<Tc> > m_Ya;
+    arma::field<arma::Mat<Tc> > m_Yb;
     
     // Holds the 'V0' terms
     arma::Col<Tc> m_Vaa;
