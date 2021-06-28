@@ -65,7 +65,25 @@ private:
     // Hold the 'Y' super matrices
     arma::field<arma::Mat<Tc> > m_Ya;
     arma::field<arma::Mat<Tc> > m_Yb;
-    
+
+    // Holds the 'F0' terms
+    arma::Col<Tc> m_F0a;
+    arma::Col<Tc> m_F0b;
+
+    // Hold the '(X/Y)F(X/Y)' super matrices
+    arma::field<arma::Mat<Tc> > m_XFXa;
+    arma::field<arma::Mat<Tc> > m_XFXb;
+
+    // Holds the `XFX' matrices
+    arma::field<arma::Mat<Tc> > m_wwXFXa;
+    arma::field<arma::Mat<Tc> > m_wxXFXa;
+    arma::field<arma::Mat<Tc> > m_xwXFXa;
+    arma::field<arma::Mat<Tc> > m_xxXFXa;
+    arma::field<arma::Mat<Tc> > m_wwXFXb;
+    arma::field<arma::Mat<Tc> > m_wxXFXb;
+    arma::field<arma::Mat<Tc> > m_xwXFXb;
+    arma::field<arma::Mat<Tc> > m_xxXFXb;
+
     // Holds the 'V0' terms
     arma::Col<Tc> m_Vaa;
     arma::Col<Tc> m_Vbb;
@@ -103,20 +121,6 @@ private:
     arma::field<arma::Mat<Tc> > m_xXCb;
     arma::field<arma::Mat<Tc> > m_wXCa;
     arma::field<arma::Mat<Tc> > m_wXCb;
-
-    // Holds the 'F0' terms
-    arma::Col<Tc> m_F0a;
-    arma::Col<Tc> m_F0b;
-
-    // Holds the `XFX' matrices
-    arma::field<arma::Mat<Tc> > m_wwXFXa;
-    arma::field<arma::Mat<Tc> > m_wxXFXa;
-    arma::field<arma::Mat<Tc> > m_xwXFXa;
-    arma::field<arma::Mat<Tc> > m_xxXFXa;
-    arma::field<arma::Mat<Tc> > m_wwXFXb;
-    arma::field<arma::Mat<Tc> > m_wxXFXb;
-    arma::field<arma::Mat<Tc> > m_xwXFXb;
-    arma::field<arma::Mat<Tc> > m_xxXFXb;
 
 public:
     /** \brief Constructor for the object

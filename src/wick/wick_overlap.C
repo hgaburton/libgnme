@@ -86,16 +86,16 @@ void wick<Tc,Tf,Tb>::setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw)
         m_Yb(i).set_size(2*m_nmo,2*m_nmo); m_Yb(i).zeros();
 
         // Compute alpha terms
-        m_Ya(i).submat(0,0, m_nmo-1,m_nmo-1)             = - m_Cxa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cxa; // xx
-        m_Ya(i).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)       = - m_Cxa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cwa; // xw
-        m_Ya(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)       = - m_Cwa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cxa; // wx
-        m_Ya(i).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1) = - m_Cwa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cwa; // ww
+        m_Ya(i).submat(0,0, m_nmo-1,m_nmo-1)             = m_Cxa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cxa; // xx
+        m_Ya(i).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)       = m_Cxa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cwa; // xw
+        m_Ya(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)       = m_Cwa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cxa; // wx
+        m_Ya(i).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1) = m_Cwa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cwa; // ww
 
         // Compute beta terms
-        m_Yb(i).submat(0,0, m_nmo-1,m_nmo-1)             = - m_Cxb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cxb; // xx
-        m_Yb(i).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)       = - m_Cxb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cwb; // xw
-        m_Yb(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)       = - m_Cwb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cxb; // wx
-        m_Yb(i).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1) = - m_Cwb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cwb; // ww
+        m_Yb(i).submat(0,0, m_nmo-1,m_nmo-1)             = m_Cxb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cxb; // xx
+        m_Yb(i).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)       = m_Cxb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cwb; // xw
+        m_Yb(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)       = m_Cwb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cxb; // wx
+        m_Yb(i).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1) = m_Cwb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cwb; // ww
     }
  
     // TODO: Refactor these into oblivion!
@@ -207,10 +207,10 @@ void wick<Tc,Tf,Tb>::spin_overlap(
 
         // Construct matrix for no zero overlaps
         arma::Mat<Tc> D    = arma::trimatl(X(0).submat(rows,cols))
-                           - arma::trimatu(Y(0).submat(rows,cols),1);
+                           + arma::trimatu(Y(0).submat(rows,cols),1);
         // Construct matrix with all zero overlaps
         arma::Mat<Tc> Dbar = arma::trimatl(X(1).submat(rows,cols)) 
-                           - arma::trimatu(Y(1).submat(rows,cols),1);
+                           + arma::trimatu(Y(1).submat(rows,cols),1);
 
         // Distribute nz zeros among columns of D 
         // This corresponds to inserting nz columns of Dbar into D for every
