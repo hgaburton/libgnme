@@ -20,6 +20,7 @@ private:
     const size_t m_nmo; //!< Number of (linearly independent) MOs
     const size_t m_nalpha; //!< Number of alpha electrons
     const size_t m_nbeta; //!< Number of beta electrons
+    size_t m_nact; //!< Number of active orbitals
     const arma::Mat<Tb> &m_metric; //!< Basis overlap metric
 
     double m_Vc; //!< constant component
@@ -37,6 +38,9 @@ private:
 
     Tc m_redSa; //!< Reduced overlap
     Tc m_redSb; //!< Reduced overlap
+
+    // Store a set of reference orbitals
+    arma::Mat<Tc> m_Cref; // Reference coefficients for integrals
 
     // Hold the reference coefficients
     arma::Mat<Tc> m_Cxa; // Bra coefficients (alpha)
@@ -64,6 +68,12 @@ private:
     // Hold the '(X/Y)F(X/Y)' super matrices
     arma::field<arma::Mat<Tc> > m_XFXa;
     arma::field<arma::Mat<Tc> > m_XFXb;
+
+    // Hold the 'CX' and 'CY' matrices
+    arma::field<arma::Mat<Tc> > m_CXa;
+    arma::field<arma::Mat<Tc> > m_CXb;
+    arma::field<arma::Mat<Tc> > m_XCa;
+    arma::field<arma::Mat<Tc> > m_XCb;
 
     // Holds the `X' matrices
     // TODO: Remove
@@ -138,6 +148,7 @@ public:
         \param Cw Molecular orbital coefficients for the ket state
      **/
     virtual void setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw);
+    virtual void setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw, size_t ncore, size_t nactive);
 
     /** \name Routines to add one- or two-body operators to the object **/
     ///@{

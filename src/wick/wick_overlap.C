@@ -6,24 +6,40 @@
 namespace libgnme {
 
 template<typename Tc, typename Tf, typename Tb>
-void wick<Tc,Tf,Tb>::setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw) 
+void wick<Tc,Tf,Tb>::setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw)
 {
-    // Take a safe copy
-    m_Cxa = Cx.cols(0,m_nmo-1);
-    m_Cwa = Cw.cols(0,m_nmo-1);
-    m_Cxb = Cx.cols(m_nmo,2*m_nmo-1);
-    m_Cwb = Cw.cols(m_nmo,2*m_nmo-1);
+    setup_orbitals(Cx, Cw, 0, m_nmo);
+}
+
+template<typename Tc, typename Tf, typename Tb>
+void wick<Tc,Tf,Tb>::setup_orbitals(
+    arma::Mat<Tc> Cx, arma::Mat<Tc> Cw, 
+    size_t ncore, size_t nactive) 
+{
+    // Store number of core and active orbitals
+    m_nact = nactive;
+
+    // Save reference coefficients for integrals 
+    // TODO: Can we replace this?
+    m_Cref = Cx;
+
+    // Take a safe copy of active orbitals
+    m_Cxa = Cx.cols(ncore,ncore+m_nact-1);
+    m_Cwa = Cw.cols(ncore,ncore+m_nact-1);
+    m_Cxb = Cx.cols(m_nmo,m_nmo+m_nact-1);
+    m_Cwb = Cw.cols(m_nmo,m_nmo+m_nact-1);
     
     // Initialise reduced overlap and number of zero overlaps
     m_redSa = 1.0, m_redSb = 1.0;
     m_nza = 0; m_nzb = 0;
 
-    // Lowdin Pair occupied orbitals
+    // Take copy of orbitals for Lowdin pairing
     arma::Mat<Tc> Cw_a(Cw.memptr(), m_nbsf, m_nalpha, true, true);
     arma::Mat<Tc> Cw_b(Cw.colptr(m_nmo), m_nbsf, m_nbeta, true, true);
     arma::Mat<Tc> Cx_a(Cx.memptr(), m_nbsf, m_nalpha, true, true);
     arma::Mat<Tc> Cx_b(Cx.colptr(m_nmo), m_nbsf, m_nbeta, true, true);
 
+    // Lowdin Pair occupied orbitals
     arma::uvec zeros_a(m_nalpha), zeros_b(m_nbeta);
     arma::Col<Tc> Sxx_a(m_nalpha, arma::fill::zeros);
     arma::Col<Tc> Sxx_b(m_nbeta, arma::fill::zeros);
@@ -61,20 +77,28 @@ void wick<Tc,Tf,Tb>::setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw)
     for(size_t i=0; i<2; i++)
     {
         // Initialise the memory
-        m_Xa(i).set_size(2*m_nmo,2*m_nmo); m_Xa(i).zeros();
-        m_Xb(i).set_size(2*m_nmo,2*m_nmo); m_Xb(i).zeros();
+        m_Xa(i).set_size(2*m_nact,2*m_nact); m_Xa(i).zeros();
+        m_Xb(i).set_size(2*m_nact,2*m_nact); m_Xb(i).zeros();
 
         // Compute alpha terms
-        m_Xa(i).submat(0,0, m_nmo-1,m_nmo-1)             = m_Cxa.t() * m_metric * m_wxMa(i) * m_metric * m_Cxa; // xx
-        m_Xa(i).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)       = m_Cxa.t() * m_metric * m_wxMa(i) * m_metric * m_Cwa; // xw
-        m_Xa(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)       = m_Cwa.t() * m_metric * m_wxMa(i) * m_metric * m_Cxa; // wx
-        m_Xa(i).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1) = m_Cwa.t() * m_metric * m_wxMa(i) * m_metric * m_Cwa; // ww
+        m_Xa(i).submat(0,0, m_nact-1,m_nact-1)               
+            = m_Cxa.t() * m_metric * m_wxMa(i) * m_metric * m_Cxa; // xx
+        m_Xa(i).submat(0,m_nact, m_nact-1,2*m_nact-1)        
+            = m_Cxa.t() * m_metric * m_wxMa(i) * m_metric * m_Cwa; // xw
+        m_Xa(i).submat(m_nact,0, 2*m_nact-1,m_nact-1)        
+            = m_Cwa.t() * m_metric * m_wxMa(i) * m_metric * m_Cxa; // wx
+        m_Xa(i).submat(m_nact,m_nact, 2*m_nact-1,2*m_nact-1) 
+            = m_Cwa.t() * m_metric * m_wxMa(i) * m_metric * m_Cwa; // ww
 
         // Compute beta terms
-        m_Xb(i).submat(0,0, m_nmo-1,m_nmo-1)             = m_Cxb.t() * m_metric * m_wxMb(i) * m_metric * m_Cxb; // xx
-        m_Xb(i).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)       = m_Cxb.t() * m_metric * m_wxMb(i) * m_metric * m_Cwb; // xw
-        m_Xb(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)       = m_Cwb.t() * m_metric * m_wxMb(i) * m_metric * m_Cxb; // wx
-        m_Xb(i).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1) = m_Cwb.t() * m_metric * m_wxMb(i) * m_metric * m_Cwb; // ww
+        m_Xb(i).submat(0,0, m_nact-1,m_nact-1)               
+            = m_Cxb.t() * m_metric * m_wxMb(i) * m_metric * m_Cxb; // xx
+        m_Xb(i).submat(0,m_nact, m_nact-1,2*m_nact-1)        
+            = m_Cxb.t() * m_metric * m_wxMb(i) * m_metric * m_Cwb; // xw
+        m_Xb(i).submat(m_nact,0, 2*m_nact-1,m_nact-1)        
+            = m_Cwb.t() * m_metric * m_wxMb(i) * m_metric * m_Cxb; // wx
+        m_Xb(i).submat(m_nact,m_nact, 2*m_nact-1,2*m_nact-1) 
+            = m_Cwb.t() * m_metric * m_wxMb(i) * m_metric * m_Cwb; // ww
     }
 
     // Intialise Y contraction arrays
@@ -82,21 +106,54 @@ void wick<Tc,Tf,Tb>::setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw)
     for(size_t i=0; i<2; i++)
     {
         // Initialise the memory
-        m_Ya(i).set_size(2*m_nmo,2*m_nmo); m_Ya(i).zeros();
-        m_Yb(i).set_size(2*m_nmo,2*m_nmo); m_Yb(i).zeros();
+        m_Ya(i).set_size(2*m_nact,2*m_nact); m_Ya(i).zeros();
+        m_Yb(i).set_size(2*m_nact,2*m_nact); m_Yb(i).zeros();
 
         // Compute alpha terms
-        m_Ya(i).submat(0,0, m_nmo-1,m_nmo-1)             = m_Cxa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cxa; // xx
-        m_Ya(i).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)       = m_Cxa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cwa; // xw
-        m_Ya(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)       = m_Cwa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cxa; // wx
-        m_Ya(i).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1) = m_Cwa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cwa; // ww
+        m_Ya(i).submat(0,0, m_nact-1,m_nact-1)             
+            = m_Cxa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cxa; // xx
+        m_Ya(i).submat(0,m_nact, m_nact-1,2*m_nact-1)       
+            = m_Cxa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cwa; // xw
+        m_Ya(i).submat(m_nact,0, 2*m_nact-1,m_nact-1)       
+            = m_Cwa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cxa; // wx
+        m_Ya(i).submat(m_nact,m_nact, 2*m_nact-1,2*m_nact-1) 
+            = m_Cwa.t() * (m_metric * m_wxMa(i) * m_metric - double(1-i) * m_metric) * m_Cwa; // ww
 
         // Compute beta terms
-        m_Yb(i).submat(0,0, m_nmo-1,m_nmo-1)             = m_Cxb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cxb; // xx
-        m_Yb(i).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)       = m_Cxb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cwb; // xw
-        m_Yb(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)       = m_Cwb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cxb; // wx
-        m_Yb(i).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1) = m_Cwb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cwb; // ww
+        m_Yb(i).submat(0,0, m_nact-1,m_nact-1)             
+            = m_Cxb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cxb; // xx
+        m_Yb(i).submat(0,m_nact, m_nact-1,2*m_nact-1)       
+            = m_Cxb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cwb; // xw
+        m_Yb(i).submat(m_nact,0, 2*m_nact-1,m_nact-1)       
+            = m_Cwb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cxb; // wx
+        m_Yb(i).submat(m_nact,m_nact, 2*m_nact-1,2*m_nact-1) 
+            = m_Cwb.t() * (m_metric * m_wxMb(i) * m_metric - double(1-i) * m_metric) * m_Cwb; // ww
     }
+
+    // Construct transformed coefficients
+    m_CXa.set_size(2); m_CXb.set_size(2);
+    m_XCa.set_size(2); m_XCb.set_size(2);
+    for(size_t i=0; i<2; i++)
+    {
+        // Alpha space
+        m_CXa(i).resize(m_nbsf,2*m_nact); m_CXa(i).zeros();
+        m_CXa(i).cols(0,m_nact-1)        = m_wxMa(i).t() * m_metric * m_Cxa - (1-i) * m_Cxa; // x[CY]
+        m_CXa(i).cols(m_nact,2*m_nact-1) = m_wxMa(i).t() * m_metric * m_Cwa;                 // w[CX]
+
+        m_XCa(i).resize(m_nbsf,2*m_nact); m_XCa(i).zeros();
+        m_XCa(i).cols(0,m_nact-1)        = m_wxMa(i) * m_metric * m_Cxa;                     // x[XC]
+        m_XCa(i).cols(m_nact,2*m_nact-1) = m_wxMa(i) * m_metric * m_Cwa - (1-i) * m_Cwa;     // w[YC]
+
+        // Beta space
+        m_CXb(i).resize(m_nbsf,2*m_nact); m_CXb(i).zeros();
+        m_CXb(i).cols(0,m_nact-1)        = m_wxMb(i).t() * m_metric * m_Cxb - (1-i) * m_Cxb; // x[CY]
+        m_CXb(i).cols(m_nact,2*m_nact-1) = m_wxMb(i).t() * m_metric * m_Cwb;                 // w[CX]
+
+        m_XCb(i).resize(m_nbsf,2*m_nact); m_XCb(i).zeros();
+        m_XCb(i).cols(0,m_nact-1)        = m_wxMb(i) * m_metric * m_Cxb;                     // x[XC]
+        m_XCb(i).cols(m_nact,2*m_nact-1) = m_wxMb(i) * m_metric * m_Cwb - (1-i) * m_Cwb;     // w[YC]
+    }
+
  
     // TODO: Refactor these into oblivion!
     // Initialise contraction arrays 
@@ -184,7 +241,7 @@ void wick<Tc,Tf,Tb>::spin_overlap(
 
     // Shift w indices
     // TODO: Do we want to keep this?
-    whp += m_nmo;
+    whp += m_nact;
 
     // Test the determinantal version
     if(nx == 0 and nw == 0)
@@ -224,7 +281,7 @@ void wick<Tc,Tf,Tb>::spin_overlap(
 
     // Shift w indices
     // TODO: Do we want to keep this?
-    whp -= m_nmo;
+    whp -= m_nact;
 
     return;
 }

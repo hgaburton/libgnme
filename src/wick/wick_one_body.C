@@ -32,17 +32,21 @@ void wick<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb)
 template<typename Tc, typename Tf, typename Tb>
 void wick<Tc,Tf,Tb>::setup_one_body()
 {
+    // Access alpha and beta orbitals
+    arma::Mat<Tc> Cxa(m_Cref.memptr(), m_nbsf, m_nmo, false, true);
+    arma::Mat<Tc> Cxb(m_Cref.colptr(m_nmo), m_nbsf, m_nmo, false, true);
+
     // Transform one-body matrix to X MO basis
-    arma::Mat<Tc> xxFa = m_Cxa.t() * m_Fa * m_Cxa;
-    arma::Mat<Tc> xxFb = m_Cxb.t() * m_Fb * m_Cxb;
+    arma::Mat<Tc> xxFa = Cxa.t() * m_Fa * Cxa;
+    arma::Mat<Tc> xxFb = Cxb.t() * m_Fb * Cxb;
 
     // Construct 'F0' terms
     m_F0a.resize(2); 
-    m_F0a(0) = arma::dot(xxFa, m_xxXa(0).st());
-    m_F0a(1) = arma::dot(xxFa, m_xxXa(1).st());
+    m_F0a(0) = arma::dot(m_Fa, m_wxMa(0).st());
+    m_F0a(1) = arma::dot(m_Fa, m_wxMa(1).st());
     m_F0b.resize(2);
-    m_F0b(0) = arma::dot(xxFb, m_xxXb(0).st());
-    m_F0b(1) = arma::dot(xxFb, m_xxXb(1).st());
+    m_F0b(0) = arma::dot(m_Fb, m_wxMb(0).st());
+    m_F0b(1) = arma::dot(m_Fb, m_wxMb(1).st());
 
     // We only have to worry about
     //    xx[YFX]    xw[YFY]
@@ -53,29 +57,9 @@ void wick<Tc,Tf,Tb>::setup_one_body()
     for(size_t i=0; i<2; i++)
     for(size_t j=0; j<2; j++)
     {
-        // Initialise the memory
-        m_XFXa(i,j).set_size(2*m_nmo,2*m_nmo); m_XFXa(i,j).zeros();
-        m_XFXb(i,j).set_size(2*m_nmo,2*m_nmo); m_XFXb(i,j).zeros();
-
-        // Compute alpha terms
-        m_XFXa(i,j).submat(0,0, m_nmo-1,m_nmo-1)             
-            = m_Ya(i).submat(0,0, m_nmo-1,m_nmo-1) * xxFa * m_Xa(j).submat(0,0, m_nmo-1,m_nmo-1); // xx
-        m_XFXa(i,j).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)      
-            = m_Ya(i).submat(0,0, m_nmo-1,m_nmo-1) * xxFa * m_Ya(j).submat(0,m_nmo, m_nmo-1,2*m_nmo-1); // xw
-        m_XFXa(i,j).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)      
-            = m_Xa(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1) * xxFa * m_Xa(j).submat(0,0, m_nmo-1,m_nmo-1); // wx
-        m_XFXa(i,j).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1)
-            = m_Xa(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1) * xxFa * m_Ya(j).submat(0,m_nmo, m_nmo-1,2*m_nmo-1); // ww
-
-        // Compute alpha terms
-        m_XFXb(i,j).submat(0,0, m_nmo-1,m_nmo-1)             
-            = m_Yb(i).submat(0,0, m_nmo-1,m_nmo-1) * xxFb * m_Xb(j).submat(0,0, m_nmo-1,m_nmo-1); // xx
-        m_XFXb(i,j).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)      
-            = m_Yb(i).submat(0,0, m_nmo-1,m_nmo-1) * xxFb * m_Yb(j).submat(0,m_nmo, m_nmo-1,2*m_nmo-1); // xw
-        m_XFXb(i,j).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)      
-            = m_Xb(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1) * xxFb * m_Xb(j).submat(0,0, m_nmo-1,m_nmo-1); // wx
-        m_XFXb(i,j).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1)
-            = m_Xb(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1) * xxFb * m_Yb(j).submat(0,m_nmo, m_nmo-1,2*m_nmo-1); // ww
+        // Go straight to the answer
+        m_XFXa(i,j) = m_CXa(i).t() * m_Fa * m_XCa(i);
+        m_XFXb(i,j) = m_CXb(i).t() * m_Fb * m_XCb(i);
     }
 }
 
@@ -99,7 +83,7 @@ void wick<Tc,Tf,Tb>::spin_one_body(
 
     // Shift w indices
     // TODO: Do we want to keep this?
-    whp += m_nmo;
+    whp += m_nact;
    
     // Get reference to relevant contractions
     const arma::field<arma::Mat<Tc> > &X = alpha ? m_Xa : m_Xb;
@@ -160,7 +144,7 @@ void wick<Tc,Tf,Tb>::spin_one_body(
         // Loop over all possible contributions of zero overlaps
         do {
             // Evaluate overlap contribution
-            arma::Mat<Tc> Dtmp = D * arma::diagmat(1-ind1) + Db * arma::diagmat(ind1);
+            arma::Mat<Tc> Dtmp = D * arma::diagmat(1-ind) + Db * arma::diagmat(ind);
             
             // Get the overlap contributions 
             F += F0(m[0]) * arma::det(Dtmp);
@@ -182,7 +166,7 @@ void wick<Tc,Tf,Tb>::spin_one_body(
 
     // Shift w indices
     // TODO: Do we want to keep this?
-    whp -= m_nmo;
+    whp -= m_nact;
 
     return;
 }

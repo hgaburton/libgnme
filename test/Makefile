@@ -4,6 +4,7 @@ CXX_LD_PATH=-L/opt/intel/compilers_and_libraries_2019.1.144/linux/mkl/lib/intel6
 
 make: 
 	${CXX_FLAGS} ${CXX_INCLUDE} ${CXX_LD_PATH} -g wick_one_body.C -lgnme -lmkl_core -lmkl_intel_thread -liomp5 -lmkl_intel_lp64 -olibgnme_wick_one_body
+	#${CXX_FLAGS} ${CXX_INCLUDE} ${CXX_LD_PATH} -g wick_rscf.C -lgnme -lmkl_core -lmkl_intel_thread -liomp5 -lmkl_intel_lp64 -olibgnme_wick_rscf
 
 test: 
 	./libgnme_wick_one_body
