@@ -175,12 +175,12 @@ void wick<Tc,Tf,Tb>::spin_overlap(
     // Get reference to number of zeros for this spin
     const size_t &nz = alpha ? m_nza : m_nzb; 
 
+    // Check we don't have a non-zero element
+    if(nz > nw + nx) return;
+
     // Get reference to relevant X/Y matrices for this spin
     const arma::field<arma::Mat<Tc> > &X = alpha ? m_Xa : m_Xb;
     const arma::field<arma::Mat<Tc> > &Y = alpha ? m_Ya : m_Yb;
-
-    // Check we don't have a non-zero element
-    if(nz > nw + nx) return;
 
     // Shift w indices
     // TODO: Do we want to keep this?
@@ -189,7 +189,7 @@ void wick<Tc,Tf,Tb>::spin_overlap(
     // Test the determinantal version
     if(nx == 0 and nw == 0)
     {   // No excitations, so return simple overlap
-        S = nz == 0 ? 1.0 : 0.0;
+        S = (nz == 0) ? 1.0 : 0.0;
     }
     else if(nx == 1 and nw == 0)
     {   // One excitation doesn't require determinant

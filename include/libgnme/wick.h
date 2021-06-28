@@ -48,16 +48,7 @@ private:
     arma::field<arma::Mat<Tc> > m_wxMa;
     arma::field<arma::Mat<Tc> > m_wxMb;
 
-    // Holds the `X' matrices
-    arma::field<arma::Mat<Tc> > m_wwXa;
-    arma::field<arma::Mat<Tc> > m_wxXa;
-    arma::field<arma::Mat<Tc> > m_xwXa;
-    arma::field<arma::Mat<Tc> > m_xxXa;
-    arma::field<arma::Mat<Tc> > m_wwXb;
-    arma::field<arma::Mat<Tc> > m_wxXb;
-    arma::field<arma::Mat<Tc> > m_xwXb;
-    arma::field<arma::Mat<Tc> > m_xxXb;
-
+    // TODO: New version
     // Hold the 'X' super matrices
     arma::field<arma::Mat<Tc> > m_Xa;
     arma::field<arma::Mat<Tc> > m_Xb;
@@ -74,15 +65,16 @@ private:
     arma::field<arma::Mat<Tc> > m_XFXa;
     arma::field<arma::Mat<Tc> > m_XFXb;
 
-    // Holds the `XFX' matrices
-    arma::field<arma::Mat<Tc> > m_wwXFXa;
-    arma::field<arma::Mat<Tc> > m_wxXFXa;
-    arma::field<arma::Mat<Tc> > m_xwXFXa;
-    arma::field<arma::Mat<Tc> > m_xxXFXa;
-    arma::field<arma::Mat<Tc> > m_wwXFXb;
-    arma::field<arma::Mat<Tc> > m_wxXFXb;
-    arma::field<arma::Mat<Tc> > m_xwXFXb;
-    arma::field<arma::Mat<Tc> > m_xxXFXb;
+    // Holds the `X' matrices
+    // TODO: Remove
+    arma::field<arma::Mat<Tc> > m_wwXa;
+    arma::field<arma::Mat<Tc> > m_wxXa;
+    arma::field<arma::Mat<Tc> > m_xwXa;
+    arma::field<arma::Mat<Tc> > m_xxXa;
+    arma::field<arma::Mat<Tc> > m_wwXb;
+    arma::field<arma::Mat<Tc> > m_wxXb;
+    arma::field<arma::Mat<Tc> > m_xwXb;
+    arma::field<arma::Mat<Tc> > m_xxXb;
 
     // Holds the 'V0' terms
     arma::Col<Tc> m_Vaa;
