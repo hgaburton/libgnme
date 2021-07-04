@@ -130,10 +130,9 @@ void wick<Tc,Tf,Tb>::spin_one_body(
 
         // Matrix of F contractions
         arma::field<arma::Mat<Tc> > Ftmp(2,2); 
-        Ftmp(0,0) = XFX(0,0).submat(rows,cols);
-        Ftmp(1,0) = XFX(1,0).submat(rows,cols);
-        Ftmp(0,1) = XFX(0,1).submat(rows,cols);
-        Ftmp(1,1) = XFX(1,1).submat(rows,cols);
+        for(size_t i=0; i<2; i++)
+        for(size_t j=0; j<2; j++)
+            Ftmp(i,j) = XFX(i,j).submat(rows,cols);
 
         // Compute contribution from the overlap and zeroth term
         std::vector<size_t> m(nz, 1); m.resize(nx+nw+1, 0); 
@@ -150,7 +149,7 @@ void wick<Tc,Tf,Tb>::spin_one_body(
             for(size_t i=0; i < nx+nw; i++)
             {   
                 // Take a safe copy of the column
-                arma::Col<Tc> Dcol = D.col(i);
+                arma::Col<Tc> Dcol = Dtmp.col(i);
                 // Make the swap
                 Dtmp.col(i) = Ftmp(m[0],m[i+1]).col(i);
                 // Add the one-body contribution

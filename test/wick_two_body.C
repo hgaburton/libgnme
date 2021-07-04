@@ -641,6 +641,56 @@ int test_real_uhf(size_t thresh)
                 return 1;
             }
         }
+
+        //std::cout << "< X_k^c   | W_ij^ab > Alpha - Alpha" << std::endl;
+        for(size_t i=0; i<nocca; i++)
+        for(size_t j=0; j<i; j++)
+        for(size_t k=0; k<nocca; k++)
+        for(size_t a=nocca; a<nmo; a++)
+        for(size_t b=nocca; b<a; b++)
+        for(size_t c=nocca; c<nmo; c++)
+        {
+            arma::umat xahp(1,2), xbhp(0,2);
+            arma::umat wahp(2,2), wbhp(0,2);
+            xahp(0,0) = k; xahp(0,1) = c;
+            wahp(0,0) = i; wahp(0,1) = a;
+            wahp(1,0) = j; wahp(1,1) = b;
+
+            // Wick test
+            T swick = 0.0, vwick = 0.0;
+            mb.evaluate(xahp, xbhp, wahp, wbhp, swick, vwick);
+
+            // Standard overlap
+            T slowdin = 0.0, vlowdin = 0.0;
+            arma::uvec xocca = ref_occa, xoccb = ref_occb;
+            arma::uvec wocca = ref_occa, woccb = ref_occb;
+            xocca(k) = c;
+            wocca(i) = a;
+            wocca(j) = b;
+            arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
+            arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, vlowdin);
+            //lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, vlowdin);
+
+            // Test overlap result
+            if(std::abs(swick - slowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout << "< [" << ix << "]_{" << k << "}^{" << c
+                          << "} | [" << iw << "]_{" << i <<"," << j << "}^{" << a << "," << b << "} >" << std::endl;
+                std::cout << "S_wick   = " << std::setprecision(16) << swick << std::endl;
+                std::cout << "S_lowdin = " << std::setprecision(16) << slowdin << std::endl;
+                return 1;
+            }
+            // Test overlap result
+            if(std::abs(vwick - vlowdin) > std::pow(0.1, thresh))
+            { 
+                std::cout << "< [" << ix << "]_{" << k << "}^{" << c
+                          << "} | F | [" << iw << "]_{" << i <<"," << j << "}^{" << a << "," << b << "} >" << std::endl;
+                std::cout << "V_wick   = " << std::setprecision(16) << vwick << std::endl;
+                std::cout << "V_lowdin = " << std::setprecision(16) << vlowdin << std::endl;
+                return 1;
+            }
+        }
     }
 
     return 0;

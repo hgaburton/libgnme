@@ -247,12 +247,12 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
     if(nz > nw + nx + 2) return;
 
     // Inform if we can't handle that excitation
-    if(nx * nw > 2 || nx + nw > 2)
-    {
-        std::cout << "wick::same_spin_two_body: Bra excitations = " << nx << std::endl;
-        std::cout << "wick::same_spin_two_body: Ket excitations = " << nw << std::endl;
-        throw std::runtime_error("wick::same_spin_two_body: Requested excitation level not yet implemented");
-    }
+    //if(nx * nw > 2 || nx + nw > 2)
+    //{
+    //    std::cout << "wick::same_spin_two_body: Bra excitations = " << nx << std::endl;
+    //    std::cout << "wick::same_spin_two_body: Ket excitations = " << nw << std::endl;
+    //    throw std::runtime_error("wick::same_spin_two_body: Requested excitation level not yet implemented");
+    //}
 
     // Get reference to relevant contractions
     const arma::field<arma::Mat<Tc> > &X = alpha ? m_Xa : m_Xb;
@@ -265,26 +265,7 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
     const arma::field<arma::Mat<Tc> > &XVX = alpha ? m_XVaXa : m_XVbXb;
 
     // Get reference to relevant two-electron integrals
-    const arma::field<arma::Mat<Tc> > &II = alpha ? m_IIaa : m_IIbb;
-
-    // TODO Remove
-    // Get referemce to relevant X matrices for this spin
-    const arma::field<arma::Mat<Tc> > &wwX = alpha ? m_wwXa : m_wwXb;
-    const arma::field<arma::Mat<Tc> > &wxX = alpha ? m_wxXa : m_wxXb;
-    const arma::field<arma::Mat<Tc> > &xwX = alpha ? m_xwXa : m_xwXb;
-    const arma::field<arma::Mat<Tc> > &xxX = alpha ? m_xxXa : m_xxXb;
-
-    // Get reference to relevant one-body matrix
-    const arma::field<arma::Mat<Tc> > &wwXVX = alpha ? m_wwXVaXa : m_wwXVbXb;
-    const arma::field<arma::Mat<Tc> > &wxXVX = alpha ? m_wxXVaXa : m_wxXVbXb;
-    const arma::field<arma::Mat<Tc> > &xwXVX = alpha ? m_xwXVaXa : m_xwXVbXb;
-    const arma::field<arma::Mat<Tc> > &xxXVX = alpha ? m_xxXVaXa : m_xxXVbXb;
-
-    // Get reference to coefficients
-    const arma::field<arma::Mat<Tc> > &xXC = alpha ? m_xXCa : m_xXCb;
-    const arma::field<arma::Mat<Tc> > &xCX = alpha ? m_xCXa : m_xCXb;
-    const arma::field<arma::Mat<Tc> > &wXC = alpha ? m_wXCa : m_wXCb;
-    const arma::field<arma::Mat<Tc> > &wCX = alpha ? m_wCXa : m_wCXb;
+    arma::field<arma::Mat<Tc> > &II = alpha ? m_IIaa : m_IIbb;
 
     // TODO Correct indexing for new code
     whp += m_nact;
@@ -366,6 +347,88 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
             V += 2.0 * II(2*m[0]+m[1], 2*m[2]+m[3])(2*m_nact*rows(0)+cols(0), 2*m_nact*rows(1)+cols(1));
         } while(std::prev_permutation(m.begin(), m.end()));
     }
+    // Three excitations requires full generalisation!
+    else
+    {
+        // Construct matrix for no zero overlaps
+        arma::Mat<Tc> D  = arma::trimatl(X(0).submat(rows,cols))
+                         + arma::trimatu(Y(0).submat(rows,cols),1);
+        // Construct matrix with all zero overlaps
+        arma::Mat<Tc> Db = arma::trimatl(X(1).submat(rows,cols)) 
+                         + arma::trimatu(Y(1).submat(rows,cols),1);
+
+        // Matrix of F contractions
+        arma::field<arma::Mat<Tc> > JKtmp(2,2,2); 
+        for(size_t i=0; i<2; i++)
+        for(size_t j=0; j<2; j++)
+        for(size_t k=0; k<2; k++)
+            JKtmp(i,j,k) = XVX(i,j,k).submat(rows,cols);
+
+        // Compute contribution from the overlap and zeroth term
+        std::vector<size_t> m(nz, 1); m.resize(nx+nw+2, 0); 
+        arma::Col<size_t> ind1(&m[2], nx+nw, false, true);
+        arma::Col<size_t> ind2(&m[3], nx+nw-1, false, true);
+        // Loop over all possible contributions of zero overlaps
+        do {
+            // Evaluate overlap contribution
+            arma::Mat<Tc> Dtmp = D * arma::diagmat(1-ind1) + Db * arma::diagmat(ind1);
+            
+            // Get the overlap contributions 
+            V += V0(m[0]+m[1]) * arma::det(Dtmp);
+            
+            // Get the effective one-body contribution
+            // Loop over the column swaps for contracted terms
+            for(size_t i=0; i < nx+nw; i++)
+            {   
+                // Take a safe copy of the column
+                arma::Col<Tc> Dcol = Dtmp.col(i);
+                // Make the swap
+                Dtmp.col(i) = JKtmp(m[0],m[1],m[i+2]).col(i);
+                // Add the one-body contribution
+                V -= 2.0 * arma::det(Dtmp);
+                // Restore the column
+                Dtmp.col(i) = Dcol;
+            }
+
+            arma::field<arma::Mat<Tc> > IItmp(2);
+            arma::Mat<Tc> D2, Db2, Dtmp2;
+            // Loop over particle-hole pairs for two-body interaction
+            for(size_t i=0; i < nx+nw; i++)
+            for(size_t j=0; j < nx+nw; j++)
+            {
+                // Get temporary two-electron indices for this pair of electrons
+                for(size_t x=0; x < 2; x++)
+                {
+                    arma::Mat<Tc> IIfull(II(2*m[2]+x, 2*m[0]+m[1]).memptr(), 4*m_nact*m_nact, 4*m_nact*m_nact, false, true);
+                    arma::Mat<Tc> vIItmp(IIfull.colptr(2*m_nact*rows(i)+cols(j)), 2*m_nact, 2*m_nact, false, true);
+                    IItmp(x) = vIItmp.submat(cols,rows).st();
+                    IItmp(x).shed_row(i); 
+                    IItmp(x).shed_col(j);
+                }
+
+                // New submatrices
+                D2  = D;   D2.shed_row(i);  D2.shed_col(j);
+                Db2 = Db; Db2.shed_row(i); Db2.shed_col(j);
+                Dtmp2 = D2 * arma::diagmat(1-ind2) + Db2 * arma::diagmat(ind2);
+
+                // Get the phase factor
+                double phase = (i % 2) xor (j % 2) ? -1.0 : 1.0;
+
+                // Loop over remaining columns
+                for(size_t k=0; k < nx+nw-1; k++)
+                {   
+                    // Take a safe copy of the column
+                    arma::Col<Tc> Dcol = Dtmp2.col(k);
+                    // Make the swap
+                    Dtmp2.col(k) = IItmp(m[k+3]).col(k);
+                    // Add the one-body contribution
+                    V += 0.5 * phase * arma::det(Dtmp2);
+                    // Restore the column
+                    Dtmp2.col(k) = Dcol;
+                }
+            }
+        } while(std::prev_permutation(m.begin(), m.end()));
+    }
 
 
     // TODO Correct indexing for old code
@@ -392,13 +455,14 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
     size_t nx = nxa + nxb;
     size_t nw = nwa + nwb;
 
+    return;
     // Inform if we can't handle that excitation
-    if(nx * nw > 2 || nx + nw > 2)
-    {
-        std::cout << "wick::diff_spin_two_body: Bra excitations = " << nx << std::endl;
-        std::cout << "wick::diff_spin_two_body: Ket excitations = " << nw << std::endl;
-        throw std::runtime_error("wick::diff_spin_two_body: Requested excitation level not yet implemented");
-    }
+    //if(nx * nw > 2 || nx + nw > 2)
+    //{
+    //    std::cout << "wick::diff_spin_two_body: Bra excitations = " << nx << std::endl;
+    //    std::cout << "wick::diff_spin_two_body: Ket excitations = " << nw << std::endl;
+    //    throw std::runtime_error("wick::diff_spin_two_body: Requested excitation level not yet implemented");
+    //}
     
     // < X | V | W > 
     if(nx == 0 and nw == 0)
