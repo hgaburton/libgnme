@@ -5,13 +5,77 @@
 
 namespace {
 
-template<typename T>
-bool matrix_equal(arma::Mat<T> &M1, arma::Mat<T> &M2)
+// Build the anti-symmetrised two-electron integrals
+// Take the form (C1 C2 || C3 C4) = (C1 C2 | C3 C4) - (C1 C3 | C2 C4) 
+template<typename Tc, typename Tb>
+void mo_eri(
+    arma::Mat<Tc> &C1, arma::Mat<Tc> &C2, arma::Mat<Tc> &C3, arma::Mat<Tc> &C4, 
+    arma::Mat<Tb> &IIao, arma::Mat<Tc> &IImo, size_t nmo, bool same_spin)
 {
-    // Check if matrices have the same size
-    if(M1.n_rows != M2.n_rows || M1.n_cols != M2.n_cols) return false;
-    return arma::norm(M1 - M2) == 0;
+    // Get array of MO numbers
+    assert(C1.n_cols == nmo);
+    assert(C2.n_cols == nmo);
+    assert(C3.n_cols == nmo);
+    assert(C4.n_cols == nmo);
+
+    // Setup temporary memory
+    size_t nbsf = C1.n_rows;
+    assert(IIao.n_rows == nbsf * nbsf);
+    assert(IIao.n_cols == nbsf * nbsf);
+    size_t dim = std::max(nmo,nbsf);
+    arma::Mat<Tc> IItmp1(dim*dim, dim*dim, arma::fill::zeros);
+    arma::Mat<Tc> IItmp2(dim*dim, dim*dim, arma::fill::zeros);
+
+    // (pq|r4)
+    IItmp1.zeros();
+    for(size_t l=0; l<nmo; l++)
+        for(size_t p=0; p<nbsf; p++)
+        for(size_t q=0; q<nbsf; q++)
+        for(size_t r=0; r<nbsf; r++)
+        for(size_t s=0; s<nbsf; s++)
+            IItmp1(p*nbsf+q, r*nmo+l) += IIao(p*nbsf+q, r*nbsf+s) * C4(s,l);
+
+    // (pq|34)
+    IItmp2.zeros();
+    for(size_t k=0; k<nmo; k++)
+        for(size_t p=0; p<nbsf; p++)
+        for(size_t q=0; q<nbsf; q++)
+        for(size_t r=0; r<nbsf; r++)
+        for(size_t l=0; l<nmo; l++)
+            IItmp2(p*nbsf+q, k*nmo+l) += IItmp1(p*nbsf+q, r*nmo+l) * std::conj(C3(r,k));
+     
+    // (p2|34)
+    IItmp1.zeros();
+    for(size_t j=0; j<nmo; j++)
+        for(size_t p=0; p<nbsf; p++)
+        for(size_t q=0; q<nbsf; q++)
+        for(size_t k=0; k<nmo; k++)
+        for(size_t l=0; l<nmo; l++)
+            IItmp1(p*nmo+j, k*nmo+l) += IItmp2(p*nbsf+q, k*nmo+l) * C2(q,j);
+
+    // (12|34)
+    for(size_t i=0; i<nmo; i++)
+        for(size_t p=0; p<nbsf; p++)
+        for(size_t j=0; j<nmo; j++)
+        for(size_t k=0; k<nmo; k++)
+        for(size_t l=0; l<nmo; l++)
+        {
+            // Save Coulomb integrals
+            IImo(i*nmo+j, k*nmo+l) += IItmp1(p*nmo+j, k*nmo+l) * std::conj(C1(p,i));
+            // Add exchange integral if same spin
+            if(same_spin)
+                IImo(i*nmo+j, k*nmo+l) -= IItmp1(p*nmo+l, k*nmo+j) * std::conj(C1(p,i)); 
+        }
 }
+template void mo_eri(
+    arma::mat &C1, arma::mat &C2, arma::mat &C3, arma::mat &C4, 
+    arma::mat &IIao, arma::mat &IImo, size_t nmo, bool same_spin);
+template void mo_eri(
+    arma::cx_mat &C1, arma::cx_mat &C2, arma::cx_mat &C3, arma::cx_mat &C4, 
+    arma::mat &IIao, arma::cx_mat &IImo, size_t nmo, bool same_spin);
+template void mo_eri(
+    arma::cx_mat &C1, arma::cx_mat &C2, arma::cx_mat &C3, arma::cx_mat &C4, 
+    arma::cx_mat &IIao, arma::cx_mat &IImo, size_t nmo, bool same_spin);
 
 } // unnamed namespace
 
@@ -45,7 +109,7 @@ void wick<Tc,Tf,Tb>::setup_two_body()
         Kb(i).set_size(m_nbsf,m_nbsf); Kb(i).zeros();
     }
 
-    // Construct J/K matrices
+    // Construct J/K matrices in AO basis
     for(size_t m=0; m < m_nbsf; m++)
     for(size_t n=0; n < m_nbsf; n++)
     {
@@ -83,6 +147,48 @@ void wick<Tc,Tf,Tb>::setup_two_body()
     m_Vab(0,1) = arma::dot(Ja(0).st(), m_wxMb(1));
     m_Vab(1,1) = arma::dot(Ja(1).st(), m_wxMb(1));
 
+    // Construct effective one-body terms
+    // xx[Y(J-K)X]    xw[Y(J-K)Y]
+    // wx[X(J-K)X]    ww[X(J-K)Y]
+    m_XVaXa.set_size(2,2,2); 
+    m_XVaXb.set_size(2,2,2);
+    m_XVbXa.set_size(2,2,2); 
+    m_XVbXb.set_size(2,2,2);
+    #pragma omp parallel for schedule(static) collapse(3)
+    for(size_t i=0; i<2; i++)
+    for(size_t j=0; j<2; j++)
+    for(size_t k=0; k<2; k++)
+    {
+        // Go straight to the answer
+        m_XVaXa(i,j,k) = m_CXa(i).t() * (Ja(j) - Ka(j)) * m_XCa(k); // aa
+        m_XVbXb(i,j,k) = m_CXb(i).t() * (Jb(j) - Kb(j)) * m_XCb(k); // bb
+        m_XVbXa(i,j,k) = m_CXa(i).t() * Jb(j) * m_XCa(k); // ab
+        m_XVaXb(i,j,k) = m_CXb(i).t() * Ja(j) * m_XCb(k); // ba
+    }
+
+    // TODO: Build the two-electron integrals
+    // Bra: xY    wX
+    // Ket: xX    wY
+    m_IIaa.set_size(4,4); // aa
+    m_IIbb.set_size(4,4); // bb
+    m_IIab.set_size(4,4); // ab
+    for(size_t i=0; i<2; i++)
+    for(size_t j=0; j<2; j++)
+    for(size_t k=0; k<2; k++)
+    for(size_t l=0; l<2; l++)
+    {
+        // Initialise the memory
+        m_IIaa(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); m_IIaa(2*i+j, 2*k+l).zeros();
+        m_IIbb(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); m_IIbb(2*i+j, 2*k+l).zeros();
+        m_IIab(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); m_IIab(2*i+j, 2*k+l).zeros();
+
+        // Construct two-electron integrals
+        mo_eri(m_CXa(i), m_XCa(j), m_CXa(k), m_XCa(l), m_II, m_IIaa(2*i+j, 2*k+l), 2*m_nact, true); 
+        mo_eri(m_CXb(i), m_XCb(j), m_CXb(k), m_XCb(l), m_II, m_IIbb(2*i+j, 2*k+l), 2*m_nact, true); 
+        mo_eri(m_CXa(i), m_XCa(j), m_CXb(k), m_XCb(l), m_II, m_IIab(2*i+j, 2*k+l), 2*m_nact, true); 
+    }
+
+    // TODO: Factor out this old code...
     // Construct XVX matrices
     m_wwXVaXa.set_size(4,2,4); m_xwXVaXa.set_size(4,2,4);
     m_wxXVaXa.set_size(4,2,4); m_xxXVaXa.set_size(4,2,4);

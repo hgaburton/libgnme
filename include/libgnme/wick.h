@@ -36,44 +36,60 @@ private:
     size_t m_nza; //!< Number of alpha zero-overlap orbitals
     size_t m_nzb; //!< Number of beta zero-overlap orbitals
 
+    // Reference reduced overlaps
     Tc m_redSa; //!< Reduced overlap
     Tc m_redSb; //!< Reduced overlap
 
     // Store a set of reference orbitals
     arma::Mat<Tc> m_Cref; // Reference coefficients for integrals
 
-    // Hold the reference coefficients
+    // Store the reference coefficients (nbsf * nmo)
     arma::Mat<Tc> m_Cxa; // Bra coefficients (alpha)
     arma::Mat<Tc> m_Cxb; // Bra coefficients (beta)
     arma::Mat<Tc> m_Cwa; // Ket coefficients (alpha)
     arma::Mat<Tc> m_Cwb; // Ket coefficients (beta)
 
-    // Hold the co-density matrices
+    // Store the co-density matrices (2 * nbsf * nbsf)
     arma::field<arma::Mat<Tc> > m_wxMa;
     arma::field<arma::Mat<Tc> > m_wxMb;
 
-    // TODO: New version
-    // Hold the 'X' super matrices
+    // Store the 'X' super matrices (2 * nmo * nmo)
     arma::field<arma::Mat<Tc> > m_Xa;
     arma::field<arma::Mat<Tc> > m_Xb;
 
-    // Hold the 'Y' super matrices
+    // Store the 'Y' super matrices (2 * nmo * nmo)
     arma::field<arma::Mat<Tc> > m_Ya;
     arma::field<arma::Mat<Tc> > m_Yb;
 
-    // Holds the 'F0' terms
+    // Store the 'F0' terms (2)
     arma::Col<Tc> m_F0a;
     arma::Col<Tc> m_F0b;
 
-    // Hold the '(X/Y)F(X/Y)' super matrices
+    // Store the '(X/Y)F(X/Y)' super matrices (4 * nmo * nmo)
     arma::field<arma::Mat<Tc> > m_XFXa;
     arma::field<arma::Mat<Tc> > m_XFXb;
 
-    // Hold the 'CX' and 'CY' matrices
+    // Store the 'CX' and 'CY' matrices 
     arma::field<arma::Mat<Tc> > m_CXa;
     arma::field<arma::Mat<Tc> > m_CXb;
     arma::field<arma::Mat<Tc> > m_XCa;
     arma::field<arma::Mat<Tc> > m_XCb;
+
+    // Store the 'V0' terms (3)
+    arma::Col<Tc> m_Vaa;
+    arma::Col<Tc> m_Vbb;
+    arma::Mat<Tc> m_Vab;
+
+    // Store the '[X/Y](J-K)[X/Y]' super matrices (8 * nmo^2)
+    arma::field<arma::Mat<Tc> > m_XVaXa;
+    arma::field<arma::Mat<Tc> > m_XVbXb;
+    arma::field<arma::Mat<Tc> > m_XVaXb;
+    arma::field<arma::Mat<Tc> > m_XVbXa;
+
+    // Store two-electron repulsion integrals (16 * nmo^4)
+    arma::field<arma::Mat<Tc> > m_IIaa;
+    arma::field<arma::Mat<Tc> > m_IIbb;
+    arma::field<arma::Mat<Tc> > m_IIab;
 
     // Holds the `X' matrices
     // TODO: Remove
@@ -85,11 +101,6 @@ private:
     arma::field<arma::Mat<Tc> > m_wxXb;
     arma::field<arma::Mat<Tc> > m_xwXb;
     arma::field<arma::Mat<Tc> > m_xxXb;
-
-    // Holds the 'V0' terms
-    arma::Col<Tc> m_Vaa;
-    arma::Col<Tc> m_Vbb;
-    arma::Mat<Tc> m_Vab;
 
     // Hold the 'XVX' matrices
     arma::field<arma::Mat<Tc> > m_wwXVaXa;
@@ -193,10 +204,10 @@ private:
     virtual void spin_1rdm(
         arma::umat &x_hp, arma::umat &w_hp, arma::Mat<Tc> &P, bool alpha);
     virtual void spin_overlap(
-        arma::umat &x_hp, arma::umat &w_hp,
+        arma::umat x_hp, arma::umat w_hp,
         Tc &S, bool alpha);
     virtual void spin_one_body(
-        arma::umat &x_hp, arma::umat &w_hp,
+        arma::umat x_hp, arma::umat w_hp,
         Tc &F, bool alpha);
     virtual void same_spin_two_body(
         arma::umat &xhp, arma::umat &whp,

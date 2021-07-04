@@ -26,8 +26,8 @@ void wick<Tc,Tf,Tb>::setup_orbitals(
     // Take a safe copy of active orbitals
     m_Cxa = Cx.cols(ncore,ncore+m_nact-1);
     m_Cwa = Cw.cols(ncore,ncore+m_nact-1);
-    m_Cxb = Cx.cols(m_nmo,m_nmo+m_nact-1);
-    m_Cwb = Cw.cols(m_nmo,m_nmo+m_nact-1);
+    m_Cxb = Cx.cols(m_nmo+ncore,m_nmo+ncore+m_nact-1);
+    m_Cwb = Cw.cols(m_nmo+ncore,m_nmo+ncore+m_nact-1);
     
     // Initialise reduced overlap and number of zero overlaps
     m_redSa = 1.0, m_redSb = 1.0;
@@ -219,7 +219,7 @@ void wick<Tc,Tf,Tb>::setup_orbitals(
 
 template<typename Tc, typename Tf, typename Tb>
 void wick<Tc,Tf,Tb>::spin_overlap(
-    arma::umat &xhp, arma::umat &whp,
+    arma::umat xhp, arma::umat whp,
     Tc &S, bool alpha)
 {
     // Ensure output is zero'd

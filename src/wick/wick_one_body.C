@@ -58,14 +58,14 @@ void wick<Tc,Tf,Tb>::setup_one_body()
     for(size_t j=0; j<2; j++)
     {
         // Go straight to the answer
-        m_XFXa(i,j) = m_CXa(i).t() * m_Fa * m_XCa(i);
-        m_XFXb(i,j) = m_CXb(i).t() * m_Fb * m_XCb(i);
+        m_XFXa(i,j) = m_CXa(i).t() * m_Fa * m_XCa(j);
+        m_XFXb(i,j) = m_CXb(i).t() * m_Fb * m_XCb(j);
     }
 }
 
 template<typename Tc, typename Tf, typename Tb>
 void wick<Tc,Tf,Tb>::spin_one_body(
-    arma::umat &xhp, arma::umat &whp,
+    arma::umat xhp, arma::umat whp,
     Tc &F, bool alpha)
 {
     // Ensure outputs are zero'd

@@ -1,4 +1,5 @@
 set(SRC
+    slater/slater_uscf.C
     utils/linalg.C
     utils/utils.C
     utils/lowdin_pair.C

@@ -4,88 +4,18 @@
 #include <libgnme/wick.h>
 #include <iomanip>
 #include <libgnme/linalg.h>
+#include <libgnme/slater_uscf.h>
 
 typedef std::complex<double> cx_double;
 
 using namespace libgnme;
 
-namespace {
-
-template<typename T>
-void lowdin_one_body(
-    arma::Mat<T> Cx_a, arma::Mat<T> Cx_b,
-    arma::Mat<T> Cw_a, arma::Mat<T> Cw_b, 
-    arma::Mat<T> Ha, arma::Mat<T> Hb,
-    arma::Mat<double> &Smat, T &Ov, T &H)
-{
-    // Get number of occupied orbitals
-    size_t nocca = Cw_a.n_cols; 
-    size_t noccb = Cw_b.n_cols; 
-
-    // Zero the output
-    H = 0.0; Ov = 0.0;
-
-    // Lowdin Pair
-    arma::Col<T> Sxx_a(nocca); Sxx_a.zeros();
-    arma::Col<T> Sxx_b(noccb); Sxx_b.zeros();
-    arma::Col<T> inv_Sxx_a(nocca, arma::fill::zeros);
-    arma::Col<T> inv_Sxx_b(noccb, arma::fill::zeros);
-    size_t nZeros_a = 0, nZeros_b = 0;
-    arma::uvec zeros_a(Sxx_a.n_elem), zeros_b(Sxx_b.n_elem);
-    libgnme::lowdin_pair(Cx_a, Cw_a, Sxx_a, Smat);
-    libgnme::lowdin_pair(Cx_b, Cw_b, Sxx_b, Smat);
-
-    // Compute reduced overlap
-    T reduced_Ov = 1.0;
-    libgnme::reduced_overlap(Sxx_a, inv_Sxx_a, reduced_Ov, nZeros_a, zeros_a);
-    libgnme::reduced_overlap(Sxx_b, inv_Sxx_b, reduced_Ov, nZeros_b, zeros_b);
-
-    if((nZeros_a + nZeros_b) == 0)
-    {   
-        // Save non-zero overlap
-        Ov = reduced_Ov;
-
-        // Construct co-weighted matrices
-        arma::Mat<T> xwPa = Cw_a * arma::diagmat(inv_Sxx_a) * Cx_a.t();  
-        arma::Mat<T> xwPb = Cw_b * arma::diagmat(inv_Sxx_b) * Cx_b.t();  
-
-        // Save Fock element
-        H += arma::trace(Ha * xwPa) + arma::trace(Hb * xwPb);
-    }
-    else if((nZeros_a + nZeros_b) == 1)
-    {   
-        if(nZeros_a == 1)
-        {
-            arma::Mat<T> xwPa = Cw_a.col(zeros_a(0)) * Cx_a.col(zeros_a(0)).t();
-            H += arma::trace(Ha * xwPa);
-        }
-        else 
-        {
-            arma::Mat<T> xwPb = Cw_b.col(zeros_b(0)) * Cx_b.col(zeros_b(0)).t();
-            H += arma::trace(Hb * xwPb);
-        }
-    }
-
-    // Account for reduced overlap 
-    H *= reduced_Ov;
-}
-template void lowdin_one_body(
-    arma::Mat<double> Cx_a, arma::Mat<double> Cx_b, 
-    arma::Mat<double> Cw_a, arma::Mat<double> Cw_b, 
-    arma::Mat<double> Ha, arma::Mat<double> Hb,
-    arma::mat &Smat, double &Ov, double &H);
-template void lowdin_one_body(
-    arma::Mat<cx_double> Cx_a, arma::Mat<cx_double> Cx_b, 
-    arma::Mat<cx_double> Cw_a, arma::Mat<cx_double> Cw_b, 
-    arma::Mat<cx_double> Ha, arma::Mat<cx_double> Hb,
-    arma::mat &Smat, cx_double &Ov, cx_double &H);
-
-} // unnamed namespace
-
 template<typename T>
 int wick_one_body(double thresh)
 {
-    std::cout << "  libgnme::wick_one_body(" << thresh << ")" << std::endl;
+    std::ostringstream tnss;
+    tnss << "libgnme::wick_one_body(" << thresh << ")";
+    std::cout << tnss.str() << std::endl;
 
     // Define dimensions
     size_t nbsf = 5, nmo = 5, ndets = 3, nocca = 2, noccb = 2;
@@ -124,7 +54,9 @@ int wick_one_body(double thresh)
     for(size_t k=0; k<noccb; k++) ref_occb(k) = k;
 
     // Setup matrix builder
+    slater_uscf<T,T,double> slat(nbsf, nmo, nocca, noccb, S);
     wick<T,T,double> mb(nbsf, nmo, nocca, noccb, S);
+    slat.add_one_body(ha);
     mb.add_one_body(ha);
 
 
@@ -138,9 +70,7 @@ int wick_one_body(double thresh)
         arma::Mat<T> Cw_a(C.slice(iw).colptr(0), nbsf, nmo, true, true);
         arma::Mat<T> Cw_b(C.slice(iw).colptr(nmo), nbsf, nmo, true, true);
 
-        arma::Mat<T> Sa = Cx_a.t() * S * Cw_a;
-        arma::Mat<T> Sb = Cx_b.t() * S * Cw_b;
-
+        // Setup orbitals
         mb.setup_orbitals(C.slice(ix), C.slice(iw));
 
         // Reference coupling
@@ -159,7 +89,8 @@ int wick_one_body(double thresh)
             arma::uvec wocca = ref_occa, woccb = ref_occb;
             arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, flowdin);
+//            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
             // one-body RDM
             arma::Mat<T> RDM;
@@ -213,7 +144,8 @@ int wick_one_body(double thresh)
             xocca(i) = a;
             arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, flowdin);
+            //lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
             // one-body RDM
             arma::Mat<T> RDM;
@@ -267,7 +199,8 @@ int wick_one_body(double thresh)
             wocca(i) = a;
             arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, flowdin);
+            //lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
             // one-body RDM
             arma::Mat<T> RDM;
@@ -325,7 +258,8 @@ int wick_one_body(double thresh)
             wocca(j) = b;
             arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, flowdin);
+            //lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
             // one-body RDM
             arma::Mat<T> RDM;
@@ -386,7 +320,8 @@ int wick_one_body(double thresh)
             wocca(j) = b;
             arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, flowdin);
+            //lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
             // one-body RDM
             arma::Mat<T> RDM;
@@ -447,7 +382,8 @@ int wick_one_body(double thresh)
             xocca(j) = b;
             arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, flowdin);
+            //lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
             // one-body RDM
             arma::Mat<T> RDM;
@@ -499,7 +435,8 @@ int wick_one_body(double thresh)
             xoccb(j) = b;
             arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, flowdin);
+            //lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
             // one-body RDM
             arma::Mat<T> RDM;
@@ -560,7 +497,8 @@ int wick_one_body(double thresh)
             xoccb(j) = b;
             arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, flowdin);
+            //lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
             // one-body RDM
             arma::Mat<T> RDM;
@@ -625,7 +563,8 @@ int wick_one_body(double thresh)
             wocca(k) = c;
             arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, flowdin);
+            //lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
             // one-body RDM
             arma::Mat<T> RDM;
@@ -690,7 +629,8 @@ int wick_one_body(double thresh)
             wocca(j) = b;
             arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, flowdin);
+            //lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
             // one-body RDM
             arma::Mat<T> RDM;
@@ -759,7 +699,8 @@ int wick_one_body(double thresh)
             wocca(l) = d;
             arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, flowdin);
+            //lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
             // one-body RDM
             arma::Mat<T> RDM;
@@ -823,7 +764,8 @@ int wick_one_body(double thresh)
             woccb(j) = b;
             arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, flowdin);
+            //lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
             // one-body RDM
             arma::Mat<T> RDM;
@@ -888,7 +830,8 @@ int wick_one_body(double thresh)
             wocca(j) = b;
             arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, flowdin);
+            //lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
             // one-body RDM
             arma::Mat<T> RDM;
@@ -957,7 +900,8 @@ int wick_one_body(double thresh)
             woccb(l) = d;
             arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
             arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-            lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
+            slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, flowdin);
+            //lowdin_one_body(Cx_occa, Cx_occb, Cw_occa, Cw_occb, ha, hb, S, slowdin, flowdin);
 
             // one-body RDM
             arma::Mat<T> RDM;
@@ -1005,5 +949,5 @@ template int wick_one_body<cx_double>(double thresh);
 
 int main()
 {
-    return wick_one_body<double>(1e-7) || wick_one_body<cx_double>(1e-7);
+    return wick_one_body<double>(7) | wick_one_body<cx_double>(7) | 0;
 }
