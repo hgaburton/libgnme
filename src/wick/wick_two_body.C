@@ -166,7 +166,7 @@ void wick<Tc,Tf,Tb>::setup_two_body()
         m_XVaXb(i,j,k) = m_CXb(i).t() * Ja(j) * m_XCb(k); // ba
     }
 
-    // TODO: Build the two-electron integrals
+    // Build the two-electron integrals
     // Bra: xY    wX
     // Ket: xX    wY
     m_IIaa.set_size(4,4); // aa
@@ -185,7 +185,7 @@ void wick<Tc,Tf,Tb>::setup_two_body()
         // Construct two-electron integrals
         mo_eri(m_CXa(i), m_XCa(j), m_CXa(k), m_XCa(l), m_II, m_IIaa(2*i+j, 2*k+l), 2*m_nact, true); 
         mo_eri(m_CXb(i), m_XCb(j), m_CXb(k), m_XCb(l), m_II, m_IIbb(2*i+j, 2*k+l), 2*m_nact, true); 
-        mo_eri(m_CXa(i), m_XCa(j), m_CXb(k), m_XCb(l), m_II, m_IIab(2*i+j, 2*k+l), 2*m_nact, true); 
+        mo_eri(m_CXa(i), m_XCa(j), m_CXb(k), m_XCb(l), m_II, m_IIab(2*i+j, 2*k+l), 2*m_nact, false); 
     }
 
     // TODO: Factor out this old code...
@@ -230,7 +230,7 @@ void wick<Tc,Tf,Tb>::setup_two_body()
 
 template<typename Tc, typename Tf, typename Tb>
 void wick<Tc,Tf,Tb>::same_spin_two_body(
-    arma::umat &xhp, arma::umat &whp,
+    arma::umat xhp, arma::umat whp,
     Tc &V, bool alpha)
 {
     // Zero the output
@@ -240,6 +240,12 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
     size_t nx = xhp.n_rows; // Bra excitations
     size_t nw = whp.n_rows; // Ket excitations
 
+    // Get reference to number of zeros for this spin
+    const size_t &nz = alpha ? m_nza : m_nzb; 
+
+    // Check we don't have a non-zero element
+    if(nz > nw + nx + 2) return;
+
     // Inform if we can't handle that excitation
     if(nx * nw > 2 || nx + nw > 2)
     {
@@ -248,6 +254,20 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
         throw std::runtime_error("wick::same_spin_two_body: Requested excitation level not yet implemented");
     }
 
+    // Get reference to relevant contractions
+    const arma::field<arma::Mat<Tc> > &X = alpha ? m_Xa : m_Xb;
+    const arma::field<arma::Mat<Tc> > &Y = alpha ? m_Ya : m_Yb;
+
+    // Get reference to relevant zeroth-order term
+    const arma::Col<Tc> &V0  = alpha ? m_Vaa : m_Vbb;
+
+    // Get reference to relevant J/K term
+    const arma::field<arma::Mat<Tc> > &XVX = alpha ? m_XVaXa : m_XVbXb;
+
+    // Get reference to relevant two-electron integrals
+    const arma::field<arma::Mat<Tc> > &II = alpha ? m_IIaa : m_IIbb;
+
+    // TODO Remove
     // Get referemce to relevant X matrices for this spin
     const arma::field<arma::Mat<Tc> > &wwX = alpha ? m_wwXa : m_wwXb;
     const arma::field<arma::Mat<Tc> > &wxX = alpha ? m_wxXa : m_wxXb;
@@ -255,7 +275,6 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
     const arma::field<arma::Mat<Tc> > &xxX = alpha ? m_xxXa : m_xxXb;
 
     // Get reference to relevant one-body matrix
-    const arma::Col<Tc> &V0  = alpha ? m_Vaa : m_Vbb;
     const arma::field<arma::Mat<Tc> > &wwXVX = alpha ? m_wwXVaXa : m_wwXVbXb;
     const arma::field<arma::Mat<Tc> > &wxXVX = alpha ? m_wxXVaXa : m_wxXVbXb;
     const arma::field<arma::Mat<Tc> > &xwXVX = alpha ? m_xwXVaXa : m_xwXVbXb;
@@ -267,16 +286,96 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
     const arma::field<arma::Mat<Tc> > &wXC = alpha ? m_wXCa : m_wXCb;
     const arma::field<arma::Mat<Tc> > &wCX = alpha ? m_wCXa : m_wCXb;
 
-    // Get reference to number of zeros for this spin
-    const size_t &nz = alpha ? m_nza : m_nzb; 
+    // TODO Correct indexing for new code
+    whp += m_nact;
 
-    // Check we don't have a non-zero element
-    if(nz > nw + nx + 2) return;
+    // Get particle-hole indices
+    arma::uvec rows, cols;
+    if(nx == 0 xor nw == 0)
+    {
+        rows = (nx > 0) ? xhp.col(1) : whp.col(0);
+        cols = (nx > 0) ? xhp.col(0) : whp.col(1);
+    }
+    else if(nx > 0 and nw > 0) 
+    {
+        rows = arma::join_cols(xhp.col(1),whp.col(0));
+        cols = arma::join_cols(xhp.col(0),whp.col(1));
+    }
 
+    /* Generalised cases */
+    // No excitations, so return simple overlap
+    if(nx == 0 and nw == 0)
+    {   
+        V = V0(nz);
+    }
+    // One excitation doesn't require one-body determinant
+    else if((nx+nw) == 1)
+    {   
+        // Distribute zeros over 3 contractions
+        std::vector<size_t> m(nz, 1); m.resize(3,0);
+        do {
+            // Zeroth-order term
+            V += V0(m[0] + m[1]) * X(m[2])(rows(0),cols(0));
+            // First-order J/K term
+            V -= 2.0 * XVX(m[0],m[1],m[2])(rows(0),cols(0));
+        } while(std::prev_permutation(m.begin(), m.end()));
+    }
+    // Two excitations doesn't require two-body determinant
+    else if((nx+nw) == 2)
+    {
+        // Construct matrix for no zero overlaps
+        arma::Mat<Tc> D  = arma::trimatl(X(0).submat(rows,cols))
+                         + arma::trimatu(Y(0).submat(rows,cols),1);
+        // Construct matrix with all zero overlaps
+        arma::Mat<Tc> Db = arma::trimatl(X(1).submat(rows,cols)) 
+                         + arma::trimatu(Y(1).submat(rows,cols),1);
+
+        // Matrix of F contractions
+        arma::field<arma::Mat<Tc> > JKtmp(2,2,2); 
+        for(size_t i=0; i<2; i++)
+        for(size_t j=0; j<2; j++)
+        for(size_t k=0; k<2; k++)
+            JKtmp(i,j,k) = XVX(i,j,k).submat(rows,cols);
+
+        // Compute contribution from the overlap and zeroth term
+        std::vector<size_t> m(nz, 1); m.resize(nx+nw+2, 0); 
+        arma::Col<size_t> ind(&m[2], nx+nw, false, true);
+        // Loop over all possible contributions of zero overlaps
+        do {
+            // Evaluate overlap contribution
+            arma::Mat<Tc> Dtmp = D * arma::diagmat(1-ind) + Db * arma::diagmat(ind);
+            
+            // Get the overlap contributions 
+            V += V0(m[0]+m[1]) * arma::det(Dtmp);
+            
+            // Get the effective one-body contribution
+            // Loop over the column swaps for contracted terms
+            for(size_t i=0; i < nx+nw; i++)
+            {   
+                // Take a safe copy of the column
+                arma::Col<Tc> Dcol = D.col(i);
+                // Make the swap
+                Dtmp.col(i) = JKtmp(m[0],m[1],m[i+2]).col(i);
+                // Add the one-body contribution
+                V -= 2.0 * arma::det(Dtmp);
+                // Restore the column
+                Dtmp.col(i) = Dcol;
+            }
+
+            // Get the two-body contribution
+            V += 2.0 * II(2*m[0]+m[1], 2*m[2]+m[3])(2*m_nact*rows(0)+cols(0), 2*m_nact*rows(1)+cols(1));
+        } while(std::prev_permutation(m.begin(), m.end()));
+    }
+
+
+    // TODO Correct indexing for old code
+    whp -= m_nact;
+
+    // TODO Old code
     // < X | V | W > 
     if(nx == 0 and nw == 0)
     {
-        V = V0(nz);
+        //V = V0(nz);
     }
     // < X_i^a | V | W >
     else if(nx == 1 and nw == 0)
@@ -285,7 +384,7 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
         // Distribute the NZ zeros among 3 contractions
         std::vector<size_t> m(nz, 1); m.resize(3, 0); 
         do {
-            V += xxX(m[0])(a,i) * V0(m[1] + m[2]) + 2.0 * xxXVX(2+m[0],m[1],m[2])(a,i);
+            //V += xxX(m[0])(a,i) * V0(m[1] + m[2]) + 2.0 * xxXVX(2+m[0],m[1],m[2])(a,i);
         } while(std::prev_permutation(m.begin(), m.end()));
     }
     // < X | V | W_i^a >
@@ -295,7 +394,7 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
         // Distribute the NZ zeros among 3 contractions
         std::vector<size_t> m(nz, 1); m.resize(3, 0); 
         do {
-            V += wwX(m[0])(i,a) * V0(m[1] + m[2]) + 2.0 * wwXVX(m[0],m[1],2+m[2])(i,a);
+            //V += wwX(m[0])(i,a) * V0(m[1] + m[2]) + 2.0 * wwXVX(m[0],m[1],2+m[2])(i,a);
         } while(std::prev_permutation(m.begin(), m.end()));
     }
     // < X_{ij}^{ab} | V | W >
@@ -306,18 +405,10 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
         // Distribute the NZ zerps ampng 4 contractions
         std::vector<size_t> m(nz, 1); m.resize(4, 0); 
         do {
-            V += V0(m[0]+m[1]) * (xxX(m[2])(a,i) * xxX(m[3])(b,j) - xxX(m[2])(a,j) * xxX(m[3])(b,i));
-            V += 2.0 * (xxX(m[0])(b,j) * xxXVX(2+m[1],m[2],m[3])(a,i) - xxX(m[0])(b,i) * xxXVX(2+m[1],m[2],m[3])(a,j));
-            V += 2.0 * (xxX(m[0])(a,i) * xxXVX(2+m[1],m[2],m[3])(b,j) - xxX(m[0])(a,j) * xxXVX(2+m[1],m[2],m[3])(b,i));
-            for(size_t p=0; p<m_nbsf; p++)
-            for(size_t q=0; q<m_nbsf; q++)
-            for(size_t r=0; r<m_nbsf; r++)
-            for(size_t s=0; s<m_nbsf; s++)
-            {
-                V += m_II(p*m_nbsf+q,r*m_nbsf+s)  
-                   * (xCX(2+m[0])(a,p) * xCX(2+m[1])(b,r) - xCX(2+m[0])(a,r) * xCX(2+m[1])(b,p))
-                   * (xXC(0+m[2])(q,i) * xXC(0+m[3])(s,j) - xXC(0+m[2])(s,i) * xXC(0+m[3])(q,j));
-            }
+            //V += V0(m[0]+m[1]) * (xxX(m[2])(a,i) * xxX(m[3])(b,j) - xxX(m[2])(a,j) * xxX(m[3])(b,i));
+            //V += 2.0 * (xxX(m[0])(b,j) * xxXVX(2+m[1],m[2],m[3])(a,i) - xxX(m[0])(b,i) * xxXVX(2+m[1],m[2],m[3])(a,j));
+            //V += 2.0 * (xxX(m[0])(a,i) * xxXVX(2+m[1],m[2],m[3])(b,j) - xxX(m[0])(a,j) * xxXVX(2+m[1],m[2],m[3])(b,i));
+            //V += 2.0 * II(2*m[0]+m[1], 2*m[2]+m[3])(2*a*m_nact+i, 2*b*m_nact+j);
         } while(std::prev_permutation(m.begin(), m.end()));
     }
     // < X | V | W_{ij}^{ab} >
@@ -328,18 +419,10 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
         // Distribute the NZ zerps ampng 4 contractions
         std::vector<size_t> m(nz, 1); m.resize(4, 0); 
         do {
-            V += V0(m[0]+m[1]) * (wwX(m[2])(i,a) * wwX(m[3])(j,b) - wwX(m[2])(j,a) * wwX(m[3])(i,b));
-            V += 2.0 * (wwX(m[0])(j,b) * wwXVX(m[1],m[2],2+m[3])(i,a) - wwX(m[0])(i,b) * wwXVX(m[1],m[2],2+m[3])(j,a));
-            V += 2.0 * (wwX(m[0])(i,a) * wwXVX(m[1],m[2],2+m[3])(j,b) - wwX(m[0])(j,a) * wwXVX(m[1],m[2],2+m[3])(i,b));
-            for(size_t p=0; p<m_nbsf; p++)
-            for(size_t q=0; q<m_nbsf; q++)
-            for(size_t r=0; r<m_nbsf; r++)
-            for(size_t s=0; s<m_nbsf; s++)
-            {
-                V += m_II(p*m_nbsf+q,r*m_nbsf+s)  
-                   * (wCX(0+m[0])(i,p) * wCX(0+m[1])(j,r) - wCX(0+m[0])(i,r) * wCX(0+m[1])(j,p))
-                   * (wXC(2+m[2])(q,a) * wXC(2+m[3])(s,b) - wXC(2+m[2])(s,a) * wXC(2+m[3])(q,b));
-            }
+            //V += V0(m[0]+m[1]) * (wwX(m[2])(i,a) * wwX(m[3])(j,b) - wwX(m[2])(j,a) * wwX(m[3])(i,b));
+            //V += 2.0 * (wwX(m[0])(j,b) * wwXVX(m[1],m[2],2+m[3])(i,a) - wwX(m[0])(i,b) * wwXVX(m[1],m[2],2+m[3])(j,a));
+            //V += 2.0 * (wwX(m[0])(i,a) * wwXVX(m[1],m[2],2+m[3])(j,b) - wwX(m[0])(j,a) * wwXVX(m[1],m[2],2+m[3])(i,b));
+            //V += 2.0 * II(2*m[0]+m[1], 2*m[2]+m[3])(2*(i+m_nact)*m_nact+(a+m_nact), 2*(j+m_nact)*m_nact+(b+m_nact));
         } while(std::prev_permutation(m.begin(), m.end()));
     }
     // < X_i^a| V | W_j^b >
@@ -349,17 +432,10 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
         size_t j = whp(0,0), b = whp(0,1);
         std::vector<size_t> m(nz,1); m.resize(4,0);
         do {
-            V += V0(m[0]+m[1]) * (xxX(m[2])(a,i) * wwX(m[3])(j,b) + xwX(2+m[2])(a,b) * wxX(m[3])(j,i));
-            V += 2.0 * (wwX(m[0])(j,b) * xxXVX(2+m[1],m[2],0+m[3])(a,i) + wxX(0+m[0])(j,i) * xwXVX(2+m[1],m[2],2+m[3])(a,b));
-            V += 2.0 * (xxX(m[0])(a,i) * wwXVX(0+m[1],m[2],2+m[3])(j,b) - xwX(2+m[0])(a,b) * wxXVX(0+m[1],m[2],0+m[3])(j,i));
-            // Direct term
-            arma::Col<Tc> LHS = arma::vectorise(xXC(0+m[2]).col(i) * xCX(2+m[0]).row(a));
-            arma::Col<Tc> RHS = arma::vectorise(wXC(2+m[3]).col(b) * wCX(0+m[1]).row(j));
-            V += 2.0 * arma::dot(LHS, m_II * RHS);
-            // Exchange term
-            LHS = arma::vectorise(xXC(0+m[2]).col(i) * wCX(0+m[0]).row(j));
-            RHS = arma::vectorise(wXC(2+m[3]).col(b) * xCX(2+m[1]).row(a));
-            V -= 2.0 * arma::dot(LHS, m_II * RHS);
+            //V += V0(m[0]+m[1]) * (xxX(m[2])(a,i) * wwX(m[3])(j,b) + xwX(2+m[2])(a,b) * wxX(m[3])(j,i));
+            //V += 2.0 * (wwX(m[0])(j,b) * xxXVX(2+m[1],m[2],0+m[3])(a,i) + wxX(0+m[0])(j,i) * xwXVX(2+m[1],m[2],2+m[3])(a,b));
+            //V += 2.0 * (xxX(m[0])(a,i) * wwXVX(0+m[1],m[2],2+m[3])(j,b) - xwX(2+m[0])(a,b) * wxXVX(0+m[1],m[2],0+m[3])(j,i));
+            //V += 2.0 * II(2*m[0]+m[1], 2*m[2]+m[3])(2*a*m_nact+i, 2*(j+m_nact)*m_nact+(b+m_nact));
         } while(std::prev_permutation(m.begin(), m.end()));
     }
 }
@@ -372,6 +448,9 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
 {
     // Zero the output
     V = 0.0;
+
+    // Get the two-electron integrals
+    arma::field<arma::Mat<Tc> > &II = m_IIab;
 
     // Establish number of bra/ket excitations
     size_t nxa = xahp.n_rows; // Bra alpha excitations
@@ -474,9 +553,7 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
                 V += m_Vab(ma[0],mb[0]) * m_xxXa(ma[1])(a,i) * m_xxXb(mb[1])(b,j)
                    + m_xxXa(ma[0])(a,i) * m_xxXVaXb(2+mb[0],ma[1],mb[1])(b,j) 
                    + m_xxXb(mb[0])(b,j) * m_xxXVbXa(2+ma[0],mb[1],ma[1])(a,i);
-                arma::Col<Tc> LHS = arma::vectorise(m_xXCa(ma[1]).col(i) * m_xCXa(2+ma[0]).row(a));
-                arma::Col<Tc> RHS = arma::vectorise(m_xXCb(mb[1]).col(j) * m_xCXb(2+mb[0]).row(b));
-                V += arma::as_scalar(LHS.st() * m_II * RHS);
+                V += II(2*ma[0]+ma[1], 2*mb[0]+mb[1])(2*a*m_nact+i, 2*b*m_nact+j);
             } while(std::prev_permutation(ma.begin(), ma.end()));
             } while(std::prev_permutation(mb.begin(), mb.end()));
         }
@@ -517,14 +594,7 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
                 V += m_Vab(ma[0],mb[0]) * m_wwXa(ma[1])(i,a) * m_wwXb(mb[1])(j,b)
                    + m_wwXa(ma[0])(i,a) * m_wwXVaXb(mb[0],ma[1],2+mb[1])(j,b) 
                    + m_wwXb(mb[0])(j,b) * m_wwXVbXa(ma[0],mb[1],2+ma[1])(i,a);
-                for(size_t p=0; p<m_nbsf; p++)
-                for(size_t q=0; q<m_nbsf; q++)
-                for(size_t r=0; r<m_nbsf; r++)
-                for(size_t s=0; s<m_nbsf; s++)
-                {
-                    V += m_II(p*m_nbsf+q,r*m_nbsf+s) * m_wCXa(ma[0])(i,p) * m_wXCa(2+ma[1])(q,a) 
-                                                     * m_wCXb(mb[0])(j,r) * m_wXCb(2+mb[1])(s,b);
-                }
+                V += II(2*ma[0]+ma[1], 2*mb[0]+mb[1])(2*(i+m_nact)*m_nact+(a+m_nact), 2*(j+m_nact)*m_nact+(b+m_nact));
             } while(std::prev_permutation(ma.begin(), ma.end()));
             } while(std::prev_permutation(mb.begin(), mb.end()));
         }
@@ -557,9 +627,7 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
                 V += m_Vab(ma[0],mb[0]) * m_xxXb(mb[1])(a,i) * m_wwXa(ma[1])(j,b)
                    + m_wwXa(ma[0])(j,b) * m_xxXVaXb(2+mb[0],ma[1],0+mb[1])(a,i)
                    + m_xxXb(mb[0])(a,i) * m_wwXVbXa(0+ma[0],mb[1],2+ma[1])(j,b);
-                arma::Col<Tc> LHS = arma::vectorise(m_wXCa(2+ma[1]).col(b) * m_wCXa(0+ma[0]).row(j));
-                arma::Col<Tc> RHS = arma::vectorise(m_xXCb(0+mb[1]).col(i) * m_xCXb(2+mb[0]).row(a));
-                V += arma::dot(LHS, m_II * RHS);
+                V += II(2*ma[0]+ma[1], 2*mb[0]+mb[1])(2*(j+m_nact)*m_nact+(b+m_nact), 2*a*m_nact+i);
             } while(std::prev_permutation(ma.begin(), ma.end()));
             } while(std::prev_permutation(mb.begin(), mb.end()));
         }

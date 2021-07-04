@@ -93,37 +93,34 @@ void wick<Tc,Tf,Tb>::spin_one_body(
     const arma::Col<Tc> &F0  = alpha ? m_F0a : m_F0b;
     const arma::field<arma::Mat<Tc> > &XFX = alpha ? m_XFXa : m_XFXb;
 
+    // Get particle-hole indices
+    arma::uvec rows, cols;
+    if(nx == 0 xor nw == 0)
+    {
+        rows = (nx > 0) ? xhp.col(1) : whp.col(0);
+        cols = (nx > 0) ? xhp.col(0) : whp.col(1);
+    }
+    else if(nx > 0 and nw > 0) 
+    {
+        rows = arma::join_cols(xhp.col(1),whp.col(0));
+        cols = arma::join_cols(xhp.col(0),whp.col(1));
+    }
+
     // Start with overlap contribution
     if(nx == 0 and nw == 0)
     {   // No excitations, so return simple overlap
         F = F0(nz);
     }
-    else if(nx == 1 and nw == 0)
+    else if((nx+nw) == 1)
     {   // One excitation doesn't require determinant
-        size_t i = xhp(0,0), a = xhp(0,1);
-
         // Distribute zeros over 2 contractions
         std::vector<size_t> m(nz, 1); m.resize(2, 0); 
         do {
-            F += X(m[0])(a,i) * F0(m[1]) - XFX(m[0],m[1])(a,i);
-        } while(std::prev_permutation(m.begin(), m.end()));
-    }
-    else if(nx == 0 and nw == 1)
-    {   // One excitation doesn't require determinant
-        size_t i = whp(0,0), a = whp(0,1);
-
-        // Distribute zeros over 2 contractions
-        std::vector<size_t> m(nz, 1); m.resize(2, 0); 
-        do {
-            F += X(m[0])(i,a) * F0(m[1]) - XFX(m[0],m[1])(i,a);
+            F += X(m[0])(rows(0),cols(0)) * F0(m[1]) - XFX(m[0],m[1])(rows(0),cols(0));
         } while(std::prev_permutation(m.begin(), m.end()));
     }
     else
     {   // General case does require determinant
-        // Get row/column indices for particle/holes
-        arma::uvec rows = arma::join_cols(xhp.col(1),whp.col(0));
-        arma::uvec cols = arma::join_cols(xhp.col(0),whp.col(1));
-
         // Construct matrix for no zero overlaps
         arma::Mat<Tc> D  = arma::trimatl(X(0).submat(rows,cols))
                          + arma::trimatu(Y(0).submat(rows,cols),1);

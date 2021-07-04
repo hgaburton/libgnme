@@ -204,13 +204,13 @@ private:
     virtual void spin_1rdm(
         arma::umat &x_hp, arma::umat &w_hp, arma::Mat<Tc> &P, bool alpha);
     virtual void spin_overlap(
-        arma::umat x_hp, arma::umat w_hp,
+        arma::umat xhp, arma::umat whp,
         Tc &S, bool alpha);
     virtual void spin_one_body(
-        arma::umat x_hp, arma::umat w_hp,
+        arma::umat xhp, arma::umat whp,
         Tc &F, bool alpha);
     virtual void same_spin_two_body(
-        arma::umat &xhp, arma::umat &whp,
+        arma::umat xhp, arma::umat whp,
         Tc &V, bool alpha);
     virtual void diff_spin_two_body(
         arma::umat &xa_hp, arma::umat &xb_hp, 

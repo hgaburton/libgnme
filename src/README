@@ -1,15 +1,5 @@
 TODO:
 
- > Code generalised Slater-Condon rules:
-    (a) Overlap
-    (b) One-body
-    (c) Two-body
-
- > Put together USCF test calculation
-    (a) Overlap
-    (b) One-body
-    (c) Two-body
-
  > Code up generalised two-body terms
     (a) Zeroth-order terms
     (b) J/K coupling 
@@ -22,3 +12,5 @@ TODO:
  > Reduced density matrices: 
     (a) 1-RDM
     (b) 2-RDM
+ 
+ > Write better test functions
