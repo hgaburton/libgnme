@@ -187,45 +187,6 @@ void wick<Tc,Tf,Tb>::setup_two_body()
         mo_eri(m_CXb(i), m_XCb(j), m_CXb(k), m_XCb(l), m_II, m_IIbb(2*i+j, 2*k+l), 2*m_nact, true); 
         mo_eri(m_CXa(i), m_XCa(j), m_CXb(k), m_XCb(l), m_II, m_IIab(2*i+j, 2*k+l), 2*m_nact, false); 
     }
-
-    // TODO: Factor out this old code...
-    // Construct XVX matrices
-    m_wwXVaXa.set_size(4,2,4); m_xwXVaXa.set_size(4,2,4);
-    m_wxXVaXa.set_size(4,2,4); m_xxXVaXa.set_size(4,2,4);
-    m_wwXVaXb.set_size(4,2,4); m_xwXVaXb.set_size(4,2,4);
-    m_wxXVaXb.set_size(4,2,4); m_xxXVaXb.set_size(4,2,4);
-    m_wwXVbXa.set_size(4,2,4); m_xwXVbXa.set_size(4,2,4);
-    m_wxXVbXa.set_size(4,2,4); m_xxXVbXa.set_size(4,2,4);
-    m_wwXVbXb.set_size(4,2,4); m_xwXVbXb.set_size(4,2,4);
-    m_wxXVbXb.set_size(4,2,4); m_xxXVbXb.set_size(4,2,4);
-
-    // Construct intermediates
-    #pragma omp parallel for schedule(static) collapse(3)
-    for(size_t x=0; x<4; x++)
-    for(size_t y=0; y<4; y++)
-    for(size_t z=0; z<2; z++)
-    {
-        // Alpha-Alpha
-        m_wwXVaXa(x,z,y) = m_wxXa(x) * m_Cxa.t() * (Ja(z) - Ka(z)) * m_Cxa * m_xwXa(y);
-        m_wxXVaXa(x,z,y) = m_wxXa(x) * m_Cxa.t() * (Ja(z) - Ka(z)) * m_Cxa * m_xxXa(y);
-        m_xwXVaXa(x,z,y) = m_xxXa(x) * m_Cxa.t() * (Ja(z) - Ka(z)) * m_Cxa * m_xwXa(y);
-        m_xxXVaXa(x,z,y) = m_xxXa(x) * m_Cxa.t() * (Ja(z) - Ka(z)) * m_Cxa * m_xxXa(y);
-        // Beta-Beta
-        m_wwXVbXb(x,z,y) = m_wxXb(x) * m_Cxb.t() * (Jb(z) - Kb(z)) * m_Cxb * m_xwXb(y);
-        m_wxXVbXb(x,z,y) = m_wxXb(x) * m_Cxb.t() * (Jb(z) - Kb(z)) * m_Cxb * m_xxXb(y);
-        m_xwXVbXb(x,z,y) = m_xxXb(x) * m_Cxb.t() * (Jb(z) - Kb(z)) * m_Cxb * m_xwXb(y);
-        m_xxXVbXb(x,z,y) = m_xxXb(x) * m_Cxb.t() * (Jb(z) - Kb(z)) * m_Cxb * m_xxXb(y);
-        // Alpha-Beta
-        m_wwXVaXb(x,z,y) = m_wxXb(x) * m_Cxb.t() * Ja(z) * m_Cxb * m_xwXb(y);
-        m_wxXVaXb(x,z,y) = m_wxXb(x) * m_Cxb.t() * Ja(z) * m_Cxb * m_xxXb(y);
-        m_xwXVaXb(x,z,y) = m_xxXb(x) * m_Cxb.t() * Ja(z) * m_Cxb * m_xwXb(y);
-        m_xxXVaXb(x,z,y) = m_xxXb(x) * m_Cxb.t() * Ja(z) * m_Cxb * m_xxXb(y);
-        // Beta-Alpha
-        m_wwXVbXa(x,z,y) = m_wxXa(x) * m_Cxa.t() * Jb(z) * m_Cxa * m_xwXa(y);
-        m_wxXVbXa(x,z,y) = m_wxXa(x) * m_Cxa.t() * Jb(z) * m_Cxa * m_xxXa(y);
-        m_xwXVbXa(x,z,y) = m_xxXa(x) * m_Cxa.t() * Jb(z) * m_Cxa * m_xwXa(y);
-        m_xxXVbXa(x,z,y) = m_xxXa(x) * m_Cxa.t() * Jb(z) * m_Cxa * m_xxXa(y);
-    }
 }
 
 template<typename Tc, typename Tf, typename Tb>
@@ -246,24 +207,13 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
     // Check we don't have a non-zero element
     if(nz > nw + nx + 2) return;
 
-    // Inform if we can't handle that excitation
-    //if(nx * nw > 2 || nx + nw > 2)
-    //{
-    //    std::cout << "wick::same_spin_two_body: Bra excitations = " << nx << std::endl;
-    //    std::cout << "wick::same_spin_two_body: Ket excitations = " << nw << std::endl;
-    //    throw std::runtime_error("wick::same_spin_two_body: Requested excitation level not yet implemented");
-    //}
-
     // Get reference to relevant contractions
     const arma::field<arma::Mat<Tc> > &X = alpha ? m_Xa : m_Xb;
     const arma::field<arma::Mat<Tc> > &Y = alpha ? m_Ya : m_Yb;
-
     // Get reference to relevant zeroth-order term
     const arma::Col<Tc> &V0  = alpha ? m_Vaa : m_Vbb;
-
     // Get reference to relevant J/K term
     const arma::field<arma::Mat<Tc> > &XVX = alpha ? m_XVaXa : m_XVbXb;
-
     // Get reference to relevant two-electron integrals
     arma::field<arma::Mat<Tc> > &II = alpha ? m_IIaa : m_IIbb;
 
@@ -444,9 +394,6 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
     // Zero the output
     V = 0.0;
 
-    // Get the two-electron integrals
-    arma::field<arma::Mat<Tc> > &II = m_IIab;
-
     // Establish number of bra/ket excitations
     size_t nxa = xahp.n_rows; // Bra alpha excitations
     size_t nwa = wahp.n_rows; // Ket alpha excitations
@@ -455,211 +402,199 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
     size_t nx = nxa + nxb;
     size_t nw = nwa + nwb;
 
-    return;
-    // Inform if we can't handle that excitation
-    //if(nx * nw > 2 || nx + nw > 2)
-    //{
-    //    std::cout << "wick::diff_spin_two_body: Bra excitations = " << nx << std::endl;
-    //    std::cout << "wick::diff_spin_two_body: Ket excitations = " << nw << std::endl;
-    //    throw std::runtime_error("wick::diff_spin_two_body: Requested excitation level not yet implemented");
-    //}
-    
-    // < X | V | W > 
-    if(nx == 0 and nw == 0)
-    {
-        V = m_Vab(m_nza,m_nzb);
-    }
-    // < X_i^a | V | W >
-    else if(nx == 1 and nw == 0)
-    {
-        if(nxa == 1) // Alpha excitation
-        {
-            size_t i = xahp(0,0), a = xahp(0,1);
-            // Distribute the NZ alpha zeros among 2 contractions
-            std::vector<size_t> ma(m_nza, 1); ma.resize(2, 0); 
-            do {
-                V += m_xxXa(ma[0])(a,i) * m_Vab(ma[1],m_nzb) + m_xxXVbXa(2+ma[0],m_nzb,ma[1])(a,i);
-            } while(std::prev_permutation(ma.begin(), ma.end()));
-        }
-        else // Beta excitation
-        {
-            size_t i = xbhp(0,0), a = xbhp(0,1);
-            // Distribute the NZ beta zeros among 2 contractions
-            std::vector<size_t> mb(m_nzb, 1); mb.resize(2, 0); 
-            do {
-                V += m_xxXb(mb[0])(a,i) * m_Vab(m_nza,mb[1]) + m_xxXVaXb(2+mb[0],m_nza,mb[1])(a,i);
-            } while(std::prev_permutation(mb.begin(), mb.end()));
-        }
-    }
-    // < X | V | W_i^a >
-    else if(nx == 0 and nw == 1)
-    {
-        if(nwa == 1) // Alpha excitation
-        {
-            size_t i = wahp(0,0), a = wahp(0,1);
-            // Distribute the NZ alpha zeros among 2 contractions
-            std::vector<size_t> ma(m_nza, 1); ma.resize(2, 0); 
-            do {
-                V += m_wwXa(ma[0])(i,a) * m_Vab(ma[1],m_nzb) + m_wwXVbXa(ma[0],m_nzb,2+ma[1])(i,a);
-            } while(std::prev_permutation(ma.begin(), ma.end()));
-        }
-        else // Beta excitation
-        {
-            size_t i = wbhp(0,0), a = wbhp(0,1);
-            // Distribute the NZ beta zeros among 2 contractions
-            std::vector<size_t> mb(m_nzb, 1); mb.resize(2, 0); 
-            do {
-                V += m_wwXb(mb[0])(i,a) * m_Vab(m_nza,mb[1]) + m_wwXVaXb(mb[0],m_nza,2+mb[1])(i,a);
-            } while(std::prev_permutation(mb.begin(), mb.end()));
-        }
-    }
-    // < X_{ij}^{ab} | V | W >
-    else if(nx == 2 and nw == 0)
-    {
-        if(nxa == 2) // Both alpha excitations
-        {
-            size_t i = xahp(0,0), a = xahp(0,1);
-            size_t j = xahp(1,0), b = xahp(1,1);
-            std::vector<size_t> m(m_nza, 1); m.resize(3, 0); 
-            do {
-                V += m_Vab(m[0],m_nzb) * (m_xxXa(m[1])(a,i) * m_xxXa(m[2])(b,j) - m_xxXa(m[1])(a,j) * m_xxXa(m[2])(b,i))
-                   + m_xxXa(m[0])(b,j) * m_xxXVbXa(2+m[1],m_nzb,m[2])(a,i) - m_xxXa(m[0])(b,i) * m_xxXVbXa(2+m[1],m_nzb,m[2])(a,j)
-                   + m_xxXa(m[0])(a,i) * m_xxXVbXa(2+m[1],m_nzb,m[2])(b,j) - m_xxXa(m[0])(a,j) * m_xxXVbXa(2+m[1],m_nzb,m[2])(b,i);
-            } while(std::prev_permutation(m.begin(), m.end()));
-        }
-        else if(nxb == 2) // Both alpha excitations
-        {
-            size_t i = xbhp(0,0), a = xbhp(0,1);
-            size_t j = xbhp(1,0), b = xbhp(1,1);
-            std::vector<size_t> m(m_nzb, 1); m.resize(3, 0); 
-            do {
-                V += m_Vab(m_nza,m[0]) * (m_xxXb(m[1])(a,i) * m_xxXb(m[2])(b,j) - m_xxXb(m[1])(a,j) * m_xxXb(m[2])(b,i))
-                   + m_xxXb(m[0])(b,j) * m_xxXVaXb(2+m[1],m_nza,m[2])(a,i) - m_xxXb(m[0])(b,i) * m_xxXVaXb(2+m[1],m_nza,m[2])(a,j)
-                   + m_xxXb(m[0])(a,i) * m_xxXVaXb(2+m[1],m_nza,m[2])(b,j) - m_xxXb(m[0])(a,j) * m_xxXVaXb(2+m[1],m_nza,m[2])(b,i);
-            } while(std::prev_permutation(m.begin(), m.end()));
-        }
-        else // One alpha and one beta excitation
-        {
-            size_t i = xahp(0,0), a = xahp(0,1);
-            size_t j = xbhp(0,0), b = xbhp(0,1);
-            std::vector<size_t> ma(m_nza, 1); ma.resize(2, 0); 
-            std::vector<size_t> mb(m_nzb, 1); mb.resize(2, 0); 
-            do {
-            do {
-                V += m_Vab(ma[0],mb[0]) * m_xxXa(ma[1])(a,i) * m_xxXb(mb[1])(b,j)
-                   + m_xxXa(ma[0])(a,i) * m_xxXVaXb(2+mb[0],ma[1],mb[1])(b,j) 
-                   + m_xxXb(mb[0])(b,j) * m_xxXVbXa(2+ma[0],mb[1],ma[1])(a,i);
-                V += II(2*ma[0]+ma[1], 2*mb[0]+mb[1])(2*a*m_nact+i, 2*b*m_nact+j);
-            } while(std::prev_permutation(ma.begin(), ma.end()));
-            } while(std::prev_permutation(mb.begin(), mb.end()));
-        }
-    }
-    // < X | V | W_{ij}^{ab} >
-    else if (nx == 0 and nw == 2)
-    {
-        if(nwa == 2) // Both alpha excitations
-        {
-            size_t i = wahp(0,0), a = wahp(0,1);
-            size_t j = wahp(1,0), b = wahp(1,1);
-            std::vector<size_t> m(m_nza, 1); m.resize(3, 0); 
-            do {
-                V += m_Vab(m[0],m_nzb) * (m_wwXa(m[1])(i,a) * m_wwXa(m[2])(j,b) - m_wwXa(m[1])(j,a) * m_wwXa(m[2])(i,b))
-                   + m_wwXa(m[0])(j,b) * m_wwXVbXa(m[1],m_nzb,2+m[2])(i,a) - m_wwXa(m[0])(i,b) * m_wwXVbXa(m[1],m_nzb,2+m[2])(j,a)
-                   + m_wwXa(m[0])(i,a) * m_wwXVbXa(m[1],m_nzb,2+m[2])(j,b) - m_wwXa(m[0])(j,a) * m_wwXVbXa(m[1],m_nzb,2+m[2])(i,b);
-            } while(std::prev_permutation(m.begin(), m.end()));
-        }
-        else if(nwb == 2) // Both alpha excitations
-        {
-            size_t i = wbhp(0,0), a = wbhp(0,1);
-            size_t j = wbhp(1,0), b = wbhp(1,1);
-            std::vector<size_t> m(m_nzb, 1); m.resize(3, 0); 
-            do {
-                V += m_Vab(m_nza,m[0]) * (m_wwXb(m[1])(i,a) * m_wwXb(m[2])(j,b) - m_wwXb(m[1])(j,a) * m_wwXb(m[2])(i,b))
-                   + m_wwXb(m[0])(j,b) * m_wwXVaXb(m[1],m_nza,2+m[2])(i,a) - m_wwXb(m[0])(i,b) * m_wwXVaXb(m[1],m_nza,2+m[2])(j,a)
-                   + m_wwXb(m[0])(i,a) * m_wwXVaXb(m[1],m_nza,2+m[2])(j,b) - m_wwXb(m[0])(j,a) * m_wwXVaXb(m[1],m_nza,2+m[2])(i,b);
-            } while(std::prev_permutation(m.begin(), m.end()));
-        }
-        else // One alpha and one beta excitation
-        {
-            size_t i = wahp(0,0), a = wahp(0,1);
-            size_t j = wbhp(0,0), b = wbhp(0,1);
-            std::vector<size_t> ma(m_nza, 1); ma.resize(2, 0); 
-            std::vector<size_t> mb(m_nzb, 1); mb.resize(2, 0); 
-            do {
-            do {
-                V += m_Vab(ma[0],mb[0]) * m_wwXa(ma[1])(i,a) * m_wwXb(mb[1])(j,b)
-                   + m_wwXa(ma[0])(i,a) * m_wwXVaXb(mb[0],ma[1],2+mb[1])(j,b) 
-                   + m_wwXb(mb[0])(j,b) * m_wwXVbXa(ma[0],mb[1],2+ma[1])(i,a);
-                V += II(2*ma[0]+ma[1], 2*mb[0]+mb[1])(2*(i+m_nact)*m_nact+(a+m_nact), 2*(j+m_nact)*m_nact+(b+m_nact));
-            } while(std::prev_permutation(ma.begin(), ma.end()));
-            } while(std::prev_permutation(mb.begin(), mb.end()));
-        }
-    }
-    // < X_i^a | V | W_j^b >
-    else if (nx == 1 and nw == 1) 
-    {
-        if(nxa == 1 and nwa == 1) // Both alpha excitations 
-        {
-            size_t i = xahp(0,0), a = xahp(0,1);
-            size_t j = wahp(0,0), b = wahp(0,1);
-            std::vector<size_t> m(m_nza,1); m.resize(3,0);
-            do {
-                V += m_Vab(m[0],m_nzb) * (m_xxXa(0+m[1])(a,i) * m_wwXa(m[2])(j,b) 
-                                        + m_xwXa(2+m[1])(a,b) * m_wxXa(m[2])(j,i));
-                V += m_wwXa(0+m[0])(j,b) * m_xxXVbXa(2+m[1],m_nzb,0+m[2])(a,i) 
-                   + m_wxXa(0+m[0])(j,i) * m_xwXVbXa(2+m[1],m_nzb,2+m[2])(a,b);
-                V += m_xxXa(0+m[0])(a,i) * m_wwXVbXa(0+m[1],m_nzb,2+m[2])(j,b) 
-                   - m_xwXa(2+m[0])(a,b) * m_wxXVbXa(0+m[1],m_nzb,0+m[2])(j,i);
-            } while(std::prev_permutation(m.begin(), m.end()));
-        }
-        else if(nxa == 0 and nwa == 1) // Bra beta, ket alpha
-        {
-            size_t i = xbhp(0,0), a = xbhp(0,1);
-            size_t j = wahp(0,0), b = wahp(0,1);
-            std::vector<size_t> ma(m_nza,1); ma.resize(2,0);
-            std::vector<size_t> mb(m_nzb,1); mb.resize(2,0);
-            do {
-            do {
-                V += m_Vab(ma[0],mb[0]) * m_xxXb(mb[1])(a,i) * m_wwXa(ma[1])(j,b)
-                   + m_wwXa(ma[0])(j,b) * m_xxXVaXb(2+mb[0],ma[1],0+mb[1])(a,i)
-                   + m_xxXb(mb[0])(a,i) * m_wwXVbXa(0+ma[0],mb[1],2+ma[1])(j,b);
-                V += II(2*ma[0]+ma[1], 2*mb[0]+mb[1])(2*(j+m_nact)*m_nact+(b+m_nact), 2*a*m_nact+i);
-            } while(std::prev_permutation(ma.begin(), ma.end()));
-            } while(std::prev_permutation(mb.begin(), mb.end()));
-        }
-        else if(nxa == 1 and nwa == 0) // Bra alpha, ket beta
-        {
-            size_t i = xahp(0,0), a = xahp(0,1);
-            size_t j = wbhp(0,0), b = wbhp(0,1);
-            std::vector<size_t> ma(m_nza,1); ma.resize(2,0);
-            std::vector<size_t> mb(m_nzb,1); mb.resize(2,0);
-            do {
-            do {
-                V += m_Vab(ma[0],mb[0]) * m_xxXa(ma[1])(a,i) * m_wwXb(mb[1])(j,b)
-                   + m_wwXb(0+mb[0])(j,b) * m_xxXVbXa(2+ma[0],mb[1],0+ma[1])(a,i)
-                   + m_xxXa(0+ma[0])(a,i) * m_wwXVaXb(0+mb[0],ma[1],2+mb[1])(j,b);
-                arma::Col<Tc> LHS = arma::vectorise(m_wXCb(2+mb[1]).col(b) * m_wCXb(0+mb[0]).row(j));
-                arma::Col<Tc> RHS = arma::vectorise(m_xXCa(0+ma[1]).col(i) * m_xCXa(2+ma[0]).row(a));
-                V += arma::dot(LHS, m_II * RHS);
-            } while(std::prev_permutation(ma.begin(), ma.end()));
-            } while(std::prev_permutation(mb.begin(), mb.end()));
+    // Check we don't have a non-zero element
+    if(m_nza > nwa+nxa+1 || m_nzb > nwb+nxb+1) return;
 
-        }
-        else // Both beta excitations
-        {
-            size_t i = xbhp(0,0), a = xbhp(0,1);
-            size_t j = wbhp(0,0), b = wbhp(0,1);
-            std::vector<size_t> m(m_nzb,1); m.resize(3,0);
-            do {
-                V += m_Vab(m_nza,m[0]) * (m_xxXb(0+m[1])(a,i) * m_wwXb(m[2])(j,b) 
-                                        + m_xwXb(2+m[1])(a,b) * m_wxXb(m[2])(j,i));
-                V += m_wwXb(0+m[0])(j,b) * m_xxXVaXb(2+m[1],m_nza,0+m[2])(a,i) 
-                   + m_wxXb(0+m[0])(j,i) * m_xwXVaXb(2+m[1],m_nza,2+m[2])(a,b);
-                V += m_xxXb(0+m[0])(a,i) * m_xxXVaXb(0+m[1],m_nza,2+m[2])(j,b) 
-                   - m_xwXb(2+m[0])(a,b) * m_wxXVaXb(0+m[1],m_nza,0+m[2])(j,i);
-            } while(std::prev_permutation(m.begin(), m.end()));
-        }
+    // TODO Correct indexing for new code
+    wahp += m_nact;
+    wbhp += m_nact;
+
+    // Get alpha particle-hole indices
+    arma::uvec rowa, cola;
+    if(nxa == 0 xor nwa == 0) 
+    {
+        rowa = (nxa > 0) ? xahp.col(1) : wahp.col(0);
+        cola = (nxa > 0) ? xahp.col(0) : wahp.col(1);
+    } 
+    else if(nxa > 0 and nwa > 0) 
+    {
+        rowa = arma::join_cols(xahp.col(1),wahp.col(0));
+        cola = arma::join_cols(xahp.col(0),wahp.col(1));
     }
+    // Get beta particle-hole indices
+    arma::uvec rowb, colb;
+    if(nxb == 0 xor nwb == 0)
+    {
+        rowb = (nxb > 0) ? xbhp.col(1) : wbhp.col(0);
+        colb = (nxb > 0) ? xbhp.col(0) : wbhp.col(1);
+    }
+    else if(nxb > 0 and nwb > 0) 
+    {
+        rowb = arma::join_cols(xbhp.col(1),wbhp.col(0));
+        colb = arma::join_cols(xbhp.col(0),wbhp.col(1));
+    }
+
+    /* Super generalised case */
+    arma::Mat<Tc> Da, DaB;
+    if(nxa+nwa == 1)
+    {
+        Da  = m_Xa(0)(rowa(0),cola(0));
+        DaB = m_Xa(1)(rowa(0),cola(0));
+    }
+    else if(nxa+nwa > 1)
+    {
+        // Construct matrix for no zero overlaps
+        Da  = arma::trimatl(m_Xa(0).submat(rowa,cola))
+            + arma::trimatu(m_Ya(0).submat(rowa,cola),1);
+        // Construct matrix with all zero overlaps
+        DaB = arma::trimatl(m_Xa(1).submat(rowa,cola)) 
+            + arma::trimatu(m_Ya(1).submat(rowa,cola),1);
+    }
+    arma::Mat<Tc> Db, DbB;
+    if(nxb+nwb == 1)
+    {
+        Db  = m_Xb(0)(rowb(0),colb(0));
+        DbB = m_Xb(1)(rowb(0),colb(0));
+    }
+    else if(nxb+nwb > 1)
+    {
+        // Construct matrix for no zero overlaps
+        Db  = arma::trimatl(m_Xb(0).submat(rowb,colb))
+            + arma::trimatu(m_Yb(0).submat(rowb,colb),1);
+        // Construct matrix with all zero overlaps
+        DbB = arma::trimatl(m_Xb(1).submat(rowb,colb)) 
+            + arma::trimatu(m_Yb(1).submat(rowb,colb),1);
+    }
+
+    // Matrix of JK contractions
+    arma::field<arma::Mat<Tc> > Jab(2,2,2), Jba(2,2,2);
+    for(size_t i=0; i<2; i++)
+    for(size_t j=0; j<2; j++)
+    for(size_t k=0; k<2; k++)
+    {
+        Jba(i,j,k) = m_XVbXa(i,j,k).submat(rowa,cola);
+        Jab(i,j,k) = m_XVaXb(i,j,k).submat(rowb,colb);
+    }
+
+    // Compute contribution from the overlap and zeroth term
+    std::vector<size_t> ma(m_nza, 1); ma.resize(nxa+nwa+1, 0); 
+    std::vector<size_t> mb(m_nzb, 1); mb.resize(nxb+nwb+1, 0); 
+    arma::Col<size_t> inda1(&ma[1], nxa+nwa,   false, true);
+    arma::Col<size_t> inda2(&ma[2], nxa+nwa-1, false, true);
+    arma::Col<size_t> indb1(&mb[1], nxb+nwb,   false, true);
+    arma::Col<size_t> indb2(&mb[2], nxb+nwb-1, false, true);
+    // Loop over all possible contributions of zero overlaps
+    arma::Mat<Tc> tmpDa, tmpDa2;
+    arma::Mat<Tc> tmpDb, tmpDb2;
+    do {
+    do {
+        // Evaluate overlap contribution
+        tmpDa = Da * arma::diagmat(1-inda1) + DaB * arma::diagmat(inda1);
+        tmpDb = Db * arma::diagmat(1-indb1) + DbB * arma::diagmat(indb1);
+        
+        // Get the zeroth-order contributions 
+        V += m_Vab(ma[0],mb[0]) * arma::det(tmpDa) * arma::det(tmpDb);
+
+        // Get the effective one-body contribution
+        // Loop over the alpha column swaps for contracted terms
+        for(size_t i=0; i < nxa+nwa; i++)
+        {   
+            // Take a safe copy of the column
+            arma::Col<Tc> Dcol = tmpDa.col(i);
+            // Make the swap
+            tmpDa.col(i) = Jba(ma[0],mb[0],ma[i+1]).col(i);
+            // Add the one-body contribution
+            V -= arma::det(tmpDa) * arma::det(tmpDb);
+            // Restore the column
+            tmpDa.col(i) = Dcol;
+        }
+        // Loop over the beta column swaps for contracted terms
+        for(size_t i=0; i < nxb+nwb; i++)
+        {   
+            // Take a safe copy of the column
+            arma::Col<Tc> Dcol = tmpDb.col(i);
+            // Make the swap
+            tmpDb.col(i) = Jab(mb[0],ma[0],mb[i+1]).col(i);
+            // Add the one-body contribution
+            V -= arma::det(tmpDa) * arma::det(tmpDb);
+            // Restore the column
+            tmpDb.col(i) = Dcol;
+        }
+
+        arma::field<arma::Mat<Tc> > IItmp(2);
+        arma::Mat<Tc> D2, DB2;
+        // Loop over alpha particle-hole pairs for two-body interaction
+        for(size_t i=0; i < nxa+nwa; i++)
+        for(size_t j=0; j < nxa+nwa; j++)
+        {
+            // Get temporary two-electron indices for this pair of electrons
+            for(size_t x=0; x<2; x++)
+            {
+                IItmp(x) = m_IIab(2*ma[0]+ma[1], 2*mb[0]+x).row(2*m_nact*rowa(i)+cola(j));
+                IItmp(x).reshape(2*m_nact, 2*m_nact);
+                IItmp(x) = IItmp(x).submat(colb,rowb).st();
+            }
+
+            // New submatrices
+            D2  = Da;   D2.shed_row(i);  D2.shed_col(j);
+            DB2 = DaB; DB2.shed_row(i); DB2.shed_col(j);
+            tmpDa2 = D2 * arma::diagmat(1-inda2) + DB2 * arma::diagmat(inda2);
+
+            // Get the phase factor
+            double phase = (i % 2) xor (j % 2) ? -1.0 : 1.0;
+
+            // Loop over beta columns
+            for(size_t k=0; k < nxb+nwb; k++)
+            {   
+                // Take a safe copy of the column
+                arma::Col<Tc> Dcol = tmpDb.col(k);
+                // Make the swap
+                tmpDb.col(k) = IItmp(mb[k+1]).col(k);
+                // Add the one-body contribution
+                V += 0.5 * phase * arma::det(tmpDa2) * arma::det(tmpDb);
+                // Restore the column
+                tmpDb.col(k) = Dcol;
+            }
+        }
+        // Loop over beta particle-hole pairs for two-body interaction
+        for(size_t i=0; i < nxb+nwb; i++)
+        for(size_t j=0; j < nxb+nwb; j++)
+        {
+            // Get temporary two-electron indices for this pair of electrons
+            for(size_t x=0; x<2; x++)
+            {
+                IItmp(x) = m_IIab(2*ma[0]+x, 2*mb[0]+mb[1]).col(2*m_nact*rowb(i)+colb(j));
+                IItmp(x).reshape(2*m_nact, 2*m_nact);
+                IItmp(x) = IItmp(x).submat(cola,rowa).st();
+            }
+
+            // New submatrices
+            D2  = Db;   D2.shed_row(i);  D2.shed_col(j);
+            DB2 = DbB; DB2.shed_row(i); DB2.shed_col(j);
+            tmpDb2 = D2 * arma::diagmat(1-indb2) + DB2 * arma::diagmat(indb2);
+
+            // Get the phase factor
+            double phase = (i % 2) xor (j % 2) ? -1.0 : 1.0;
+
+            // Loop over alpha columns
+            for(size_t k=0; k < nxa+nwa; k++)
+            {   
+                // Take a safe copy of the column
+                arma::Col<Tc> Dcol = tmpDa.col(k);
+                // Make the swap
+                tmpDa.col(k) = IItmp(ma[k+1]).col(k);
+                // Add the one-body contribution
+                V += 0.5 * phase * arma::det(tmpDa) * arma::det(tmpDb2);
+                // Restore the column
+                tmpDa.col(k) = Dcol;
+            }
+        }
+    } while(std::prev_permutation(ma.begin(), ma.end()));
+    } while(std::prev_permutation(mb.begin(), mb.end()));
+    
+    // TODO Correct indexing for old code
+    wahp -= m_nact;
+    wbhp -= m_nact;
 }
 
 template class wick<double, double, double>;

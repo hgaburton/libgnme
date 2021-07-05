@@ -90,7 +90,7 @@ void slater_uscf<Tc,Tf,Tb>::evaluate(
                    - 0.5 * m_II(p*m_nbsf+s, r*m_nbsf+q) * xwWa(q,p) * xwWa(s,r);
                 H += 0.5 * m_II(p*m_nbsf+q, r*m_nbsf+s) * xwWb(q,p) * xwWb(s,r)
                    - 0.5 * m_II(p*m_nbsf+s, r*m_nbsf+q) * xwWb(q,p) * xwWb(s,r);
-                //H += 1.0 * m_II(p*m_nbsf+q, r*m_nbsf+s) * xwWa(q,p) * xwWb(s,r);
+                H += 1.0 * m_II(p*m_nbsf+q, r*m_nbsf+s) * xwWa(q,p) * xwWb(s,r);
             }
         }
     }
@@ -130,7 +130,7 @@ void slater_uscf<Tc,Tf,Tb>::evaluate(
             {
                 H += m_II(p*m_nbsf+q, r*m_nbsf+s) * xwP(q,p) * xwWs(s,r)
                    - m_II(p*m_nbsf+s, r*m_nbsf+q) * xwP(q,p) * xwWs(s,r);
-                //H += m_II(p*m_nbsf+q, r*m_nbsf+s) * xwP(q,p) * xwWd(s,r);
+                H += m_II(p*m_nbsf+q, r*m_nbsf+s) * xwP(q,p) * xwWd(s,r);
             }
         }
     }
@@ -155,8 +155,8 @@ void slater_uscf<Tc,Tf,Tb>::evaluate(
         }
         else 
         {
-            //xwP1  = Cwa.col(zeros_a(0)) * Cxa.col(zeros_a(0)).t();
-            //xwP2J = Cwb.col(zeros_b(0)) * Cxb.col(zeros_b(0)).t();
+            xwP1  = Cwa.col(zeros_a(0)) * Cxa.col(zeros_a(0)).t();
+            xwP2J = Cwb.col(zeros_b(0)) * Cxb.col(zeros_b(0)).t();
         }
 
         // Add two-body element
