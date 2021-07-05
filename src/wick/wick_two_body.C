@@ -28,37 +28,41 @@ void mo_eri(
 
     // (pq|r4)
     IItmp1.zeros();
+    #pragma omp parallel for schedule(static) collapse(4)
+    for(size_t p=0; p<nbsf; p++)
+    for(size_t q=0; q<nbsf; q++)
+    for(size_t r=0; r<nbsf; r++)
     for(size_t l=0; l<nmo; l++)
-        for(size_t p=0; p<nbsf; p++)
-        for(size_t q=0; q<nbsf; q++)
-        for(size_t r=0; r<nbsf; r++)
         for(size_t s=0; s<nbsf; s++)
             IItmp1(p*nbsf+q, r*nmo+l) += IIao(p*nbsf+q, r*nbsf+s) * C4(s,l);
 
     // (pq|34)
     IItmp2.zeros();
+    #pragma omp parallel for schedule(static) collapse(4)
+    for(size_t p=0; p<nbsf; p++)
+    for(size_t q=0; q<nbsf; q++)
     for(size_t k=0; k<nmo; k++)
-        for(size_t p=0; p<nbsf; p++)
-        for(size_t q=0; q<nbsf; q++)
+    for(size_t l=0; l<nmo; l++)
         for(size_t r=0; r<nbsf; r++)
-        for(size_t l=0; l<nmo; l++)
             IItmp2(p*nbsf+q, k*nmo+l) += IItmp1(p*nbsf+q, r*nmo+l) * std::conj(C3(r,k));
      
     // (p2|34)
     IItmp1.zeros();
+    #pragma omp parallel for schedule(static) collapse(4)
+    for(size_t p=0; p<nbsf; p++)
     for(size_t j=0; j<nmo; j++)
-        for(size_t p=0; p<nbsf; p++)
+    for(size_t k=0; k<nmo; k++)
+    for(size_t l=0; l<nmo; l++)
         for(size_t q=0; q<nbsf; q++)
-        for(size_t k=0; k<nmo; k++)
-        for(size_t l=0; l<nmo; l++)
             IItmp1(p*nmo+j, k*nmo+l) += IItmp2(p*nbsf+q, k*nmo+l) * C2(q,j);
 
     // (12|34)
+    #pragma omp parallel for schedule(static) collapse(4)
     for(size_t i=0; i<nmo; i++)
+    for(size_t j=0; j<nmo; j++)
+    for(size_t k=0; k<nmo; k++)
+    for(size_t l=0; l<nmo; l++)
         for(size_t p=0; p<nbsf; p++)
-        for(size_t j=0; j<nmo; j++)
-        for(size_t k=0; k<nmo; k++)
-        for(size_t l=0; l<nmo; l++)
         {
             // Save Coulomb integrals
             IImo(i*nmo+j, k*nmo+l) += IItmp1(p*nmo+j, k*nmo+l) * std::conj(C1(p,i));
@@ -172,6 +176,7 @@ void wick<Tc,Tf,Tb>::setup_two_body()
     m_IIaa.set_size(4,4); // aa
     m_IIbb.set_size(4,4); // bb
     m_IIab.set_size(4,4); // ab
+    m_IIba.set_size(4,4); // ba
     for(size_t i=0; i<2; i++)
     for(size_t j=0; j<2; j++)
     for(size_t k=0; k<2; k++)
@@ -186,6 +191,9 @@ void wick<Tc,Tf,Tb>::setup_two_body()
         mo_eri(m_CXa(i), m_XCa(j), m_CXa(k), m_XCa(l), m_II, m_IIaa(2*i+j, 2*k+l), 2*m_nact, true); 
         mo_eri(m_CXb(i), m_XCb(j), m_CXb(k), m_XCb(l), m_II, m_IIbb(2*i+j, 2*k+l), 2*m_nact, true); 
         mo_eri(m_CXa(i), m_XCa(j), m_CXb(k), m_XCb(l), m_II, m_IIab(2*i+j, 2*k+l), 2*m_nact, false); 
+        
+        // Also store the transpose for IIab as it will make access quicker later
+        m_IIba(2*i+j, 2*k+l) = m_IIab(2*i+j, 2*k+l).st();
     }
 }
 
@@ -349,8 +357,9 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
                 // Get temporary two-electron indices for this pair of electrons
                 for(size_t x=0; x < 2; x++)
                 {
-                    arma::Mat<Tc> IIfull(II(2*m[2]+x, 2*m[0]+m[1]).memptr(), 4*m_nact*m_nact, 4*m_nact*m_nact, false, true);
-                    arma::Mat<Tc> vIItmp(IIfull.colptr(2*m_nact*rows(i)+cols(j)), 2*m_nact, 2*m_nact, false, true);
+                    arma::Mat<Tc> vIItmp(
+                        II(2*m[2]+x, 2*m[0]+m[1]).colptr(2*m_nact*rows(i)+cols(j)), 
+                        2*m_nact, 2*m_nact, false, true);
                     IItmp(x) = vIItmp.submat(cols,rows).st();
                     IItmp(x).shed_row(i); 
                     IItmp(x).shed_col(j);
@@ -530,9 +539,10 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
             // Get temporary two-electron indices for this pair of electrons
             for(size_t x=0; x<2; x++)
             {
-                IItmp(x) = m_IIab(2*ma[0]+ma[1], 2*mb[0]+x).row(2*m_nact*rowa(i)+cola(j));
-                IItmp(x).reshape(2*m_nact, 2*m_nact);
-                IItmp(x) = IItmp(x).submat(colb,rowb).st();
+                arma::Mat<Tc> vIItmp(
+                    m_IIab(2*ma[0]+ma[1], 2*mb[0]+x).colptr(2*m_nact*rowa(i)+cola(j)), 
+                    2*m_nact, 2*m_nact, false, true);
+                IItmp(x) = vIItmp.submat(colb,rowb).st();
             }
 
             // New submatrices
@@ -563,9 +573,10 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
             // Get temporary two-electron indices for this pair of electrons
             for(size_t x=0; x<2; x++)
             {
-                IItmp(x) = m_IIab(2*ma[0]+x, 2*mb[0]+mb[1]).col(2*m_nact*rowb(i)+colb(j));
-                IItmp(x).reshape(2*m_nact, 2*m_nact);
-                IItmp(x) = IItmp(x).submat(cola,rowa).st();
+                arma::Mat<Tc> vIItmp(
+                    m_IIba(2*mb[0]+mb[1], 2*ma[0]+x).colptr(2*m_nact*rowb(i)+colb(j)), 
+                    2*m_nact, 2*m_nact, false, true);
+                IItmp(x) = vIItmp.submat(cola,rowa).st();
             }
 
             // New submatrices
@@ -582,7 +593,7 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
                 // Take a safe copy of the column
                 arma::Col<Tc> Dcol = tmpDa.col(k);
                 // Make the swap
-                tmpDa.col(k) = IItmp(ma[k+1]).col(k);
+                //tmpDa.col(k) = IItmp(ma[k+1]).col(k);
                 // Add the one-body contribution
                 V += 0.5 * phase * arma::det(tmpDa) * arma::det(tmpDb2);
                 // Restore the column

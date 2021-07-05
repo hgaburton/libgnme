@@ -33,7 +33,9 @@ private:
     bool m_two_body = false;
 
     /* Information about this pair */
+public:
     size_t m_nza; //!< Number of alpha zero-overlap orbitals
+private:
     size_t m_nzb; //!< Number of beta zero-overlap orbitals
 
     // Reference reduced overlaps
@@ -90,6 +92,7 @@ private:
     arma::field<arma::Mat<Tc> > m_IIaa;
     arma::field<arma::Mat<Tc> > m_IIbb;
     arma::field<arma::Mat<Tc> > m_IIab;
+    arma::field<arma::Mat<Tc> > m_IIba;
 
     // Holds the `X' matrices
     // TODO: Remove
@@ -102,34 +105,15 @@ private:
     arma::field<arma::Mat<Tc> > m_xwXb;
     arma::field<arma::Mat<Tc> > m_xxXb;
 
-    // Hold the 'XVX' matrices
-    arma::field<arma::Mat<Tc> > m_wwXVaXa;
-    arma::field<arma::Mat<Tc> > m_wxXVaXa;
-    arma::field<arma::Mat<Tc> > m_xwXVaXa;
-    arma::field<arma::Mat<Tc> > m_xxXVaXa;
-
-    arma::field<arma::Mat<Tc> > m_wwXVaXb;
-    arma::field<arma::Mat<Tc> > m_wxXVaXb;
-    arma::field<arma::Mat<Tc> > m_xwXVaXb;
-    arma::field<arma::Mat<Tc> > m_xxXVaXb;
-
-    arma::field<arma::Mat<Tc> > m_wwXVbXa;
-    arma::field<arma::Mat<Tc> > m_wxXVbXa;
-    arma::field<arma::Mat<Tc> > m_xwXVbXa;
-    arma::field<arma::Mat<Tc> > m_xxXVbXa;
-
-    arma::field<arma::Mat<Tc> > m_wwXVbXb;
-    arma::field<arma::Mat<Tc> > m_wxXVbXb;
-    arma::field<arma::Mat<Tc> > m_xwXVbXb;
-    arma::field<arma::Mat<Tc> > m_xxXVbXb;
-    
     // Hold the 'CX' and 'CY' matrices
+    // TODO: Remove
     arma::field<arma::Mat<Tc> > m_xCXa;
     arma::field<arma::Mat<Tc> > m_xCXb;
     arma::field<arma::Mat<Tc> > m_wCXa;
     arma::field<arma::Mat<Tc> > m_wCXb;
 
     // Hold the 'XC' and 'YC' matrices
+    // TODO: Remove
     arma::field<arma::Mat<Tc> > m_xXCa;
     arma::field<arma::Mat<Tc> > m_xXCb;
     arma::field<arma::Mat<Tc> > m_wXCa;
