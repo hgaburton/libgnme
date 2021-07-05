@@ -103,13 +103,21 @@ void wick<Tc,Tf,Tb>::add_two_body(arma::Mat<Tb> &V)
 template<typename Tc, typename Tf, typename Tb>
 void wick<Tc,Tf,Tb>::setup_two_body()
 {
+    // Get dimensions of contractions
+    size_t da = (m_nza > 0) ? 2 : 1;
+    size_t db = (m_nzb > 0) ? 2 : 1;
+
     // Initialise J/K matrices
-    arma::field<arma::Mat<Tc> > Ja(2), Jb(2), Ka(2), Kb(2);
-    for(size_t i=0; i<2; i++)
+    arma::field<arma::Mat<Tc> > Ja(da), Ka(da);
+    for(size_t i=0; i<da; i++)
     {
         Ja(i).set_size(m_nbsf,m_nbsf); Ja(i).zeros();
-        Jb(i).set_size(m_nbsf,m_nbsf); Jb(i).zeros();
         Ka(i).set_size(m_nbsf,m_nbsf); Ka(i).zeros();
+    }
+    arma::field<arma::Mat<Tc> > Jb(db), Kb(db);
+    for(size_t i=0; i<db; i++)
+    {
+        Jb(i).set_size(m_nbsf,m_nbsf); Jb(i).zeros();
         Kb(i).set_size(m_nbsf,m_nbsf); Kb(i).zeros();
     }
 
@@ -121,79 +129,107 @@ void wick<Tc,Tf,Tb>::setup_two_body()
         for(size_t s=0; s < m_nbsf; s++)
         for(size_t t=0; t < m_nbsf; t++)
         {
-            // Coulomb matrices
-            Ja(0)(s,t) += m_II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMa(0)(n,m); 
-            Ja(1)(s,t) += m_II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMa(1)(n,m); 
-            Jb(0)(s,t) += m_II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMb(0)(n,m); 
-            Jb(1)(s,t) += m_II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMb(1)(n,m); 
-            // Exchange matrices
-            Ka(0)(s,t) += m_II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMa(0)(n,m);
-            Ka(1)(s,t) += m_II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMa(1)(n,m);
-            Kb(0)(s,t) += m_II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMb(0)(n,m);
-            Kb(1)(s,t) += m_II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMb(1)(n,m);
+            for(size_t i=0; i<da; i++)
+            {
+                // Coulomb matrices
+                Ja(i)(s,t) += m_II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMa(i)(n,m); 
+                // Exchange matrices
+                Ka(i)(s,t) += m_II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMa(i)(n,m);
+            }
+            for(size_t i=0; i<db; i++)
+            {
+                // Coulomb matrices
+                Jb(i)(s,t) += m_II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMb(i)(n,m); 
+                // Exchange matrices
+                Kb(i)(s,t) += m_II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMb(i)(n,m);
+            }
         }
     }
 
     // Alpha-Alpha V terms
     m_Vaa.resize(3); m_Vaa.zeros();
     m_Vaa(0) = arma::dot(Ja(0).st() - Ka(0).st(), m_wxMa(0));
-    m_Vaa(1) = 2.0 * arma::dot(Ja(0).st() - Ka(0).st(), m_wxMa(1));
-    m_Vaa(2) = arma::dot(Ja(1).st() - Ka(1).st(), m_wxMa(1));
+    if(m_nza > 1)
+    {
+        m_Vaa(1) = 2.0 * arma::dot(Ja(0).st() - Ka(0).st(), m_wxMa(1));
+        m_Vaa(2) = arma::dot(Ja(1).st() - Ka(1).st(), m_wxMa(1));
+    }
     // Beta-Beta V terms
     m_Vbb.resize(3); m_Vbb.zeros();
     m_Vbb(0) = arma::dot(Jb(0).st() - Kb(0).st(), m_wxMb(0));
-    m_Vbb(1) = 2.0 * arma::dot(Jb(0).st() - Kb(0).st(), m_wxMb(1));
-    m_Vbb(2) = arma::dot(Jb(1).st() - Kb(1).st(), m_wxMb(1));
+    if(m_nzb > 1)
+    {
+        m_Vbb(1) = 2.0 * arma::dot(Jb(0).st() - Kb(0).st(), m_wxMb(1));
+        m_Vbb(2) = arma::dot(Jb(1).st() - Kb(1).st(), m_wxMb(1));
+    }
     // Alpha-Beta V terms
-    m_Vab.resize(2,2); m_Vab.zeros();
-    m_Vab(0,0) = arma::dot(Ja(0).st(), m_wxMb(0));
-    m_Vab(1,0) = arma::dot(Ja(1).st(), m_wxMb(0));
-    m_Vab(0,1) = arma::dot(Ja(0).st(), m_wxMb(1));
-    m_Vab(1,1) = arma::dot(Ja(1).st(), m_wxMb(1));
+    m_Vab.resize(da,db); m_Vab.zeros();
+    for(size_t i=0; i<da; i++)
+    for(size_t j=0; j<db; j++)
+        m_Vab(i,j) = arma::dot(Ja(i).st(), m_wxMb(j));
 
     // Construct effective one-body terms
     // xx[Y(J-K)X]    xw[Y(J-K)Y]
     // wx[X(J-K)X]    ww[X(J-K)Y]
-    m_XVaXa.set_size(2,2,2); 
-    m_XVaXb.set_size(2,2,2);
-    m_XVbXa.set_size(2,2,2); 
-    m_XVbXb.set_size(2,2,2);
-    #pragma omp parallel for schedule(static) collapse(3)
-    for(size_t i=0; i<2; i++)
-    for(size_t j=0; j<2; j++)
-    for(size_t k=0; k<2; k++)
-    {
-        // Go straight to the answer
-        m_XVaXa(i,j,k) = m_CXa(i).t() * (Ja(j) - Ka(j)) * m_XCa(k); // aa
-        m_XVbXb(i,j,k) = m_CXb(i).t() * (Jb(j) - Kb(j)) * m_XCb(k); // bb
-        m_XVbXa(i,j,k) = m_CXa(i).t() * Jb(j) * m_XCa(k); // ab
-        m_XVaXb(i,j,k) = m_CXb(i).t() * Ja(j) * m_XCb(k); // ba
-    }
+    m_XVaXa.set_size(da,da,da); 
+    m_XVaXb.set_size(db,da,db);
+    m_XVbXa.set_size(da,db,da); 
+    m_XVbXb.set_size(db,db,db);
+    for(size_t i=0; i<da; i++)
+    for(size_t j=0; j<da; j++)
+    for(size_t k=0; k<da; k++)
+        m_XVaXa(i,k,j) = m_CXa(i).t() * (Ja(k) - Ka(k)) * m_XCa(j);
+    for(size_t i=0; i<da; i++)
+    for(size_t j=0; j<da; j++)
+    for(size_t k=0; k<db; k++)
+        m_XVbXa(i,k,j) = m_CXa(i).t() * Jb(k) * m_XCa(j);
+    for(size_t i=0; i<db; i++)
+    for(size_t j=0; j<db; j++)
+    for(size_t k=0; k<da; k++)
+        m_XVaXb(i,k,j) = m_CXb(i).t() * Ja(k) * m_XCb(j);
+    for(size_t i=0; i<db; i++)
+    for(size_t j=0; j<db; j++)
+    for(size_t k=0; k<db; k++)
+        m_XVbXb(i,k,j) = m_CXb(i).t() * (Jb(k) - Kb(k)) * m_XCb(j);
 
     // Build the two-electron integrals
     // Bra: xY    wX
     // Ket: xX    wY
-    m_IIaa.set_size(4,4); // aa
-    m_IIbb.set_size(4,4); // bb
-    m_IIab.set_size(4,4); // ab
-    m_IIba.set_size(4,4); // ba
-    for(size_t i=0; i<2; i++)
-    for(size_t j=0; j<2; j++)
-    for(size_t k=0; k<2; k++)
-    for(size_t l=0; l<2; l++)
+    m_IIaa.set_size(da*da,da*da); // aa
+    m_IIbb.set_size(db*db,db*db); // bb
+    m_IIab.set_size(da*da,db*db); // ab
+    m_IIba.set_size(db*db,da*da); // ba
+    for(size_t i=0; i<da; i++)
+    for(size_t j=0; j<da; j++)
+    for(size_t k=0; k<da; k++)
+    for(size_t l=0; l<da; l++)
     {
         // Initialise the memory
         m_IIaa(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); m_IIaa(2*i+j, 2*k+l).zeros();
-        m_IIbb(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); m_IIbb(2*i+j, 2*k+l).zeros();
-        m_IIab(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); m_IIab(2*i+j, 2*k+l).zeros();
-
         // Construct two-electron integrals
         mo_eri(m_CXa(i), m_XCa(j), m_CXa(k), m_XCa(l), m_II, m_IIaa(2*i+j, 2*k+l), 2*m_nact, true); 
+    }
+    for(size_t i=0; i<db; i++)
+    for(size_t j=0; j<db; j++)
+    for(size_t k=0; k<db; k++)
+    for(size_t l=0; l<db; l++)
+    {
+        // Initialise the memory
+        m_IIbb(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); m_IIbb(2*i+j, 2*k+l).zeros();
+        // Construct two-electron integrals
         mo_eri(m_CXb(i), m_XCb(j), m_CXb(k), m_XCb(l), m_II, m_IIbb(2*i+j, 2*k+l), 2*m_nact, true); 
+    }
+    for(size_t i=0; i<da; i++)
+    for(size_t j=0; j<da; j++)
+    for(size_t k=0; k<db; k++)
+    for(size_t l=0; l<db; l++)
+    {
+        // Initialise the memory
+        m_IIab(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); m_IIab(2*i+j, 2*k+l).zeros();
+        // Construct two-electron integrals
         mo_eri(m_CXa(i), m_XCa(j), m_CXb(k), m_XCb(l), m_II, m_IIab(2*i+j, 2*k+l), 2*m_nact, false); 
-        
         // Also store the transpose for IIab as it will make access quicker later
-        m_IIba(2*i+j, 2*k+l) = m_IIab(2*i+j, 2*k+l).st();
+        m_IIba(2*k+l, 2*i+j) = m_IIab(2*i+j, 2*k+l).st();
     }
 }
 
@@ -211,6 +247,9 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
 
     // Get reference to number of zeros for this spin
     const size_t &nz = alpha ? m_nza : m_nzb; 
+
+    // Dimensions of multiple contractions
+    size_t d = (nz > 0) ? 2 : 1;
 
     // Check we don't have a non-zero element
     if(nz > nw + nx + 2) return;
@@ -270,10 +309,10 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
                          + arma::trimatu(Y(1).submat(rows,cols),1);
 
         // Matrix of F contractions
-        arma::field<arma::Mat<Tc> > JKtmp(2,2,2); 
-        for(size_t i=0; i<2; i++)
-        for(size_t j=0; j<2; j++)
-        for(size_t k=0; k<2; k++)
+        arma::field<arma::Mat<Tc> > JKtmp(d,d,d); 
+        for(size_t i=0; i<d; i++)
+        for(size_t j=0; j<d; j++)
+        for(size_t k=0; k<d; k++)
             JKtmp(i,j,k) = XVX(i,j,k).submat(rows,cols);
 
         // Compute contribution from the overlap and zeroth term
@@ -316,10 +355,10 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
                          + arma::trimatu(Y(1).submat(rows,cols),1);
 
         // Matrix of F contractions
-        arma::field<arma::Mat<Tc> > JKtmp(2,2,2); 
-        for(size_t i=0; i<2; i++)
-        for(size_t j=0; j<2; j++)
-        for(size_t k=0; k<2; k++)
+        arma::field<arma::Mat<Tc> > JKtmp(d,d,d); 
+        for(size_t i=0; i<d; i++)
+        for(size_t j=0; j<d; j++)
+        for(size_t k=0; k<d; k++)
             JKtmp(i,j,k) = XVX(i,j,k).submat(rows,cols);
 
         // Compute contribution from the overlap and zeroth term
@@ -348,14 +387,14 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
                 Dtmp.col(i) = Dcol;
             }
 
-            arma::field<arma::Mat<Tc> > IItmp(2);
+            arma::field<arma::Mat<Tc> > IItmp(d);
             arma::Mat<Tc> D2, Db2, Dtmp2;
             // Loop over particle-hole pairs for two-body interaction
             for(size_t i=0; i < nx+nw; i++)
             for(size_t j=0; j < nx+nw; j++)
             {
                 // Get temporary two-electron indices for this pair of electrons
-                for(size_t x=0; x < 2; x++)
+                for(size_t x=0; x < d; x++)
                 {
                     arma::Mat<Tc> vIItmp(
                         II(2*m[2]+x, 2*m[0]+m[1]).colptr(2*m_nact*rows(i)+cols(j)), 
