@@ -389,10 +389,10 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
         } while(std::prev_permutation(m.begin(), m.end()));
     }
 
-
     // TODO Correct indexing for old code
     whp -= m_nact;
 }
+
 
 template<typename Tc, typename Tf, typename Tb>
 void wick<Tc,Tf,Tb>::diff_spin_two_body(
@@ -410,6 +410,10 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
     size_t nwb = wbhp.n_rows; // Ket beta excitations
     size_t nx = nxa + nxb;
     size_t nw = nwa + nwb;
+
+    // Dimensions of multiple contractions
+    size_t da = (m_nza > 0) ? 2 : 1;
+    size_t db = (m_nzb > 0) ? 2 : 1;
 
     // Check we don't have a non-zero element
     if(m_nza > nwa+nxa+1 || m_nzb > nwb+nxb+1) return;
@@ -476,14 +480,15 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
     }
 
     // Matrix of JK contractions
-    arma::field<arma::Mat<Tc> > Jab(2,2,2), Jba(2,2,2);
-    for(size_t i=0; i<2; i++)
-    for(size_t j=0; j<2; j++)
-    for(size_t k=0; k<2; k++)
-    {
-        Jba(i,j,k) = m_XVbXa(i,j,k).submat(rowa,cola);
-        Jab(i,j,k) = m_XVaXb(i,j,k).submat(rowb,colb);
-    }
+    arma::field<arma::Mat<Tc> > Jab(db,da,db), Jba(da,db,da);
+    for(size_t i=0; i<da; i++)
+    for(size_t j=0; j<da; j++)
+    for(size_t k=0; k<db; k++)
+        Jba(i,k,j) = m_XVbXa(i,k,j).submat(rowa,cola);
+    for(size_t i=0; i<db; i++)
+    for(size_t j=0; j<db; j++)
+    for(size_t k=0; k<da; k++)
+        Jab(i,k,j) = m_XVaXb(i,k,j).submat(rowb,colb);
 
     // Compute contribution from the overlap and zeroth term
     std::vector<size_t> ma(m_nza, 1); ma.resize(nxa+nwa+1, 0); 
@@ -530,17 +535,17 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
             tmpDb.col(i) = Dcol;
         }
 
-        arma::field<arma::Mat<Tc> > IItmp(2);
+        arma::field<arma::Mat<Tc> > IItmp(std::max(da,db));
         arma::Mat<Tc> D2, DB2;
         // Loop over alpha particle-hole pairs for two-body interaction
         for(size_t i=0; i < nxa+nwa; i++)
         for(size_t j=0; j < nxa+nwa; j++)
         {
             // Get temporary two-electron indices for this pair of electrons
-            for(size_t x=0; x<2; x++)
+            for(size_t x=0; x<db; x++)
             {
                 arma::Mat<Tc> vIItmp(
-                    m_IIab(2*ma[0]+ma[1], 2*mb[0]+x).colptr(2*m_nact*rowa(i)+cola(j)), 
+                    m_IIba(2*mb[0]+x, 2*ma[0]+ma[1]).colptr(2*m_nact*rowa(i)+cola(j)), 
                     2*m_nact, 2*m_nact, false, true);
                 IItmp(x) = vIItmp.submat(colb,rowb).st();
             }
@@ -571,10 +576,10 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
         for(size_t j=0; j < nxb+nwb; j++)
         {
             // Get temporary two-electron indices for this pair of electrons
-            for(size_t x=0; x<2; x++)
+            for(size_t x=0; x<da; x++)
             {
                 arma::Mat<Tc> vIItmp(
-                    m_IIba(2*mb[0]+mb[1], 2*ma[0]+x).colptr(2*m_nact*rowb(i)+colb(j)), 
+                    m_IIab(2*ma[0]+x, 2*mb[0]+mb[1]).colptr(2*m_nact*rowb(i)+colb(j)), 
                     2*m_nact, 2*m_nact, false, true);
                 IItmp(x) = vIItmp.submat(cola,rowa).st();
             }
@@ -593,7 +598,7 @@ void wick<Tc,Tf,Tb>::diff_spin_two_body(
                 // Take a safe copy of the column
                 arma::Col<Tc> Dcol = tmpDa.col(k);
                 // Make the swap
-                //tmpDa.col(k) = IItmp(ma[k+1]).col(k);
+                tmpDa.col(k) = IItmp(ma[k+1]).col(k);
                 // Add the one-body contribution
                 V += 0.5 * phase * arma::det(tmpDa) * arma::det(tmpDb2);
                 // Restore the column
