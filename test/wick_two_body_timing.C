@@ -226,8 +226,9 @@ int test_real_uhf(size_t thresh, size_t nbsf, size_t nelec)
     }
     t_end = std::chrono::system_clock::now();
     dtslat = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count() / ncount; 
-    std::cout << "          Wicks Theorem = " << std::setprecision(3) << std::fixed << dtwick / 1000.0 << " ms" << std::endl;
-    std::cout << "    Slater-Condon Rules = " << std::setprecision(3) << std::fixed << dtslat / 1000.0 << " ms" << std::endl;
+    std::cout << "         Basis Set Size = " << std::setprecision(0) << std::fixed << nbsf << std::endl;
+    std::cout << "          Wicks Theorem = " << std::setprecision(6) << std::fixed << dtwick / 1000.0 << " ms" << std::endl;
+    std::cout << "    Slater-Condon Rules = " << std::setprecision(6) << std::fixed << dtslat / 1000.0 << " ms" << std::endl;
 
     /* Alpha T-ref
     std::cout << "< X_ij^ab | W       > Alpha - Ref" << std::endl;
@@ -530,7 +531,7 @@ int test_real_uhf(size_t thresh, size_t nbsf, size_t nelec)
 int main() {
 
     int ret = 0;
-    for(size_t nbsf=2; nbsf<30; nbsf++)
+    for(size_t nbsf=2; nbsf<31; nbsf++)
         ret = ret | test_real_uhf<double>(7,nbsf,2);
     return ret;
 }
