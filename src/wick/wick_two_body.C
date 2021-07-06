@@ -1,87 +1,7 @@
 #include <cassert>
 #include <algorithm>
-#include "lowdin_pair.h"
+#include "eri_ao2mo.h"
 #include "wick.h"
-
-namespace {
-
-// Build the anti-symmetrised two-electron integrals
-// Take the form (C1 C2 || C3 C4) = (C1 C2 | C3 C4) - (C1 C3 | C2 C4) 
-template<typename Tc, typename Tb>
-void mo_eri(
-    arma::Mat<Tc> &C1, arma::Mat<Tc> &C2, arma::Mat<Tc> &C3, arma::Mat<Tc> &C4, 
-    arma::Mat<Tb> &IIao, arma::Mat<Tc> &IImo, size_t nmo, bool same_spin)
-{
-    // Get array of MO numbers
-    assert(C1.n_cols == nmo);
-    assert(C2.n_cols == nmo);
-    assert(C3.n_cols == nmo);
-    assert(C4.n_cols == nmo);
-
-    // Setup temporary memory
-    size_t nbsf = C1.n_rows;
-    assert(IIao.n_rows == nbsf * nbsf);
-    assert(IIao.n_cols == nbsf * nbsf);
-    size_t dim = std::max(nmo,nbsf);
-    arma::Mat<Tc> IItmp1(dim*dim, dim*dim, arma::fill::zeros);
-    arma::Mat<Tc> IItmp2(dim*dim, dim*dim, arma::fill::zeros);
-
-    // (pq|r4)
-    IItmp1.zeros();
-    #pragma omp parallel for schedule(static) collapse(4)
-    for(size_t p=0; p<nbsf; p++)
-    for(size_t q=0; q<nbsf; q++)
-    for(size_t r=0; r<nbsf; r++)
-    for(size_t l=0; l<nmo; l++)
-        for(size_t s=0; s<nbsf; s++)
-            IItmp1(p*nbsf+q, r*nmo+l) += IIao(p*nbsf+q, r*nbsf+s) * C4(s,l);
-
-    // (pq|34)
-    IItmp2.zeros();
-    #pragma omp parallel for schedule(static) collapse(4)
-    for(size_t p=0; p<nbsf; p++)
-    for(size_t q=0; q<nbsf; q++)
-    for(size_t k=0; k<nmo; k++)
-    for(size_t l=0; l<nmo; l++)
-        for(size_t r=0; r<nbsf; r++)
-            IItmp2(p*nbsf+q, k*nmo+l) += IItmp1(p*nbsf+q, r*nmo+l) * std::conj(C3(r,k));
-     
-    // (p2|34)
-    IItmp1.zeros();
-    #pragma omp parallel for schedule(static) collapse(4)
-    for(size_t p=0; p<nbsf; p++)
-    for(size_t j=0; j<nmo; j++)
-    for(size_t k=0; k<nmo; k++)
-    for(size_t l=0; l<nmo; l++)
-        for(size_t q=0; q<nbsf; q++)
-            IItmp1(p*nmo+j, k*nmo+l) += IItmp2(p*nbsf+q, k*nmo+l) * C2(q,j);
-
-    // (12|34)
-    #pragma omp parallel for schedule(static) collapse(4)
-    for(size_t i=0; i<nmo; i++)
-    for(size_t j=0; j<nmo; j++)
-    for(size_t k=0; k<nmo; k++)
-    for(size_t l=0; l<nmo; l++)
-        for(size_t p=0; p<nbsf; p++)
-        {
-            // Save Coulomb integrals
-            IImo(i*nmo+j, k*nmo+l) += IItmp1(p*nmo+j, k*nmo+l) * std::conj(C1(p,i));
-            // Add exchange integral if same spin
-            if(same_spin)
-                IImo(i*nmo+j, k*nmo+l) -= IItmp1(p*nmo+l, k*nmo+j) * std::conj(C1(p,i)); 
-        }
-}
-template void mo_eri(
-    arma::mat &C1, arma::mat &C2, arma::mat &C3, arma::mat &C4, 
-    arma::mat &IIao, arma::mat &IImo, size_t nmo, bool same_spin);
-template void mo_eri(
-    arma::cx_mat &C1, arma::cx_mat &C2, arma::cx_mat &C3, arma::cx_mat &C4, 
-    arma::mat &IIao, arma::cx_mat &IImo, size_t nmo, bool same_spin);
-template void mo_eri(
-    arma::cx_mat &C1, arma::cx_mat &C2, arma::cx_mat &C3, arma::cx_mat &C4, 
-    arma::cx_mat &IIao, arma::cx_mat &IImo, size_t nmo, bool same_spin);
-
-} // unnamed namespace
 
 namespace libgnme {
 
@@ -93,7 +13,7 @@ void wick<Tc,Tf,Tb>::add_two_body(arma::Mat<Tb> &V)
     assert(V.n_cols == m_nbsf * m_nbsf);
 
     // Save two-body integrals
-    m_II = V;
+    m_II = V.memptr();
 
     // Setup control variable to indicate one-body initialised
     m_two_body = true;
@@ -106,6 +26,9 @@ void wick<Tc,Tf,Tb>::setup_two_body()
     // Get dimensions of contractions
     size_t da = (m_nza > 0) ? 2 : 1;
     size_t db = (m_nzb > 0) ? 2 : 1;
+
+    // Get view of two-electron AO integrals
+    arma::Mat<Tb> IIao(m_II, m_nbsf*m_nbsf, m_nbsf*m_nbsf, false, true);
 
     // Initialise J/K matrices
     arma::field<arma::Mat<Tc> > Ja(da), Ka(da);
@@ -132,16 +55,16 @@ void wick<Tc,Tf,Tb>::setup_two_body()
             for(size_t i=0; i<da; i++)
             {
                 // Coulomb matrices
-                Ja(i)(s,t) += m_II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMa(i)(n,m); 
+                Ja(i)(s,t) += IIao(m*m_nbsf+n,s*m_nbsf+t) * m_wxMa(i)(n,m); 
                 // Exchange matrices
-                Ka(i)(s,t) += m_II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMa(i)(n,m);
+                Ka(i)(s,t) += IIao(m*m_nbsf+t,s*m_nbsf+n) * m_wxMa(i)(n,m);
             }
             for(size_t i=0; i<db; i++)
             {
                 // Coulomb matrices
-                Jb(i)(s,t) += m_II(m*m_nbsf+n,s*m_nbsf+t) * m_wxMb(i)(n,m); 
+                Jb(i)(s,t) += IIao(m*m_nbsf+n,s*m_nbsf+t) * m_wxMb(i)(n,m); 
                 // Exchange matrices
-                Kb(i)(s,t) += m_II(m*m_nbsf+t,s*m_nbsf+n) * m_wxMb(i)(n,m);
+                Kb(i)(s,t) += IIao(m*m_nbsf+t,s*m_nbsf+n) * m_wxMb(i)(n,m);
             }
         }
     }
@@ -207,7 +130,7 @@ void wick<Tc,Tf,Tb>::setup_two_body()
         // Initialise the memory
         m_IIaa(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); m_IIaa(2*i+j, 2*k+l).zeros();
         // Construct two-electron integrals
-        mo_eri(m_CXa(i), m_XCa(j), m_CXa(k), m_XCa(l), m_II, m_IIaa(2*i+j, 2*k+l), 2*m_nact, true); 
+        eri_ao2mo(m_CXa(i), m_XCa(j), m_CXa(k), m_XCa(l), IIao, m_IIaa(2*i+j, 2*k+l), 2*m_nact, true); 
     }
     for(size_t i=0; i<db; i++)
     for(size_t j=0; j<db; j++)
@@ -217,7 +140,7 @@ void wick<Tc,Tf,Tb>::setup_two_body()
         // Initialise the memory
         m_IIbb(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); m_IIbb(2*i+j, 2*k+l).zeros();
         // Construct two-electron integrals
-        mo_eri(m_CXb(i), m_XCb(j), m_CXb(k), m_XCb(l), m_II, m_IIbb(2*i+j, 2*k+l), 2*m_nact, true); 
+        eri_ao2mo(m_CXb(i), m_XCb(j), m_CXb(k), m_XCb(l), IIao, m_IIbb(2*i+j, 2*k+l), 2*m_nact, true); 
     }
     for(size_t i=0; i<da; i++)
     for(size_t j=0; j<da; j++)
@@ -227,7 +150,7 @@ void wick<Tc,Tf,Tb>::setup_two_body()
         // Initialise the memory
         m_IIab(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); m_IIab(2*i+j, 2*k+l).zeros();
         // Construct two-electron integrals
-        mo_eri(m_CXa(i), m_XCa(j), m_CXb(k), m_XCb(l), m_II, m_IIab(2*i+j, 2*k+l), 2*m_nact, false); 
+        eri_ao2mo(m_CXa(i), m_XCa(j), m_CXb(k), m_XCb(l), IIao, m_IIab(2*i+j, 2*k+l), 2*m_nact, false); 
         // Also store the transpose for IIab as it will make access quicker later
         m_IIba(2*k+l, 2*i+j) = m_IIab(2*i+j, 2*k+l).st();
     }

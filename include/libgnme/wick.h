@@ -26,7 +26,7 @@ private:
     double m_Vc; //!< constant component
     arma::Mat<Tf> m_Fa; //!< Fock matrices
     arma::Mat<Tf> m_Fb; //!< Fock matrices
-    arma::Mat<Tb> m_II; //!< Two-body integrals
+    Tb *m_II; //!< Pointer to two-body integral memory
 
     // One-body MO matrices
     bool m_one_body = false;

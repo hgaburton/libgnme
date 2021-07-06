@@ -2,3 +2,4 @@ CMakeFiles/
 build/
 docs/html/
 src/slater.bk/
+test/libgnme*
