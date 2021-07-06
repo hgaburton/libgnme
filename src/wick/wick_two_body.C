@@ -298,53 +298,7 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
             V -= 2.0 * XVX(m[0],m[1],m[2])(rows(0),cols(0));
         } while(std::prev_permutation(m.begin(), m.end()));
     }
-    // Two excitations doesn't require two-body determinant
-    else if((nx+nw) == 2)
-    {
-        // Construct matrix for no zero overlaps
-        arma::Mat<Tc> D  = arma::trimatl(X(0).submat(rows,cols))
-                         + arma::trimatu(Y(0).submat(rows,cols),1);
-        // Construct matrix with all zero overlaps
-        arma::Mat<Tc> Db = arma::trimatl(X(1).submat(rows,cols)) 
-                         + arma::trimatu(Y(1).submat(rows,cols),1);
-
-        // Matrix of F contractions
-        arma::field<arma::Mat<Tc> > JKtmp(d,d,d); 
-        for(size_t i=0; i<d; i++)
-        for(size_t j=0; j<d; j++)
-        for(size_t k=0; k<d; k++)
-            JKtmp(i,j,k) = XVX(i,j,k).submat(rows,cols);
-
-        // Compute contribution from the overlap and zeroth term
-        std::vector<size_t> m(nz, 1); m.resize(nx+nw+2, 0); 
-        arma::Col<size_t> ind(&m[2], nx+nw, false, true);
-        // Loop over all possible contributions of zero overlaps
-        do {
-            // Evaluate overlap contribution
-            arma::Mat<Tc> Dtmp = D * arma::diagmat(1-ind) + Db * arma::diagmat(ind);
-            
-            // Get the overlap contributions 
-            V += V0(m[0]+m[1]) * arma::det(Dtmp);
-            
-            // Get the effective one-body contribution
-            // Loop over the column swaps for contracted terms
-            for(size_t i=0; i < nx+nw; i++)
-            {   
-                // Take a safe copy of the column
-                arma::Col<Tc> Dcol = D.col(i);
-                // Make the swap
-                Dtmp.col(i) = JKtmp(m[0],m[1],m[i+2]).col(i);
-                // Add the one-body contribution
-                V -= 2.0 * arma::det(Dtmp);
-                // Restore the column
-                Dtmp.col(i) = Dcol;
-            }
-
-            // Get the two-body contribution
-            V += 2.0 * II(2*m[0]+m[1], 2*m[2]+m[3])(2*m_nact*rows(0)+cols(0), 2*m_nact*rows(1)+cols(1));
-        } while(std::prev_permutation(m.begin(), m.end()));
-    }
-    // Three excitations requires full generalisation!
+    // Full generalisation!
     else
     {
         // Construct matrix for no zero overlaps
