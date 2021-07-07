@@ -55,6 +55,7 @@ void eri_ao2mo(
             IItmp1(p*nmo+j, k*nmo+l) += IItmp2(p*nbsf+q, k*nmo+l) * C2(q,j);
 
     // (12|34)
+    IImo.zeros();
     #pragma omp parallel for schedule(static) collapse(4)
     for(size_t i=0; i<nmo; i++)
     for(size_t j=0; j<nmo; j++)

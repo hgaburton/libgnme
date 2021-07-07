@@ -19,10 +19,6 @@ void wick<Tc,Tf,Tb>::setup_orbitals(
     // Store number of core and active orbitals
     m_nact = nactive;
 
-    // Save reference coefficients for integrals 
-    // TODO: Can we replace this?
-    m_Cref = Cx;
-
     // Take a safe copy of active orbitals
     m_Cxa = Cx.cols(ncore,ncore+m_nact-1);
     m_Cwa = Cw.cols(ncore,ncore+m_nact-1);

@@ -1,10 +1,5 @@
 TODO:
 
- > Code up generalised two-body terms
-    (a) Zeroth-order terms
-    (b) J/K coupling 
-    (c) Two-electron interactions
-
  > Generalised to:
     (a) RSCF
     (b) GSCF 
@@ -14,3 +9,9 @@ TODO:
     (b) 2-RDM
  
  > Write better test functions
+
+ > In the longer term:
+    (a) How do we want to use these matrix elements?
+    (b) What is the best format for excitations?
+    (c) Interface with integral library for on-the-fly AO integrals
+    (d) Only compute occupied/virtual indices in ao2mo transform

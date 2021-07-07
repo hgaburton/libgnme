@@ -128,9 +128,10 @@ void wick<Tc,Tf,Tb>::setup_two_body()
     for(size_t l=0; l<da; l++)
     {
         // Initialise the memory
-        m_IIaa(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); m_IIaa(2*i+j, 2*k+l).zeros();
+        m_IIaa(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); 
         // Construct two-electron integrals
-        eri_ao2mo(m_CXa(i), m_XCa(j), m_CXa(k), m_XCa(l), IIao, m_IIaa(2*i+j, 2*k+l), 2*m_nact, true); 
+        eri_ao2mo(m_CXa(i), m_XCa(j), m_CXa(k), m_XCa(l), 
+                  IIao, m_IIaa(2*i+j, 2*k+l), 2*m_nact, true); 
     }
     for(size_t i=0; i<db; i++)
     for(size_t j=0; j<db; j++)
@@ -138,9 +139,10 @@ void wick<Tc,Tf,Tb>::setup_two_body()
     for(size_t l=0; l<db; l++)
     {
         // Initialise the memory
-        m_IIbb(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); m_IIbb(2*i+j, 2*k+l).zeros();
+        m_IIbb(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); 
         // Construct two-electron integrals
-        eri_ao2mo(m_CXb(i), m_XCb(j), m_CXb(k), m_XCb(l), IIao, m_IIbb(2*i+j, 2*k+l), 2*m_nact, true); 
+        eri_ao2mo(m_CXb(i), m_XCb(j), m_CXb(k), m_XCb(l), 
+                  IIao, m_IIbb(2*i+j, 2*k+l), 2*m_nact, true); 
     }
     for(size_t i=0; i<da; i++)
     for(size_t j=0; j<da; j++)
@@ -150,7 +152,8 @@ void wick<Tc,Tf,Tb>::setup_two_body()
         // Initialise the memory
         m_IIab(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); m_IIab(2*i+j, 2*k+l).zeros();
         // Construct two-electron integrals
-        eri_ao2mo(m_CXa(i), m_XCa(j), m_CXb(k), m_XCb(l), IIao, m_IIab(2*i+j, 2*k+l), 2*m_nact, false); 
+        eri_ao2mo(m_CXa(i), m_XCa(j), m_CXb(k), m_XCb(l), 
+                  IIao, m_IIab(2*i+j, 2*k+l), 2*m_nact, false); 
         // Also store the transpose for IIab as it will make access quicker later
         m_IIba(2*k+l, 2*i+j) = m_IIab(2*i+j, 2*k+l).st();
     }
@@ -312,8 +315,8 @@ void wick<Tc,Tf,Tb>::same_spin_two_body(
 
 template<typename Tc, typename Tf, typename Tb>
 void wick<Tc,Tf,Tb>::diff_spin_two_body(
-    arma::umat &xahp, arma::umat &xbhp,
-    arma::umat &wahp, arma::umat &wbhp,
+    arma::umat xahp, arma::umat xbhp,
+    arma::umat wahp, arma::umat wbhp,
     Tc &V)
 {
     // Zero the output

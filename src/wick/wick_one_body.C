@@ -32,35 +32,31 @@ void wick<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb)
 template<typename Tc, typename Tf, typename Tb>
 void wick<Tc,Tf,Tb>::setup_one_body()
 {
-    // Access alpha and beta orbitals
-    arma::Mat<Tc> Cxa(m_Cref.memptr(), m_nbsf, m_nmo, false, true);
-    arma::Mat<Tc> Cxb(m_Cref.colptr(m_nmo), m_nbsf, m_nmo, false, true);
-
-    // Transform one-body matrix to X MO basis
-    arma::Mat<Tc> xxFa = Cxa.t() * m_Fa * Cxa;
-    arma::Mat<Tc> xxFb = Cxb.t() * m_Fb * Cxb;
+    // Get dimensions needed for temporary arrays
+    size_t da = (m_nza > 0) ? 2 : 1;
+    size_t db = (m_nzb > 0) ? 2 : 1;
 
     // Construct 'F0' terms
-    m_F0a.resize(2); 
-    m_F0a(0) = arma::dot(m_Fa, m_wxMa(0).st());
-    m_F0a(1) = arma::dot(m_Fa, m_wxMa(1).st());
-    m_F0b.resize(2);
-    m_F0b(0) = arma::dot(m_Fb, m_wxMb(0).st());
-    m_F0b(1) = arma::dot(m_Fb, m_wxMb(1).st());
+    m_F0a.resize(da); 
+    for(size_t i=0; i<da; i++)
+        m_F0a(i) = arma::dot(m_Fa, m_wxMa(i).st());
+    m_F0b.resize(db);
+    for(size_t i=0; i<db; i++)
+        m_F0b(i) = arma::dot(m_Fb, m_wxMb(i).st());
 
     // We only have to worry about
     //    xx[YFX]    xw[YFY]
     //    wx[XFX]    ww[XFY]
     // Construct the XFX super matrices
-    m_XFXa.set_size(2,2); m_XFXb.set_size(2,2);
-    #pragma omp parallel for schedule(static) collapse(2)
-    for(size_t i=0; i<2; i++)
-    for(size_t j=0; j<2; j++)
-    {
-        // Go straight to the answer
+    m_XFXa.set_size(da,da); 
+    for(size_t i=0; i<da; i++)
+    for(size_t j=0; j<da; j++)
         m_XFXa(i,j) = m_CXa(i).t() * m_Fa * m_XCa(j);
+
+    m_XFXb.set_size(da,da);
+    for(size_t i=0; i<db; i++)
+    for(size_t j=0; j<db; j++)
         m_XFXb(i,j) = m_CXb(i).t() * m_Fb * m_XCb(j);
-    }
 }
 
 template<typename Tc, typename Tf, typename Tb>
@@ -77,6 +73,9 @@ void wick<Tc,Tf,Tb>::spin_one_body(
 
     // Get reference to number of zeros for this spin
     const size_t &nz = alpha ? m_nza : m_nzb; 
+
+    // Get dimensions of zero-contractions
+    size_t dim = (nz > 0) ? 2 : 1; 
 
     // Check we don't have a non-zero element
     if(nz > nw + nx + 1) return;
@@ -129,9 +128,9 @@ void wick<Tc,Tf,Tb>::spin_one_body(
                          + arma::trimatu(Y(1).submat(rows,cols),1);
 
         // Matrix of F contractions
-        arma::field<arma::Mat<Tc> > Ftmp(2,2); 
-        for(size_t i=0; i<2; i++)
-        for(size_t j=0; j<2; j++)
+        arma::field<arma::Mat<Tc> > Ftmp(dim,dim); 
+        for(size_t i=0; i<dim; i++)
+        for(size_t j=0; j<dim; j++)
             Ftmp(i,j) = XFX(i,j).submat(rows,cols);
 
         // Compute contribution from the overlap and zeroth term

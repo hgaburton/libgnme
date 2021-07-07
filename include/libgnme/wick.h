@@ -35,15 +35,12 @@ private:
     /* Information about this pair */
 public:
     size_t m_nza; //!< Number of alpha zero-overlap orbitals
-private:
     size_t m_nzb; //!< Number of beta zero-overlap orbitals
 
+private:
     // Reference reduced overlaps
     Tc m_redSa; //!< Reduced overlap
     Tc m_redSb; //!< Reduced overlap
-
-    // Store a set of reference orbitals
-    arma::Mat<Tc> m_Cref; // Reference coefficients for integrals
 
     // Store the reference coefficients (nbsf * nmo)
     arma::Mat<Tc> m_Cxa; // Bra coefficients (alpha)
@@ -197,8 +194,8 @@ private:
         arma::umat xhp, arma::umat whp,
         Tc &V, bool alpha);
     virtual void diff_spin_two_body(
-        arma::umat &xa_hp, arma::umat &xb_hp, 
-        arma::umat &wa_hp, arma::umat &wb_hp, 
+        arma::umat xa_hp, arma::umat xb_hp, 
+        arma::umat wa_hp, arma::umat wb_hp, 
         Tc &V);
 
     virtual void setup_one_body();
