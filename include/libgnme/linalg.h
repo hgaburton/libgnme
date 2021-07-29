@@ -29,7 +29,7 @@ size_t orthogonalisation_matrix(size_t dim, const arma::Mat<T> &M, double thresh
 template<typename T>
 void gen_eig_sym(
     const size_t dim, arma::Mat<T> &M, arma::Mat<T> &S, arma::Mat<T> &X, 
-    arma::Col<double> &eigval, arma::Mat<T> &eigvec, double thresh);
+    arma::Col<double> &eigval, arma::Mat<T> &eigvec, double thresh=1e-8);
 
 } // namespace libgnme
 
