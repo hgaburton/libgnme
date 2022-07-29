@@ -12,6 +12,7 @@ set(SRC
     wick/wick_rscf.C
     wick/wick_rscf_overlap.C
     wick/wick_rscf_one_body.C
+    wick/wick_rscf_two_body.C
 )
 
 add_library(gnme STATIC ${SRC})

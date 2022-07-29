@@ -73,8 +73,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
         // Temporary variables
         Tc Vaa = 0.0, Vbb = 0.0, Vab = 0.0;
         // Same spin terms
-        same_spin_two_body(xahp, wahp, Vaa, true);
-        same_spin_two_body(xbhp, wbhp, Vbb, false);
+        same_spin_two_body(xahp, wahp, Vaa);
+        same_spin_two_body(xbhp, wbhp, Vbb);
         // Different spin terms
         diff_spin_two_body(xahp, xbhp, wahp, wbhp, Vab);
         // Recombine
