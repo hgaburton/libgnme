@@ -22,6 +22,10 @@ if(WITH_OPENMP)
     message(STATUS "OpenMP is enabled")
 endif(WITH_OPENMP)
 
+# Look for linear algebra libraries
+find_package(BLAS)
+find_package(LAPACK)
+
 # Setup Armadillo paths
 set(ARMADILLO_PATH "${LIBGNME_SOURCE_DIR}/external/armadillo-10.1.2")
 include(cmake/SetupArmadillo.cmake)
@@ -29,8 +33,6 @@ include_directories($<TARGET_PROPERTY:armadillo,INTERFACE_INCLUDE_DIRECTORIES>)
 set_property(DIRECTORY . APPEND PROPERTY COMPILE_DEFINITIONS
     $<TARGET_PROPERTY:armadillo,INTERFACE_COMPILE_DEFINITIONS>)
 
-find_package(BLAS)
-find_package(LAPACK)
 find_package(Doxygen 1.8)
 enable_testing()
 

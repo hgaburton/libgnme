@@ -1,4 +1,5 @@
 set(TESTS
+    wick_orbitals_test
     wick_two_body_timing
 )
 
