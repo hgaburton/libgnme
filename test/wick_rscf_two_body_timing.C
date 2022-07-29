@@ -1,13 +1,12 @@
 #include <iostream>
 #include <armadillo>
+#include <libgnme/lowdin_pair.h>
+#include <libgnme/wick_rscf.h>
 #include <iomanip>
+#include <libgnme/linalg.h>
+#include <libgnme/slater_uscf.h>
 #include <chrono>
 #include <ctime>
-#include <libgnme/utils/lowdin_pair.h>
-#include <libgnme/wick/wick_orbitals.h>
-#include <libgnme/wick/wick.h>
-#include <libgnme/utils/linalg.h>
-#include <libgnme/slater/slater_uscf.h>
 
 typedef std::complex<double> cx_double;
 
@@ -41,13 +40,11 @@ int test_single_ref(size_t thresh, size_t nbsf, size_t nelec, double &dtwick, do
         arma::Mat<T> Cb(C.slice(idet).colptr(nmo), nbsf, nmo, false, true);
         // Orbital overlap matrices
         arma::Mat<T> Saa = Ca.t() * S * Ca;
-        arma::Mat<T> Sbb = Cb.t() * S * Cb;
-        arma::Mat<T> Xa, Xb;
+        arma::Mat<T> Xa;
         orthogonalisation_matrix(nmo, Saa, 1e-10, Xa);
-        orthogonalisation_matrix(nmo, Sbb, 1e-10, Xb);
         // Orthogonalize input orbitals
         Ca = Ca * Xa;
-        Cb = Cb * Xb;
+        Cb = Ca;
     }
 
     // Get a one-body Hamiltonian
@@ -98,12 +95,12 @@ int test_single_ref(size_t thresh, size_t nbsf, size_t nelec, double &dtwick, do
 
     // Setup matrix builder
     //std::cout << "Setup matrix builders...";
-    slater_uscf<T,T,double> slat(nbsf, nmo, nocca, noccb, S);
-    wick<T,T,double> mb(nbsf, nmo, nocca, noccb, S);
-    slat.add_two_body(II);
+    wick_rscf<T,T,double> mb(nbsf, nmo, nocca, S);
     mb.add_two_body(II);
+    slater_uscf<T,T,double> slat(nbsf, nmo, nocca, noccb, S);
+    slat.add_two_body(II);
     //std::cout << " done" << std::endl;
-    size_t nza = mb.m_nza;
+    size_t nza = mb.m_nz;
     //std::cout << "Alpha zeros = " << nza << std::endl;
 
     // Get access to coefficients
@@ -217,13 +214,11 @@ int test_single_single(size_t thresh, size_t nbsf, size_t nelec, double &dtwick,
         arma::Mat<T> Cb(C.slice(idet).colptr(nmo), nbsf, nmo, false, true);
         // Orbital overlap matrices
         arma::Mat<T> Saa = Ca.t() * S * Ca;
-        arma::Mat<T> Sbb = Cb.t() * S * Cb;
-        arma::Mat<T> Xa, Xb;
+        arma::Mat<T> Xa;
         orthogonalisation_matrix(nmo, Saa, 1e-10, Xa);
-        orthogonalisation_matrix(nmo, Sbb, 1e-10, Xb);
         // Orthogonalize input orbitals
         Ca = Ca * Xa;
-        Cb = Cb * Xb;
+        Cb = Ca;
     }
 
     // Get a one-body Hamiltonian
@@ -273,14 +268,12 @@ int test_single_single(size_t thresh, size_t nbsf, size_t nelec, double &dtwick,
     }
 
     // Setup matrix builder
-    //std::cout << "Setup matrix builders...";
+    std::cout << "Setup matrix builders...";
     slater_uscf<T,T,double> slat(nbsf, nmo, nocca, noccb, S);
-    wick<T,T,double> mb(nbsf, nmo, nocca, noccb, S);
     slat.add_two_body(II);
+    wick_rscf<T,T,double> mb(nbsf, nmo, nocca, S);
     mb.add_two_body(II);
-    //std::cout << " done" << std::endl;
-    size_t nza = mb.m_nza;
-    //std::cout << "Alpha zeros = " << nza << std::endl;
+    std::cout << " done" << std::endl;
 
     // Get access to coefficients
     arma::Mat<T> Cx_a(C.slice(0).colptr(0), nbsf, nmo, true, true);
@@ -292,25 +285,6 @@ int test_single_single(size_t thresh, size_t nbsf, size_t nelec, double &dtwick,
     //std::cout << "Setup orbitals..." << std::flush;
     mb.setup_orbitals(C.slice(0), C.slice(1));
     //std::cout << " done" << std::endl;
-
-    // Reference coupling
-    //std::cout << "< X       | W       > Ref   - Ref" << std::endl;
-    {
-        arma::umat xahp, xbhp;
-        arma::umat wahp, wbhp;
-
-        // Wick test
-        T swick = 0.0, vwick = 0.0;
-        mb.evaluate(xahp, xbhp, wahp, wbhp, swick, vwick);
-
-        // Standard overlap
-        T slowdin = 0.0, vlowdin = 0.0;
-        arma::uvec xocca = ref_occa, xoccb = ref_occb;
-        arma::uvec wocca = ref_occa, woccb = ref_occb;
-        arma::Mat<T> Cx_occa = Cx_a.cols(xocca), Cx_occb = Cx_b.cols(xoccb);
-        arma::Mat<T> Cw_occa = Cw_a.cols(wocca), Cw_occb = Cw_b.cols(woccb);
-        slat.evaluate(Cx_occa, Cx_occb, Cw_occa, Cw_occb, slowdin, vlowdin);
-    }
 
     auto t_start = std::chrono::system_clock::now();
     auto t_end = std::chrono::system_clock::now();
@@ -399,13 +373,11 @@ int test_double_single(size_t thresh, size_t nbsf, size_t nelec, double &dtwick,
         arma::Mat<T> Cb(C.slice(idet).colptr(nmo), nbsf, nmo, false, true);
         // Orbital overlap matrices
         arma::Mat<T> Saa = Ca.t() * S * Ca;
-        arma::Mat<T> Sbb = Cb.t() * S * Cb;
-        arma::Mat<T> Xa, Xb;
+        arma::Mat<T> Xa;
         orthogonalisation_matrix(nmo, Saa, 1e-10, Xa);
-        orthogonalisation_matrix(nmo, Sbb, 1e-10, Xb);
         // Orthogonalize input orbitals
         Ca = Ca * Xa;
-        Cb = Cb * Xb;
+        Cb = Ca;
     }
 
     // Get a one-body Hamiltonian
@@ -457,12 +429,10 @@ int test_double_single(size_t thresh, size_t nbsf, size_t nelec, double &dtwick,
     // Setup matrix builder
     //std::cout << "Setup matrix builders...";
     slater_uscf<T,T,double> slat(nbsf, nmo, nocca, noccb, S);
-    wick<T,T,double> mb(nbsf, nmo, nocca, noccb, S);
     slat.add_two_body(II);
+    wick_rscf<T,T,double> mb(nbsf, nmo, nocca, S);
     mb.add_two_body(II);
     //std::cout << " done" << std::endl;
-    size_t nza = mb.m_nza;
-    //std::cout << "Alpha zeros = " << nza << std::endl;
 
     // Get access to coefficients
     arma::Mat<T> Cx_a(C.slice(0).colptr(0), nbsf, nmo, true, true);
@@ -588,13 +558,11 @@ int test_double_double(size_t thresh, size_t nbsf, size_t nelec, double &dtwick,
         arma::Mat<T> Cb(C.slice(idet).colptr(nmo), nbsf, nmo, false, true);
         // Orbital overlap matrices
         arma::Mat<T> Saa = Ca.t() * S * Ca;
-        arma::Mat<T> Sbb = Cb.t() * S * Cb;
-        arma::Mat<T> Xa, Xb;
+        arma::Mat<T> Xa;
         orthogonalisation_matrix(nmo, Saa, 1e-10, Xa);
-        orthogonalisation_matrix(nmo, Sbb, 1e-10, Xb);
         // Orthogonalize input orbitals
         Ca = Ca * Xa;
-        Cb = Cb * Xb;
+        Cb = Ca;
     }
 
     // Get a one-body Hamiltonian
@@ -646,12 +614,10 @@ int test_double_double(size_t thresh, size_t nbsf, size_t nelec, double &dtwick,
     // Setup matrix builder
     //std::cout << "Setup matrix builders...";
     slater_uscf<T,T,double> slat(nbsf, nmo, nocca, noccb, S);
-    wick<T,T,double> mb(nbsf, nmo, nocca, noccb, S);
     slat.add_two_body(II);
+    wick_rscf<T,T,double> mb(nbsf, nmo, nocca, S);
     mb.add_two_body(II);
     //std::cout << " done" << std::endl;
-    size_t nza = mb.m_nza;
-    //std::cout << "Alpha zeros = " << nza << std::endl;
 
     // Get access to coefficients
     arma::Mat<T> Cx_a(C.slice(0).colptr(0), nbsf, nmo, true, true);
@@ -783,13 +749,11 @@ int test_double_triple(size_t thresh, size_t nbsf, size_t nelec, double &dtwick,
         arma::Mat<T> Cb(C.slice(idet).colptr(nmo), nbsf, nmo, false, true);
         // Orbital overlap matrices
         arma::Mat<T> Saa = Ca.t() * S * Ca;
-        arma::Mat<T> Sbb = Cb.t() * S * Cb;
-        arma::Mat<T> Xa, Xb;
+        arma::Mat<T> Xa;
         orthogonalisation_matrix(nmo, Saa, 1e-10, Xa);
-        orthogonalisation_matrix(nmo, Sbb, 1e-10, Xb);
         // Orthogonalize input orbitals
         Ca = Ca * Xa;
-        Cb = Cb * Xb;
+        Cb = Ca;
     }
 
     // Get a one-body Hamiltonian
@@ -841,12 +805,10 @@ int test_double_triple(size_t thresh, size_t nbsf, size_t nelec, double &dtwick,
     // Setup matrix builder
     //std::cout << "Setup matrix builders...";
     slater_uscf<T,T,double> slat(nbsf, nmo, nocca, noccb, S);
-    wick<T,T,double> mb(nbsf, nmo, nocca, noccb, S);
+    wick_rscf<T,T,double> mb(nbsf, nmo, nocca, S);
     slat.add_two_body(II);
     mb.add_two_body(II);
     //std::cout << " done" << std::endl;
-    size_t nza = mb.m_nza;
-    //std::cout << "Alpha zeros = " << nza << std::endl;
 
     // Get access to coefficients
     arma::Mat<T> Cx_a(C.slice(0).colptr(0), nbsf, nmo, true, true);
@@ -960,7 +922,7 @@ int main() {
 
     int ret = 0, nelec=5;
     double dtwick, dtslat;
-    for(size_t nbsf=nelec+5; nbsf<51; nbsf++)
+    for(size_t nbsf=nelec+5; nbsf<nelec+10; nbsf++)
     {
         ret = ret | test_single_single<double>(7,nbsf,nelec,dtwick,dtslat);
         std::cout << std::setw(12) << std::setprecision(0) << nelec
@@ -969,7 +931,7 @@ int main() {
                   << std::setw(12) << std::setprecision(6) << std::fixed << dtslat / 1000.0 
                   << std::endl;
     }
-    for(size_t nbsf=nelec+5; nbsf<51; nbsf++)
+    for(size_t nbsf=nelec+5; nbsf<nelec+10; nbsf++)
     {
         ret = ret | test_double_double<double>(7,nbsf,nelec,dtwick,dtslat);
         std::cout << std::setw(12) << std::setprecision(0) << nelec

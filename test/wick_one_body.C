@@ -1,10 +1,10 @@
 #include <iostream>
 #include <armadillo>
-#include <libgnme/lowdin_pair.h>
-#include <libgnme/wick.h>
+#include <libgnme/utils/lowdin_pair.h>
+#include <libgnme/wick/wick.h>
 #include <iomanip>
-#include <libgnme/linalg.h>
-#include <libgnme/slater_uscf.h>
+#include <libgnme/utils/linalg.h>
+#include <libgnme/slater/slater_uscf.h>
 
 typedef std::complex<double> cx_double;
 
