@@ -48,8 +48,8 @@ target_include_directories(gnme PUBLIC "${PROJECT_SOURCE_DIR}/include/libgnme")
 target_link_libraries(gnme ${ARMADILLO_LIBRARIES})
 
 # Add testing
-#enable_testing()
-#add_subdirectory(test)
+enable_testing()
+add_subdirectory(test)
 
 if(CMAKE_RUN_FROM_CONFIGURE)
     message(STATUS "Install location: ${CMAKE_INSTALL_PREFIX}")

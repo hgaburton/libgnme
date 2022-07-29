@@ -1,12 +1,13 @@
 #include <iostream>
 #include <armadillo>
-#include <libgnme/lowdin_pair.h>
-#include <libgnme/wick.h>
 #include <iomanip>
-#include <libgnme/linalg.h>
-#include <libgnme/slater_uscf.h>
 #include <chrono>
 #include <ctime>
+#include "lowdin_pair.h"
+#include "wick_orbitals.h"
+#include "wick.h"
+#include "linalg.h"
+#include "slater_uscf.h"
 
 typedef std::complex<double> cx_double;
 

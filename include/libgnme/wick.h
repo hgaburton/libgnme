@@ -2,6 +2,7 @@
 #define LIBGNME_WICK_H
 
 #include <armadillo>
+#include "wick_orbitals.h"
 
 namespace libgnme {
 
@@ -27,6 +28,9 @@ private:
     arma::Mat<Tf> m_Fa; //!< Fock matrices
     arma::Mat<Tf> m_Fb; //!< Fock matrices
     Tb *m_II; //!< Pointer to two-body integral memory
+
+    //wick_orbitals<Tc,Tb> m_wick_a;
+    //wick_orbitals<Tc,Tb> m_wick_b;
 
     // One-body MO matrices
     bool m_one_body = false;
@@ -128,8 +132,10 @@ public:
     wick(
         const size_t nbsf, const size_t nmo, 
         const size_t nalpha, const size_t nbeta, 
+        //wick_orbitals<Tc,Tb> &wicka, wick_orbitals<Tc,Tb> &wickb,
         const arma::Mat<Tb> &metric, double Vc=0) :
         m_nbsf(nbsf), m_nmo(nmo), m_nalpha(nalpha), m_nbeta(nbeta), m_metric(metric), m_Vc(Vc)
+//        m_wick_a(wicka), m_wick_b(wickb)
     { }
 
     /** \brief Destructor **/

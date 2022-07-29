@@ -1,9 +1,11 @@
 set(SRC
+    slater/slater_rscf.C
     slater/slater_uscf.C
     utils/eri_ao2mo.C
     utils/linalg.C
     utils/lowdin_pair.C
     utils/utils.C
+    wick/wick_orbitals.C
     wick/wick.C
     wick/wick_overlap.C
     wick/wick_one_body.C
