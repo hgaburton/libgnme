@@ -9,13 +9,12 @@ void slater_rscf<Tc,Tf,Tb>::evaluate_overlap(
     arma::Mat<Tc> Cx, arma::Mat<Tc> Cw, Tc &Ov)
 {
     // Check the input
-    assert(Cx.n_rows == m_nbsf);
-    assert(Cx.n_cols == m_nelec);
-    assert(Cw.n_rows == m_nbsf);
-    assert(Cw.n_cols == m_nelec);
+    assert(Cx.n_rows == m_nbsf); assert(Cx.n_cols == m_nelec);
+    assert(Cw.n_rows == m_nbsf); assert(Cw.n_cols == m_nelec);
 
     // Compute overlap 
-    Ov = arma::det(Cx.t() * m_metric * Cw);
+    Tc spinOv = arma::det(Cx.t() * m_metric * Cw);
+    Ov = spinOv * spinOv;
 }
 
 template<typename Tc, typename Tf, typename Tb>
@@ -24,10 +23,8 @@ void slater_rscf<Tc,Tf,Tb>::evaluate(
     Tc &Ov, Tc &H)
 {
     // Check the input
-    assert(Cx.n_rows == m_nbsf);
-    assert(Cx.n_cols == m_nelec);
-    assert(Cw.n_rows == m_nbsf);
-    assert(Cw.n_cols == m_nelec);
+    assert(Cx.n_rows == m_nbsf); assert(Cx.n_cols == m_nelec);
+    assert(Cw.n_rows == m_nbsf); assert(Cw.n_cols == m_nelec);
 
     // Zero the output
     H = 0.0; Ov = 0.0;

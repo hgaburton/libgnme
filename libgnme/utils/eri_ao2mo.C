@@ -4,9 +4,9 @@
 namespace libgnme {
 
 template<typename Tc, typename Tb>
-void eri_ao2mo(
+void eri_ao2mo_split(
     arma::Mat<Tc> &C1, arma::Mat<Tc> &C2, arma::Mat<Tc> &C3, arma::Mat<Tc> &C4, 
-    arma::Mat<Tb> &IIao, arma::Mat<Tc> &IImo, size_t nmo, bool antisym)
+    arma::Mat<Tb> &IIao, arma::Mat<Tc> &II_J, arma::Mat<Tc> &II_K, size_t nmo, bool antisym)
 {
     // Check the dimensions of input coefficients
     assert(C1.n_cols == nmo);
@@ -55,7 +55,8 @@ void eri_ao2mo(
             IItmp1(p*nmo+j, k*nmo+l) += IItmp2(p*nbsf+q, k*nmo+l) * C2(q,j);
 
     // (12|34)
-    IImo.zeros();
+    II_J.zeros();
+    II_K.zeros();
     #pragma omp parallel for schedule(static) collapse(4)
     for(size_t i=0; i<nmo; i++)
     for(size_t j=0; j<nmo; j++)
@@ -64,11 +65,29 @@ void eri_ao2mo(
         for(size_t p=0; p<nbsf; p++)
         {
             // Save Coulomb integrals
-            IImo(i*nmo+j, k*nmo+l) += IItmp1(p*nmo+j, k*nmo+l) * std::conj(C1(p,i));
+            II_J(i*nmo+j, k*nmo+l) += IItmp1(p*nmo+j, k*nmo+l) * std::conj(C1(p,i));
             // Add exchange integral if same spin
             if(antisym)
-                IImo(i*nmo+j, k*nmo+l) -= IItmp1(p*nmo+l, k*nmo+j) * std::conj(C1(p,i)); 
+                II_K(i*nmo+j, k*nmo+l) -= IItmp1(p*nmo+l, k*nmo+j) * std::conj(C1(p,i)); 
         }
+}
+template void eri_ao2mo_split(
+    arma::mat &C1, arma::mat &C2, arma::mat &C3, arma::mat &C4, 
+    arma::mat &IIao, arma::mat &II_J, arma::mat &II_K, size_t nmo, bool antisym);
+template void eri_ao2mo_split(
+    arma::cx_mat &C1, arma::cx_mat &C2, arma::cx_mat &C3, arma::cx_mat &C4, 
+    arma::mat &IIao, arma::cx_mat &II_J, arma::cx_mat &II_K, size_t nmo, bool antisym);
+template void eri_ao2mo_split(
+    arma::cx_mat &C1, arma::cx_mat &C2, arma::cx_mat &C3, arma::cx_mat &C4, 
+    arma::cx_mat &IIao, arma::cx_mat &II_J, arma::cx_mat &II_K, size_t nmo, bool antisym);
+
+
+template<typename Tc, typename Tb>
+void eri_ao2mo(
+    arma::Mat<Tc> &C1, arma::Mat<Tc> &C2, arma::Mat<Tc> &C3, arma::Mat<Tc> &C4, 
+    arma::Mat<Tb> &IIao, arma::Mat<Tc> &IImo, size_t nmo, bool antisym)
+{
+    eri_ao2mo_split(C1, C2, C3, C4, IIao, IImo, IImo, nmo, antisym);
 }
 template void eri_ao2mo(
     arma::mat &C1, arma::mat &C2, arma::mat &C3, arma::mat &C4, 

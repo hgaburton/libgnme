@@ -22,17 +22,12 @@ void wick_orbitals<Tc,Tb>::init(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw)
     arma::Mat<Tc> Cx_tmp(Cx.memptr(), m_nbsf, m_nelec, true, true);
 
     // Lowdin Pair occupied orbitals
-    m_nz = 0;
+    m_nz = 0; m_redS = 1.0;
     arma::uvec zeros(m_nelec, arma::fill::zeros);
     arma::Col<Tc> Sxx(m_nelec, arma::fill::zeros);
     arma::Col<Tc> inv_Sxx(m_nelec, arma::fill::zeros); 
     lowdin_pair(Cx_tmp, Cw_tmp, Sxx, m_metric, 1e-20);
     reduced_overlap(Sxx, inv_Sxx, m_redS, m_nz, zeros, 1e-8);
-
-    Sxx.print("Sxx");
-    inv_Sxx.print("inv_Sxx");
-    std::cout << m_nz << std::endl;
-    std::cout << m_redS << std::endl;
 
     // Construct co-density
     m_M.set_size(2);

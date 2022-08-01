@@ -74,17 +74,20 @@ void wick_rscf<Tc,Tf,Tb>::add_two_body(arma::Mat<Tb> &V)
     // Build the two-electron integrals
     // Bra: xY    wX
     // Ket: xX    wY
-    m_II.set_size(d*d,d*d); 
+    m_IIsame.set_size(d*d,d*d);
+    m_IIdiff.set_size(d*d,d*d); 
     for(size_t i=0; i<d; i++)
     for(size_t j=0; j<d; j++)
     for(size_t k=0; k<d; k++)
     for(size_t l=0; l<d; l++)
     {
         // Initialise the memory
-        m_II(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); 
+        m_IIsame(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); 
+        m_IIdiff(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); 
         // Construct two-electron integrals
-        eri_ao2mo(m_orb.m_CX(i), m_orb.m_XC(j), m_orb.m_CX(k), m_orb.m_XC(l), 
-                  V, m_II(2*i+j, 2*k+l), 2*m_nact, true); 
+        eri_ao2mo_split(m_orb.m_CX(i), m_orb.m_XC(j), m_orb.m_CX(k), m_orb.m_XC(l), 
+                        V, m_IIdiff(2*i+j, 2*k+l), m_IIsame(2*i+j, 2*k+l), 2*m_nact, true); 
+        m_IIsame(2*i+j, 2*k+l) += m_IIdiff(2*i+j, 2*k+l);
     }
 }
 
@@ -197,7 +200,7 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_two_body(
                 for(size_t x=0; x < d; x++)
                 {
                     arma::Mat<Tc> vIItmp(
-                        m_II(2*m[2]+x, 2*m[0]+m[1]).colptr(2*m_nact*rows(i)+cols(j)), 
+                        m_IIsame(2*m[2]+x, 2*m[0]+m[1]).colptr(2*m_nact*rows(i)+cols(j)), 
                         2*m_nact, 2*m_nact, false, true);
                     IItmp(x) = vIItmp.submat(cols,rows).st();
                     IItmp(x).shed_row(i); 
@@ -383,7 +386,7 @@ void wick_rscf<Tc,Tf,Tb>::diff_spin_two_body(
             for(size_t x=0; x<d; x++)
             {
                 arma::Mat<Tc> vIItmp(
-                    m_II(2*mb[0]+x, 2*ma[0]+ma[1]).colptr(2*m_nact*rowa(i)+cola(j)), 
+                    m_IIdiff(2*mb[0]+x, 2*ma[0]+ma[1]).colptr(2*m_nact*rowa(i)+cola(j)), 
                     2*m_nact, 2*m_nact, false, true);
                 IItmp(x) = vIItmp.submat(colb,rowb).st();
             }
@@ -417,7 +420,7 @@ void wick_rscf<Tc,Tf,Tb>::diff_spin_two_body(
             for(size_t x=0; x<d; x++)
             {
                 arma::Mat<Tc> vIItmp(
-                    m_II(2*ma[0]+x, 2*mb[0]+mb[1]).colptr(2*m_nact*rowb(i)+colb(j)), 
+                    m_IIdiff(2*ma[0]+x, 2*mb[0]+mb[1]).colptr(2*m_nact*rowb(i)+colb(j)), 
                          2*m_nact, 2*m_nact, false, true);
                 IItmp(x) = vIItmp.submat(cola,rowa).st();
             }

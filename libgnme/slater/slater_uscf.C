@@ -15,26 +15,9 @@ void slater_uscf<Tc,Tf,Tb>::evaluate_overlap(
     assert(Cwa.n_rows == m_nbsf); assert(Cwa.n_cols == m_nalpha);
     assert(Cxb.n_rows == m_nbsf); assert(Cxb.n_cols == m_nbeta);
 
-    // Zero the output
-    Ov = 0.0;
-
-    // Lowdin Pair
-    arma::Col<Tc> Sxx_a(m_nalpha); Sxx_a.zeros();
-    arma::Col<Tc> Sxx_b(m_nbeta); Sxx_b.zeros();
-    arma::Col<Tc> inv_Sxx_a(m_nalpha, arma::fill::zeros);
-    arma::Col<Tc> inv_Sxx_b(m_nbeta, arma::fill::zeros);
-    size_t nZeros_a = 0, nZeros_b = 0;
-    arma::uvec zeros_a(Sxx_a.n_elem), zeros_b(Sxx_b.n_elem);
-    libgnme::lowdin_pair(Cxa, Cwa, Sxx_a, m_metric);
-    libgnme::lowdin_pair(Cxb, Cwb, Sxx_b, m_metric);
-
-    // Compute reduced overlap
-    Tc redOv = 1.0;
-    libgnme::reduced_overlap(Sxx_a, inv_Sxx_a, redOv, nZeros_a, zeros_a);
-    libgnme::reduced_overlap(Sxx_b, inv_Sxx_b, redOv, nZeros_b, zeros_b);
-
-    // Compute the desired overlap
-    Ov = ((nZeros_a + nZeros_b) == 0) ? redOv : 0.0;
+    // Compute overlap 
+    Ov = arma::det(Cxa.t() * m_metric * Cwa) * 
+         arma::det(Cxb.t() * m_metric * Cwb);
 }
 
 template<typename Tc, typename Tf, typename Tb>
@@ -62,12 +45,13 @@ void slater_uscf<Tc,Tf,Tb>::evaluate(
     libgnme::lowdin_pair(Cxb, Cwb, Sxx_b, m_metric);
 
     // Compute reduced overlap
-    Tc redOv = 1.0;
-    libgnme::reduced_overlap(Sxx_a, inv_Sxx_a, redOv, nZeros_a, zeros_a);
-    libgnme::reduced_overlap(Sxx_b, inv_Sxx_b, redOv, nZeros_b, zeros_b);
+    Tc redOv_a = 1.0, redOv_b = 1.0;
+    libgnme::reduced_overlap(Sxx_a, inv_Sxx_a, redOv_a, nZeros_a, zeros_a);
+    libgnme::reduced_overlap(Sxx_b, inv_Sxx_b, redOv_b, nZeros_b, zeros_b);
+//    ((arma::Mat<Tc>) arma::join_rows(Sxx_a,Sxx_b)).print("Sxx");
 
     // Zeroth order terms
-    Ov = ((nZeros_a + nZeros_b) == 0) ? redOv : 0.0;
+    Ov = ((nZeros_a + nZeros_b) == 0) ? redOv_a * redOv_b : 0.0;
     H  = ((nZeros_a + nZeros_b) == 0) ? m_Vc : 0.0;
 
     // Return early if no one- or two-body terms
@@ -78,7 +62,7 @@ void slater_uscf<Tc,Tf,Tb>::evaluate(
     if((nZeros_a + nZeros_b) == 0)
     {   
         // Save non-zero overlap
-        Ov = redOv;
+        Ov = redOv_a * redOv_b;
 
         // Construct co-density matrices
         arma::Mat<Tc> xwWa = Cwa * arma::diagmat(inv_Sxx_a) * Cxa.t();
@@ -184,7 +168,7 @@ void slater_uscf<Tc,Tf,Tb>::evaluate(
     }
 
     // Account for reduced overlap 
-    H *= redOv;
+    H *= redOv_a * redOv_b;
 }
 
 template class slater_uscf<double, double, double>;

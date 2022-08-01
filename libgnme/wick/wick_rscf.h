@@ -52,7 +52,8 @@ private:
     arma::field<arma::Mat<Tc> > m_XKX;
 
     // Store two-electron repulsion integrals (16 * nmo^4)
-    arma::field<arma::Mat<Tc> > m_II;
+    arma::field<arma::Mat<Tc> > m_IIsame;
+    arma::field<arma::Mat<Tc> > m_IIdiff;
 
 public:
     /** \brief Constructor for the object

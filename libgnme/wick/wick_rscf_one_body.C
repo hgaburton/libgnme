@@ -77,7 +77,8 @@ void wick_rscf<Tc,Tf,Tb>::spin_one_body(
         // Distribute zeros over 2 contractions
         std::vector<size_t> m(m_orb.m_nz, 1); m.resize(2, 0); 
         do {
-            F += m_orb.m_X(m[0])(rows(0),cols(0)) * m_F0(m[1]) - m_XFX(m[0],m[1])(rows(0),cols(0));
+            F += m_orb.m_X(m[0])(rows(0),cols(0)) * m_F0(m[1]) 
+               - m_XFX(m[0],m[1])(rows(0),cols(0));
         } while(std::prev_permutation(m.begin(), m.end()));
     }
     else
