@@ -55,6 +55,9 @@ void reduced_overlap(
     // Check we have a meaningful threshold
     assert(thresh > 0);
 
+    // Initialise reduced overlap
+    reduced_Ov = 1.0;
+
     // Resize and zero invSxx
     invSxx.resize(Sxx.n_elem); invSxx.zeros();
 
@@ -70,7 +73,6 @@ void reduced_overlap(
             invSxx(i) = 1.0;
             zeros(nZeros) = i; nZeros++;
         }
-        std::cout << i << " " << Sxx(i) << " " << reduced_Ov << std::endl;
     }
 }
 template void reduced_overlap<double>(
