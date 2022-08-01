@@ -16,7 +16,7 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_overlap(
     spin_overlap(xahp, wahp, sa);
     spin_overlap(xbhp, wbhp, sb);
     // Save total overlap
-    S = m_redS * m_redS * sa * sb;
+    S = m_orb.m_redS * m_orb.m_redS * sa * sb;
 }
 
 template<typename Tc, typename Tf, typename Tb>
@@ -29,14 +29,14 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_one_body_spin(
     spin_overlap(xhp, whp, sspin);
 
     // Save total spin-overlap
-    S = m_redS * sspin;
+    S = m_orb.m_redS * sspin;
 
     // Evaluate one-body terms
     Tc Vspin = 0.0;
     // Evaluate separate spin one-body terms
     spin_one_body(xhp, whp, Vspin);
     // Recombine and increment output
-    V = m_redS * Vspin;
+    V = m_orb.m_redS * Vspin;
 }
 
 template<typename Tc, typename Tf, typename Tb>
@@ -50,7 +50,7 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
     spin_overlap(xahp, wahp, sa);
     spin_overlap(xbhp, wbhp, sb);
     // Save total overlap
-    S = m_redS * m_redS * sa * sb;
+    S = m_orb.m_redS * m_orb.m_redS * sa * sb;
 
     // Save any constant term
     V = S * m_Vc;
@@ -64,7 +64,7 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
         spin_one_body(xahp, wahp, Va);
         spin_one_body(xbhp, wbhp, Vb);
         // Recombine and increment output
-        V += m_redS * m_redS * (Va * sb + Vb * sa);
+        V += m_orb.m_redS * m_orb.m_redS * (Va * sb + Vb * sa);
     }
 
     // Evaluate two-body term if present
@@ -78,7 +78,7 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
         // Different spin terms
         diff_spin_two_body(xahp, xbhp, wahp, wbhp, Vab);
         // Recombine
-        V += 0.5 * m_redS * m_redS * (Vaa * sb + Vbb * sa + 2.0 * Vab);
+        V += 0.5 * m_orb.m_redS * m_orb.m_redS * (Vaa * sb + Vbb * sa + 2.0 * Vab);
     }
 }
 

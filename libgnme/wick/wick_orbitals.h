@@ -50,7 +50,7 @@ public:
      **/
     wick_orbitals(
         const size_t nbsf, const size_t nmo, const size_t nelec,
-        arma::Mat<Tc> &Cx, arma::Mat<Tc> &Cw, 
+        arma::Mat<Tc> Cx, arma::Mat<Tc> Cw, 
         const arma::Mat<Tb> &metric) :
         m_nbsf(nbsf), m_nmo(nmo), m_nelec(nelec),
         m_metric(metric), m_nact(nmo), m_ncore(0) 
@@ -70,7 +70,7 @@ public:
      **/
     wick_orbitals(
         const size_t nbsf, const size_t nmo, const size_t nelec,
-        arma::Mat<Tc> &Cx, arma::Mat<Tc> &Cw, 
+        arma::Mat<Tc> Cx, arma::Mat<Tc> Cw, 
         const arma::Mat<Tb> &metric,
         const size_t nact, const size_t ncore) :
         m_nbsf(nbsf), m_nmo(nmo), m_nelec(nelec),
@@ -84,7 +84,7 @@ public:
     virtual ~wick_orbitals() { }
 
     /** \brief Initialise all variables **/
-    virtual void init(arma::Mat<Tc> &Cx, arma::Mat<Tc> &Cw);
+    virtual void init(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw);
 };
 
 } // namespace libgnme

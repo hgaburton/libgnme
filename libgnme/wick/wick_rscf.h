@@ -2,6 +2,7 @@
 #define LIBGNME_WICK_RSCF_H
 
 #include <armadillo>
+#include "wick_orbitals.h"
 
 namespace libgnme {
 
@@ -24,8 +25,8 @@ private:
     const arma::Mat<Tb> &m_metric; //!< Basis overlap metric
 
     double m_Vc; //!< constant component
-    arma::Mat<Tf> m_F; //!< Fock matrices
-    Tb *m_IIao; //!< Pointer to two-body integral memory
+
+    wick_orbitals<Tc,Tb> m_orb; //!< Orbital pair
 
     // One-body MO matrices
     bool m_one_body = false;
@@ -36,31 +37,11 @@ public:
     size_t m_nz; //!< Number of zero-overlap orbitals
 
 private:
-    // Reference reduced overlaps
-    Tc m_redS; //!< Reduced overlap
-
-    // Store the reference coefficients (nbsf * nmo)
-    arma::Mat<Tc> m_Cx; // Bra coefficients
-    arma::Mat<Tc> m_Cw; // Ket coefficients
-
-    // Store the co-density matrices (2 * nbsf * nbsf)
-    arma::field<arma::Mat<Tc> > m_wxM;
-
-    // Store the 'X' super matrices (2 * nmo * nmo)
-    arma::field<arma::Mat<Tc> > m_X;
-
-    // Store the 'Y' super matrices (2 * nmo * nmo)
-    arma::field<arma::Mat<Tc> > m_Y;
-
     // Store the 'F0' terms (2)
     arma::Col<Tc> m_F0;
 
     // Store the '(X/Y)F(X/Y)' super matrices (4 * nmo * nmo)
     arma::field<arma::Mat<Tc> > m_XFX;
-
-    // Store the 'CX' and 'CY' matrices 
-    arma::field<arma::Mat<Tc> > m_CX;
-    arma::field<arma::Mat<Tc> > m_XC;
 
     // Store the 'V0' terms (3)
     arma::Col<Tc> m_Vsame;
@@ -83,21 +64,15 @@ public:
         \param Vc Constant term in the corresponding operator
      **/
     wick_rscf(
-        const size_t nbsf, const size_t nmo, 
-        const size_t nelec,
+        wick_orbitals<Tc,Tb> &orb,
         const arma::Mat<Tb> &metric, double Vc=0) :
-        m_nbsf(nbsf), m_nmo(nmo), m_nelec(nelec), m_metric(metric), m_Vc(Vc)
+        m_nbsf(orb.m_nbsf), m_nmo(orb.m_nmo), m_nelec(orb.m_nelec), 
+        m_nact(orb.m_nact), m_metric(metric), m_Vc(Vc),
+        m_orb(orb)
     { }
 
     /** \brief Destructor **/
     virtual ~wick_rscf() { }
-
-    /** \brief Setup orbitals associated with the reference determinants
-        \param Cx Molecular orbital coefficients for the bra state
-        \param Cw Molecular orbital coefficients for the ket state
-     **/
-    virtual void setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw);
-    virtual void setup_orbitals(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw, size_t ncore, size_t nactive);
 
     /** \name Routines to add one- or two-body operators to the object **/
     ///@{
@@ -143,9 +118,6 @@ private:
         arma::umat xa_hp, arma::umat xb_hp, 
         arma::umat wa_hp, arma::umat wb_hp, 
         Tc &V);
-
-    virtual void setup_one_body();
-    virtual void setup_two_body();
 };
 
 } // namespace libgnme

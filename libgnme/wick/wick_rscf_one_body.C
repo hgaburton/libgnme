@@ -12,24 +12,16 @@ void wick_rscf<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &F)
     assert(F.n_rows == m_nbsf);
     assert(F.n_cols == m_nbsf);
 
-    // Save a copy of matrices
-    m_F = F;
-
     // Setup control variable to indicate one-body initialised
     m_one_body = true;
-}
 
-
-template<typename Tc, typename Tf, typename Tb>
-void wick_rscf<Tc,Tf,Tb>::setup_one_body()
-{
     // Get dimensions needed for temporary arrays
-    size_t d = (m_nz > 0) ? 2 : 1;
+    size_t d = (m_orb.m_nz > 0) ? 2 : 1;
 
     // Construct 'F0' terms
     m_F0.resize(d); 
     for(size_t i=0; i<d; i++)
-        m_F0(i) = arma::dot(m_F, m_wxM(i).st());
+        m_F0(i) = arma::dot(F, m_orb.m_M(i).st());
 
     // We only have to worry about
     //    xx[YFX]    xw[YFY]
@@ -38,7 +30,7 @@ void wick_rscf<Tc,Tf,Tb>::setup_one_body()
     m_XFX.set_size(d,d); 
     for(size_t i=0; i<d; i++)
     for(size_t j=0; j<d; j++)
-        m_XFX(i,j) = m_CX(i).t() * m_F * m_XC(j);
+        m_XFX(i,j) = m_orb.m_CX(i).t() * F * m_orb.m_XC(j);
 }
 
 template<typename Tc, typename Tf, typename Tb>
@@ -53,10 +45,10 @@ void wick_rscf<Tc,Tf,Tb>::spin_one_body(
     size_t nw = whp.n_rows; // Ket excitations
 
     // Get dimensions of zero-contractions
-    size_t dim = (m_nz > 0) ? 2 : 1; 
+    size_t dim = (m_orb.m_nz > 0) ? 2 : 1; 
 
     // Check we don't have a non-zero element
-    if(m_nz > nw + nx + 1) return;
+    if(m_orb.m_nz > nw + nx + 1) return;
 
     // Shift w indices
     // TODO: Do we want to keep this?
@@ -78,24 +70,24 @@ void wick_rscf<Tc,Tf,Tb>::spin_one_body(
     // Start with overlap contribution
     if(nx == 0 and nw == 0)
     {   // No excitations, so return simple overlap
-        F = m_F0(m_nz);
+        F = m_F0(m_orb.m_nz);
     }
     else if((nx+nw) == 1)
     {   // One excitation doesn't require determinant
         // Distribute zeros over 2 contractions
-        std::vector<size_t> m(m_nz, 1); m.resize(2, 0); 
+        std::vector<size_t> m(m_orb.m_nz, 1); m.resize(2, 0); 
         do {
-            F += m_X(m[0])(rows(0),cols(0)) * m_F0(m[1]) - m_XFX(m[0],m[1])(rows(0),cols(0));
+            F += m_orb.m_X(m[0])(rows(0),cols(0)) * m_F0(m[1]) - m_XFX(m[0],m[1])(rows(0),cols(0));
         } while(std::prev_permutation(m.begin(), m.end()));
     }
     else
     {   // General case does require determinant
         // Construct matrix for no zero overlaps
-        arma::Mat<Tc> D  = arma::trimatl(m_X(0).submat(rows,cols))
-                         + arma::trimatu(m_Y(0).submat(rows,cols),1);
+        arma::Mat<Tc> D  = arma::trimatl(m_orb.m_X(0).submat(rows,cols))
+                         + arma::trimatu(m_orb.m_Y(0).submat(rows,cols),1);
         // Construct matrix with all zero overlaps
-        arma::Mat<Tc> Db = arma::trimatl(m_X(1).submat(rows,cols)) 
-                         + arma::trimatu(m_Y(1).submat(rows,cols),1);
+        arma::Mat<Tc> Db = arma::trimatl(m_orb.m_X(1).submat(rows,cols)) 
+                         + arma::trimatu(m_orb.m_Y(1).submat(rows,cols),1);
 
         // Matrix of F contractions
         arma::field<arma::Mat<Tc> > Ftmp(dim,dim); 
@@ -104,7 +96,7 @@ void wick_rscf<Tc,Tf,Tb>::spin_one_body(
             Ftmp(i,j) = m_XFX(i,j).submat(rows,cols);
 
         // Compute contribution from the overlap and zeroth term
-        std::vector<size_t> m(m_nz, 1); m.resize(nx+nw+1, 0); 
+        std::vector<size_t> m(m_orb.m_nz, 1); m.resize(nx+nw+1, 0); 
         arma::Col<size_t> ind(&m[1], nx+nw, false, true);
         // Loop over all possible contributions of zero overlaps
         do {

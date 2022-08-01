@@ -12,22 +12,11 @@ void wick_rscf<Tc,Tf,Tb>::add_two_body(arma::Mat<Tb> &V)
     assert(V.n_rows == m_nbsf * m_nbsf);
     assert(V.n_cols == m_nbsf * m_nbsf);
 
-    // Save two-body integrals
-    m_IIao = V.memptr();
-
     // Setup control variable to indicate one-body initialised
     m_two_body = true;
-}
 
-
-template<typename Tc, typename Tf, typename Tb>
-void wick_rscf<Tc,Tf,Tb>::setup_two_body()
-{
     // Get dimensions of contractions
-    size_t d = (m_nz > 0) ? 2 : 1;
-
-    // Get view of two-electron AO integrals
-    arma::Mat<Tb> IIao(m_IIao, m_nbsf*m_nbsf, m_nbsf*m_nbsf, false, true);
+    size_t d = (m_orb.m_nz > 0) ? 2 : 1;
 
     // Initialise J/K matrices
     arma::field<arma::Mat<Tc> > J(d), K(d);
@@ -48,26 +37,26 @@ void wick_rscf<Tc,Tf,Tb>::setup_two_body()
             for(size_t i=0; i<d; i++)
             {
                 // Coulomb matrices
-                J(i)(s,t) += IIao(m*m_nbsf+n,s*m_nbsf+t) * m_wxM(i)(n,m); 
+                J(i)(s,t) += V(m*m_nbsf+n,s*m_nbsf+t) * m_orb.m_M(i)(n,m); 
                 // Exchange matrices
-                K(i)(s,t) += IIao(m*m_nbsf+t,s*m_nbsf+n) * m_wxM(i)(n,m);
+                K(i)(s,t) += V(m*m_nbsf+t,s*m_nbsf+n) * m_orb.m_M(i)(n,m);
             }
         }
     }
 
     // Alpha-Alpha V terms
     m_Vsame.resize(3); m_Vsame.zeros();
-    m_Vsame(0) = arma::dot(J(0).st() - K(0).st(), m_wxM(0));
-    if(m_nz > 1)
+    m_Vsame(0) = arma::dot(J(0).st() - K(0).st(), m_orb.m_M(0));
+    if(m_orb.m_nz > 1)
     {
-        m_Vsame(1) = 2.0 * arma::dot(J(0).st() - K(0).st(), m_wxM(1));
-        m_Vsame(2) = arma::dot(J(1).st() - K(1).st(), m_wxM(1));
+        m_Vsame(1) = 2.0 * arma::dot(J(0).st() - K(0).st(), m_orb.m_M(1));
+        m_Vsame(2) = arma::dot(J(1).st() - K(1).st(), m_orb.m_M(1));
     }
     // Alpha-Beta V terms
     m_Vdiff.resize(d,d); m_Vdiff.zeros();
     for(size_t i=0; i<d; i++)
     for(size_t j=0; j<d; j++)
-        m_Vdiff(i,j) = arma::dot(J(i).st(), m_wxM(j));
+        m_Vdiff(i,j) = arma::dot(J(i).st(), m_orb.m_M(j));
 
     // Construct effective one-body terms
     // xx[Y(J-K)X]    xw[Y(J-K)Y]
@@ -78,8 +67,8 @@ void wick_rscf<Tc,Tf,Tb>::setup_two_body()
     for(size_t j=0; j<d; j++)
     for(size_t k=0; k<d; k++)
     {
-        m_XJX(i,k,j) = m_CX(i).t() * J(k) * m_XC(j);
-        m_XKX(i,k,j) = m_CX(i).t() * K(k) * m_XC(j);
+        m_XJX(i,k,j) = m_orb.m_CX(i).t() * J(k) * m_orb.m_XC(j);
+        m_XKX(i,k,j) = m_orb.m_CX(i).t() * K(k) * m_orb.m_XC(j);
     }
 
     // Build the two-electron integrals
@@ -94,8 +83,8 @@ void wick_rscf<Tc,Tf,Tb>::setup_two_body()
         // Initialise the memory
         m_II(2*i+j, 2*k+l).resize(4*m_nact*m_nact, 4*m_nact*m_nact); 
         // Construct two-electron integrals
-        eri_ao2mo(m_CX(i), m_XC(j), m_CX(k), m_XC(l), 
-                  IIao, m_II(2*i+j, 2*k+l), 2*m_nact, true); 
+        eri_ao2mo(m_orb.m_CX(i), m_orb.m_XC(j), m_orb.m_CX(k), m_orb.m_XC(l), 
+                  V, m_II(2*i+j, 2*k+l), 2*m_nact, true); 
     }
 }
 
@@ -111,10 +100,10 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_two_body(
     size_t nw = whp.n_rows; // Ket excitations
 
     // Dimensions of multiple contractions
-    size_t d = (m_nz > 0) ? 2 : 1;
+    size_t d = (m_orb.m_nz > 0) ? 2 : 1;
 
     // Check we don't have a non-zero element
-    if(m_nz > nw + nx + 2) return;
+    if(m_orb.m_nz > nw + nx + 2) return;
 
     // Get reference to relevant zeroth-order term
     const arma::Col<Tc> &V0  = m_Vsame;
@@ -139,16 +128,16 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_two_body(
     // No excitations, so return simple overlap
     if(nx == 0 and nw == 0)
     {   
-        V = V0(m_nz);
+        V = V0(m_orb.m_nz);
     }
     // One excitation doesn't require one-body determinant
     else if((nx+nw) == 1)
     {   
         // Distribute zeros over 3 contractions
-        std::vector<size_t> m(m_nz, 1); m.resize(3,0);
+        std::vector<size_t> m(m_orb.m_nz, 1); m.resize(3,0);
         do {
             // Zeroth-order term
-            V += V0(m[0] + m[1]) * m_X(m[2])(rows(0),cols(0));
+            V += V0(m[0] + m[1]) * m_orb.m_X(m[2])(rows(0),cols(0));
             // First-order J/K term
             V -= 2.0 * m_XJX(m[0],m[1],m[2])(rows(0),cols(0));
             V += 2.0 * m_XKX(m[0],m[1],m[2])(rows(0),cols(0));
@@ -158,11 +147,11 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_two_body(
     else
     {
         // Construct matrix for no zero overlaps
-        arma::Mat<Tc> D  = arma::trimatl(m_X(0).submat(rows,cols))
-                         + arma::trimatu(m_Y(0).submat(rows,cols),1);
+        arma::Mat<Tc> D  = arma::trimatl(m_orb.m_X(0).submat(rows,cols))
+                         + arma::trimatu(m_orb.m_Y(0).submat(rows,cols),1);
         // Construct matrix with all zero overlaps
-        arma::Mat<Tc> Db = arma::trimatl(m_X(1).submat(rows,cols)) 
-                         + arma::trimatu(m_Y(1).submat(rows,cols),1);
+        arma::Mat<Tc> Db = arma::trimatl(m_orb.m_X(1).submat(rows,cols)) 
+                         + arma::trimatu(m_orb.m_Y(1).submat(rows,cols),1);
 
         // Matrix of F contractions
         arma::field<arma::Mat<Tc> > JKtmp(d,d,d); 
@@ -173,7 +162,7 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_two_body(
                          - m_XKX(i,j,k).submat(rows,cols);
 
         // Compute contribution from the overlap and zeroth term
-        std::vector<size_t> m(m_nz, 1); m.resize(nx+nw+2, 0); 
+        std::vector<size_t> m(m_orb.m_nz, 1); m.resize(nx+nw+2, 0); 
         arma::Col<size_t> ind1(&m[2], nx+nw, false, true);
         arma::Col<size_t> ind2(&m[3], nx+nw-1, false, true);
         // Loop over all possible contributions of zero overlaps
@@ -262,10 +251,10 @@ void wick_rscf<Tc,Tf,Tb>::diff_spin_two_body(
     size_t nw = nwa + nwb;
 
     // Dimensions of multiple contractions
-    size_t d = (m_nz > 0) ? 2 : 1;
+    size_t d = (m_orb.m_nz > 0) ? 2 : 1;
 
     // Check we don't have a non-zero element
-    if(m_nz > nwa+nxa+1 || m_nz > nwb+nxb+1) return;
+    if(m_orb.m_nz > nwa+nxa+1 || m_orb.m_nz > nwb+nxb+1) return;
 
     // TODO Correct indexing for new code
     wahp += m_nact;
@@ -300,32 +289,32 @@ void wick_rscf<Tc,Tf,Tb>::diff_spin_two_body(
     arma::Mat<Tc> Da, DaB;
     if(nxa+nwa == 1)
     {
-        Da  = m_X(0)(rowa(0),cola(0));
-        DaB = m_X(1)(rowa(0),cola(0));
+        Da  = m_orb.m_X(0)(rowa(0),cola(0));
+        DaB = m_orb.m_X(1)(rowa(0),cola(0));
     }
     else if(nxa+nwa > 1)
     {
         // Construct matrix for no zero overlaps
-        Da  = arma::trimatl(m_X(0).submat(rowa,cola))
-            + arma::trimatu(m_Y(0).submat(rowa,cola),1);
+        Da  = arma::trimatl(m_orb.m_X(0).submat(rowa,cola))
+            + arma::trimatu(m_orb.m_Y(0).submat(rowa,cola),1);
         // Construct matrix with all zero overlaps
-        DaB = arma::trimatl(m_X(1).submat(rowa,cola)) 
-            + arma::trimatu(m_Y(1).submat(rowa,cola),1);
+        DaB = arma::trimatl(m_orb.m_X(1).submat(rowa,cola)) 
+            + arma::trimatu(m_orb.m_Y(1).submat(rowa,cola),1);
     }
     arma::Mat<Tc> Db, DbB;
     if(nxb+nwb == 1)
     {
-        Db  = m_X(0)(rowb(0),colb(0));
-        DbB = m_X(1)(rowb(0),colb(0));
+        Db  = m_orb.m_X(0)(rowb(0),colb(0));
+        DbB = m_orb.m_X(1)(rowb(0),colb(0));
     }
     else if(nxb+nwb > 1)
     {
         // Construct matrix for no zero overlaps
-        Db  = arma::trimatl(m_X(0).submat(rowb,colb))
-            + arma::trimatu(m_Y(0).submat(rowb,colb),1);
+        Db  = arma::trimatl(m_orb.m_X(0).submat(rowb,colb))
+            + arma::trimatu(m_orb.m_Y(0).submat(rowb,colb),1);
         // Construct matrix with all zero overlaps
-        DbB = arma::trimatl(m_X(1).submat(rowb,colb)) 
-            + arma::trimatu(m_Y(1).submat(rowb,colb),1);
+        DbB = arma::trimatl(m_orb.m_X(1).submat(rowb,colb)) 
+            + arma::trimatu(m_orb.m_Y(1).submat(rowb,colb),1);
     }
 
     // Matrix of JK contractions
@@ -340,8 +329,8 @@ void wick_rscf<Tc,Tf,Tb>::diff_spin_two_body(
         Jab(i,k,j) = m_XJX(i,k,j).submat(rowb,colb);
 
     // Compute contribution from the overlap and zeroth term
-    std::vector<size_t> ma(m_nz, 1); ma.resize(nxa+nwa+1, 0); 
-    std::vector<size_t> mb(m_nz, 1); mb.resize(nxb+nwb+1, 0); 
+    std::vector<size_t> ma(m_orb.m_nz, 1); ma.resize(nxa+nwa+1, 0); 
+    std::vector<size_t> mb(m_orb.m_nz, 1); mb.resize(nxb+nwb+1, 0); 
     arma::Col<size_t> inda1(&ma[1], nxa+nwa,   false, true);
     arma::Col<size_t> inda2(&ma[2], nxa+nwa-1, false, true);
     arma::Col<size_t> indb1(&mb[1], nxb+nwb,   false, true);

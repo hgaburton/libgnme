@@ -5,7 +5,7 @@
 namespace libgnme {
 
 template<typename Tc, typename Tb>
-void wick_orbitals<Tc,Tb>::init(arma::Mat<Tc> &Cx, arma::Mat<Tc> &Cw)
+void wick_orbitals<Tc,Tb>::init(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw)
 {
     // Check all the dimensions
     assert(Cx.n_rows == m_nbsf);
@@ -28,6 +28,11 @@ void wick_orbitals<Tc,Tb>::init(arma::Mat<Tc> &Cx, arma::Mat<Tc> &Cw)
     arma::Col<Tc> inv_Sxx(m_nelec, arma::fill::zeros); 
     lowdin_pair(Cx_tmp, Cw_tmp, Sxx, m_metric, 1e-20);
     reduced_overlap(Sxx, inv_Sxx, m_redS, m_nz, zeros, 1e-8);
+
+    Sxx.print("Sxx");
+    inv_Sxx.print("inv_Sxx");
+    std::cout << m_nz << std::endl;
+    std::cout << m_redS << std::endl;
 
     // Construct co-density
     m_M.set_size(2);
