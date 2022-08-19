@@ -62,8 +62,8 @@ int test_ref_ref(const char *testcase, unsigned thresh)
     arma::mat Cw_b(Cw.colptr(nmo), nbsf, nmo, false, true);
 
     // Define bra and ket orbital coefficients as spin-flip pairs
-    Cx_a = Cread.cols(0,nmo-1); Cw_b = Cread.cols(0,nmo-1);
-    Cx_b = Cread.cols(nmo,2*nmo-1); Cx_a = Cread.cols(nmo,2*nmo-1);
+    Cx_a = Cread.cols(0,nmo-1);     Cw_b = Cread.cols(0,nmo-1);
+    Cx_b = Cread.cols(nmo,2*nmo-1); Cw_a = Cread.cols(nmo,2*nmo-1);
 
     // Construct the wick_orbitals object
     wick_orbitals<double,double> orbs_a(nbsf, nmo, nocca, Cx_a, Cw_a, S);
@@ -112,9 +112,9 @@ int test_ref_ref(const char *testcase, unsigned thresh)
     // Test one-body matrix element
     if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
     {
-        std::cout << "One-body error = " 
+        std::cout << "Two-body error = " 
                   << std::fixed << std::setprecision(thresh+2) << std::scientific
-                  << std::abs(swick - sslat) << std::endl;
+                  << std::abs(fwick - fslat) << std::endl;
         return 1;
     }
 
@@ -176,8 +176,8 @@ int test_ref_single(const char *testcase, unsigned thresh)
     arma::mat Cw_b(Cw.colptr(nmo), nbsf, nmo, false, true);
 
     // Define bra and ket orbital coefficients as spin-flip pairs
-    Cx_a = Cread.cols(0,nmo-1); Cw_b = Cread.cols(0,nmo-1);
-    Cx_b = Cread.cols(nmo,2*nmo-1); Cx_a = Cread.cols(nmo,2*nmo-1);
+    Cx_a = Cread.cols(0,nmo-1);     Cw_b = Cread.cols(0,nmo-1);
+    Cx_b = Cread.cols(nmo,2*nmo-1); Cw_a = Cread.cols(nmo,2*nmo-1);
 
     // Construct the wick_orbitals object
     wick_orbitals<double,double> orbs_a(nbsf, nmo, nocca, Cx_a, Cw_a, S);
@@ -231,9 +231,9 @@ int test_ref_single(const char *testcase, unsigned thresh)
         // Test one-body matrix element
         if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
         {
-            std::cout << "One-body error = " 
+            std::cout << "Two-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
 
@@ -253,9 +253,9 @@ int test_ref_single(const char *testcase, unsigned thresh)
         // Test one-body matrix element
         if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
         {
-            std::cout << "One-body error = " 
+            std::cout << "Two-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
     }
@@ -290,9 +290,9 @@ int test_ref_single(const char *testcase, unsigned thresh)
         // Test one-body matrix element
         if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
         {
-            std::cout << "One-body error = " 
+            std::cout << "Two-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
 
@@ -312,9 +312,9 @@ int test_ref_single(const char *testcase, unsigned thresh)
         // Test one-body matrix element
         if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
         {
-            std::cout << "One-body error = " 
+            std::cout << "Two-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
     }
@@ -377,8 +377,8 @@ int test_single_single(const char *testcase, unsigned thresh)
     arma::mat Cw_b(Cw.colptr(nmo), nbsf, nmo, false, true);
 
     // Define bra and ket orbital coefficients as spin-flip pairs
-    Cx_a = Cread.cols(0,nmo-1); Cw_b = Cread.cols(0,nmo-1);
-    Cx_b = Cread.cols(nmo,2*nmo-1); Cx_a = Cread.cols(nmo,2*nmo-1);
+    Cx_a = Cread.cols(0,nmo-1);     Cw_b = Cread.cols(0,nmo-1);
+    Cx_b = Cread.cols(nmo,2*nmo-1); Cw_a = Cread.cols(nmo,2*nmo-1);
 
     // Construct the wick_orbitals object
     wick_orbitals<double,double> orbs_a(nbsf, nmo, nocca, Cx_a, Cw_a, S);
@@ -436,9 +436,9 @@ int test_single_single(const char *testcase, unsigned thresh)
         // Test one-body matrix element
         if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
         {
-            std::cout << "One-body error = " 
+            std::cout << "Two-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
     }
@@ -477,9 +477,9 @@ int test_single_single(const char *testcase, unsigned thresh)
         // Test one-body matrix element
         if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
         {
-            std::cout << "One-body error = " 
+            std::cout << "Two-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
     }
@@ -518,9 +518,9 @@ int test_single_single(const char *testcase, unsigned thresh)
         // Test one-body matrix element
         if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
         {
-            std::cout << "One-body error = " 
+            std::cout << "Two-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
 
@@ -540,9 +540,9 @@ int test_single_single(const char *testcase, unsigned thresh)
         // Test one-body matrix element
         if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
         {
-            std::cout << "One-body error = " 
+            std::cout << "Two-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
     }
@@ -605,8 +605,8 @@ int test_single_double(const char *testcase, unsigned thresh)
     arma::mat Cw_b(Cw.colptr(nmo), nbsf, nmo, false, true);
 
     // Define bra and ket orbital coefficients as spin-flip pairs
-    Cx_a = Cread.cols(0,nmo-1); Cw_b = Cread.cols(0,nmo-1);
-    Cx_b = Cread.cols(nmo,2*nmo-1); Cx_a = Cread.cols(nmo,2*nmo-1);
+    Cx_a = Cread.cols(0,nmo-1);     Cw_b = Cread.cols(0,nmo-1);
+    Cx_b = Cread.cols(nmo,2*nmo-1); Cw_a = Cread.cols(nmo,2*nmo-1);
 
     // Construct the wick_orbitals object
     wick_orbitals<double,double> orbs_a(nbsf, nmo, nocca, Cx_a, Cw_a, S);
@@ -671,9 +671,9 @@ int test_single_double(const char *testcase, unsigned thresh)
             // Test one-body matrix element
             if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
             {
-                std::cout << "One-body error = " 
+                std::cout << "Two-body error = " 
                           << std::fixed << std::setprecision(thresh+2) << std::scientific
-                          << std::abs(swick - sslat) << std::endl;
+                          << std::abs(fwick - fslat) << std::endl;
                 return 1;
             }
 
@@ -693,69 +693,9 @@ int test_single_double(const char *testcase, unsigned thresh)
             // Test one-body matrix element
             if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
             {
-                std::cout << "One-body error = " 
+                std::cout << "Two-body error = " 
                           << std::fixed << std::setprecision(thresh+2) << std::scientific
-                          << std::abs(swick - sslat) << std::endl;
-                return 1;
-            }
-        }
-
-        // Beta / Beta double
-        for(size_t j=0; j<noccb; j++)
-        for(size_t k=0; k<j; k++)
-        for(size_t b=noccb; b<nmo; b++)
-        for(size_t c=noccb; c<b; c++)
-        {
-            // Excitation indices
-            arma::umat wahp(0,2), wbhp(2,2);
-            wbhp(0,0) = j; wbhp(0,1) = b;
-            wbhp(1,0) = k; wbhp(1,1) = c;
-            
-            // Occupied orbitals
-            arma::uvec wocca = ref_occa, woccb = ref_occb;
-            woccb(j) = b; woccb(k) = c;
-
-            // Compute matrix elements
-            mb.evaluate(xahp, xbhp, wahp, wbhp, swick, fwick);
-            slat.evaluate(Cx_a.cols(xocca), Cx_b.cols(xoccb), Cw_a.cols(wocca), Cw_b.cols(woccb), sslat, fslat);
-
-            // Test overlap
-            if(std::abs(swick - sslat) > std::pow(0.1,thresh))
-            {
-                std::cout << "Overlap error = " 
-                          << std::fixed << std::setprecision(thresh+2) << std::scientific
-                          << std::abs(swick - sslat) << std::endl;
-                return 1;
-            }
-
-            // Test one-body matrix element
-            if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
-            {
-                std::cout << "One-body error = " 
-                          << std::fixed << std::setprecision(thresh+2) << std::scientific
-                          << std::abs(swick - sslat) << std::endl;
-                return 1;
-            }
-
-            // Compute matrix elements while swapping bra and ket excitation
-            mb.evaluate(wahp, wbhp, xahp, xbhp, swick, fwick);
-            slat.evaluate(Cx_a.cols(wocca), Cx_b.cols(woccb), Cw_a.cols(xocca), Cw_b.cols(xoccb), sslat, fslat);
-
-            // Test overlap
-            if(std::abs(swick - sslat) > std::pow(0.1,thresh))
-            {
-                std::cout << "Overlap error = " 
-                          << std::fixed << std::setprecision(thresh+2) << std::scientific
-                          << std::abs(swick - sslat) << std::endl;
-                return 1;
-            }
-
-            // Test one-body matrix element
-            if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
-            {
-                std::cout << "One-body error = " 
-                          << std::fixed << std::setprecision(thresh+2) << std::scientific
-                          << std::abs(swick - sslat) << std::endl;
+                          << std::abs(fwick - fslat) << std::endl;
                 return 1;
             }
         }
@@ -791,9 +731,9 @@ int test_single_double(const char *testcase, unsigned thresh)
             // Test one-body matrix element
             if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
             {
-                std::cout << "One-body error = " 
+                std::cout << "Two-body error = " 
                           << std::fixed << std::setprecision(thresh+2) << std::scientific
-                          << std::abs(swick - sslat) << std::endl;
+                          << std::abs(fwick - fslat) << std::endl;
                 return 1;
             }
 
@@ -813,22 +753,24 @@ int test_single_double(const char *testcase, unsigned thresh)
             // Test one-body matrix element
             if(std::abs(fwick - fslat) > std::pow(0.1,thresh))
             {
-                std::cout << "One-body error = " 
+                std::cout << "Two-body error = " 
                           << std::fixed << std::setprecision(thresh+2) << std::scientific
-                          << std::abs(swick - sslat) << std::endl;
+                          << std::abs(fwick - fslat) << std::endl;
                 return 1;
             }
         }
     }
 }
 
-int main () {
-    return 
 
-    test_ref_ref("h2o_6-31g",8)       | 
-    test_ref_single("h2o_6-31g",8)    | 
-    test_single_single("h2o_6-31g",8) | 
-    test_single_double("h2o_6-31g",8) |
+int main () {
+    int tol = 6;
+
+    return 
+    test_ref_ref("h2o_6-31g",tol)       | 
+    test_ref_single("h2o_6-31g",tol)    | 
+    test_single_single("h2o_6-31g",tol) | 
+    test_single_double("h2o_6-31g",tol) |
     0;
 }
 

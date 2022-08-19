@@ -62,8 +62,8 @@ int test_ref_ref(const char *testcase, unsigned thresh)
     arma::mat Cw_b(Cw.colptr(nmo), nbsf, nmo, false, true);
 
     // Define bra and ket orbital coefficients as spin-flip pairs
-    Cx_a = Cread.cols(0,nmo-1); Cw_b = Cread.cols(0,nmo-1);
-    Cx_b = Cread.cols(nmo,2*nmo-1); Cx_a = Cread.cols(nmo,2*nmo-1);
+    Cx_a = Cread.cols(0,nmo-1);     Cw_b = Cread.cols(0,nmo-1);
+    Cx_b = Cread.cols(nmo,2*nmo-1); Cw_a = Cread.cols(nmo,2*nmo-1);
 
     // Construct the wick_orbitals object
     wick_orbitals<double,double> orbs_a(nbsf, nmo, nocca, Cx_a, Cw_a, S);
@@ -110,7 +110,7 @@ int test_ref_ref(const char *testcase, unsigned thresh)
     {
         std::cout << "One-body error = " 
                   << std::fixed << std::setprecision(thresh+2) << std::scientific
-                  << std::abs(swick - sslat) << std::endl;
+                  << std::abs(fwick - fslat) << std::endl;
         return 1;
     }
 
@@ -172,8 +172,8 @@ int test_ref_single(const char *testcase, unsigned thresh)
     arma::mat Cw_b(Cw.colptr(nmo), nbsf, nmo, false, true);
 
     // Define bra and ket orbital coefficients as spin-flip pairs
-    Cx_a = Cread.cols(0,nmo-1); Cw_b = Cread.cols(0,nmo-1);
-    Cx_b = Cread.cols(nmo,2*nmo-1); Cx_a = Cread.cols(nmo,2*nmo-1);
+    Cx_a = Cread.cols(0,nmo-1);     Cw_b = Cread.cols(0,nmo-1);
+    Cx_b = Cread.cols(nmo,2*nmo-1); Cw_a = Cread.cols(nmo,2*nmo-1);
 
     // Construct the wick_orbitals object
     wick_orbitals<double,double> orbs_a(nbsf, nmo, nocca, Cx_a, Cw_a, S);
@@ -226,7 +226,7 @@ int test_ref_single(const char *testcase, unsigned thresh)
         {
             std::cout << "One-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
 
@@ -248,7 +248,7 @@ int test_ref_single(const char *testcase, unsigned thresh)
         {
             std::cout << "One-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
     }
@@ -276,7 +276,7 @@ int test_ref_single(const char *testcase, unsigned thresh)
         {
             std::cout << "Overlap error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
 
@@ -285,7 +285,7 @@ int test_ref_single(const char *testcase, unsigned thresh)
         {
             std::cout << "One-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
 
@@ -307,7 +307,7 @@ int test_ref_single(const char *testcase, unsigned thresh)
         {
             std::cout << "One-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
     }
@@ -370,8 +370,8 @@ int test_single_single(const char *testcase, unsigned thresh)
     arma::mat Cw_b(Cw.colptr(nmo), nbsf, nmo, false, true);
 
     // Define bra and ket orbital coefficients as spin-flip pairs
-    Cx_a = Cread.cols(0,nmo-1); Cw_b = Cread.cols(0,nmo-1);
-    Cx_b = Cread.cols(nmo,2*nmo-1); Cx_a = Cread.cols(nmo,2*nmo-1);
+    Cx_a = Cread.cols(0,nmo-1);     Cw_b = Cread.cols(0,nmo-1);
+    Cx_b = Cread.cols(nmo,2*nmo-1); Cw_a = Cread.cols(nmo,2*nmo-1);
 
     // Construct the wick_orbitals object
     wick_orbitals<double,double> orbs_a(nbsf, nmo, nocca, Cx_a, Cw_a, S);
@@ -428,7 +428,7 @@ int test_single_single(const char *testcase, unsigned thresh)
         {
             std::cout << "One-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
     }
@@ -469,7 +469,7 @@ int test_single_single(const char *testcase, unsigned thresh)
         {
             std::cout << "One-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
     }
@@ -510,7 +510,7 @@ int test_single_single(const char *testcase, unsigned thresh)
         {
             std::cout << "One-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
 
@@ -532,7 +532,7 @@ int test_single_single(const char *testcase, unsigned thresh)
         {
             std::cout << "One-body error = " 
                       << std::fixed << std::setprecision(thresh+2) << std::scientific
-                      << std::abs(swick - sslat) << std::endl;
+                      << std::abs(fwick - fslat) << std::endl;
             return 1;
         }
     }
@@ -595,8 +595,8 @@ int test_single_double(const char *testcase, unsigned thresh)
     arma::mat Cw_b(Cw.colptr(nmo), nbsf, nmo, false, true);
 
     // Define bra and ket orbital coefficients as spin-flip pairs
-    Cx_a = Cread.cols(0,nmo-1); Cw_b = Cread.cols(0,nmo-1);
-    Cx_b = Cread.cols(nmo,2*nmo-1); Cx_a = Cread.cols(nmo,2*nmo-1);
+    Cx_a = Cread.cols(0,nmo-1);     Cw_b = Cread.cols(0,nmo-1);
+    Cx_b = Cread.cols(nmo,2*nmo-1); Cw_a = Cread.cols(nmo,2*nmo-1);
 
     // Construct the wick_orbitals object
     wick_orbitals<double,double> orbs_a(nbsf, nmo, nocca, Cx_a, Cw_a, S);
@@ -660,7 +660,7 @@ int test_single_double(const char *testcase, unsigned thresh)
             {
                 std::cout << "One-body error = " 
                           << std::fixed << std::setprecision(thresh+2) << std::scientific
-                          << std::abs(swick - sslat) << std::endl;
+                          << std::abs(fwick - fslat) << std::endl;
                 return 1;
             }
 
@@ -682,7 +682,7 @@ int test_single_double(const char *testcase, unsigned thresh)
             {
                 std::cout << "One-body error = " 
                           << std::fixed << std::setprecision(thresh+2) << std::scientific
-                          << std::abs(swick - sslat) << std::endl;
+                          << std::abs(fwick - fslat) << std::endl;
                 return 1;
             }
         }
@@ -720,7 +720,7 @@ int test_single_double(const char *testcase, unsigned thresh)
             {
                 std::cout << "One-body error = " 
                           << std::fixed << std::setprecision(thresh+2) << std::scientific
-                          << std::abs(swick - sslat) << std::endl;
+                          << std::abs(fwick - fslat) << std::endl;
                 return 1;
             }
 
@@ -742,7 +742,7 @@ int test_single_double(const char *testcase, unsigned thresh)
             {
                 std::cout << "One-body error = " 
                           << std::fixed << std::setprecision(thresh+2) << std::scientific
-                          << std::abs(swick - sslat) << std::endl;
+                          << std::abs(fwick - fslat) << std::endl;
                 return 1;
             }
         }
@@ -780,7 +780,7 @@ int test_single_double(const char *testcase, unsigned thresh)
             {
                 std::cout << "One-body error = " 
                           << std::fixed << std::setprecision(thresh+2) << std::scientific
-                          << std::abs(swick - sslat) << std::endl;
+                          << std::abs(fwick - fslat) << std::endl;
                 return 1;
             }
 
@@ -802,7 +802,7 @@ int test_single_double(const char *testcase, unsigned thresh)
             {
                 std::cout << "One-body error = " 
                           << std::fixed << std::setprecision(thresh+2) << std::scientific
-                          << std::abs(swick - sslat) << std::endl;
+                          << std::abs(fwick - fslat) << std::endl;
                 return 1;
             }
         }
@@ -810,12 +810,13 @@ int test_single_double(const char *testcase, unsigned thresh)
 }
 
 int main () {
-    return 
+    int tol = 6;
 
-    test_ref_ref("h2o_6-31g",8)       | 
-    test_ref_single("h2o_6-31g",8)    | 
-    test_single_single("h2o_6-31g",8) | 
-    test_single_double("h2o_6-31g",8) |
+    return 
+    test_ref_ref("h2o_6-31g",tol)       | 
+    test_ref_single("h2o_6-31g",tol)    | 
+    test_single_single("h2o_6-31g",tol) | 
+    test_single_double("h2o_6-31g",tol) |
     0;
 }
 
