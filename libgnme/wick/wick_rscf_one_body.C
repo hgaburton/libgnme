@@ -106,7 +106,7 @@ void wick_rscf<Tc,Tf,Tb>::spin_one_body(
 
             // Get determinant and (transposed) inverse
             Tc detDtmp = arma::det(Dtmp);
-            if(detDtmp == 0) continue;
+            if(std::abs(detDtmp) == 0.0) continue;
             arma::Mat<Tc> invDtmp = arma::inv(Dtmp).t();
             
             // Get the overlap contributions 

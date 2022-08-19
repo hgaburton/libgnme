@@ -175,7 +175,7 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_two_body(
 
             // Get determinant and (transposed) inverse
             Tc detDtmp = arma::det(Dtmp);
-            if(detDtmp == 0) continue;
+            if(std::abs(detDtmp) == 0.0) continue;
             // More efficient to store transpose for later column extraction
             arma::Mat<Tc> invDtmp = arma::inv(Dtmp).t();
             
@@ -218,7 +218,7 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_two_body(
 
                 // Get determinant and (transposed) inverse
                 Tc detDtmp2 = arma::det(Dtmp2);
-                if(detDtmp2 == 0) continue;
+                if(std::abs(detDtmp2) == 0.0) continue;
                 arma::Mat<Tc> invDtmp2 = arma::inv(Dtmp2).t();
 
                 // Get the phase factor
@@ -357,7 +357,7 @@ void wick_rscf<Tc,Tf,Tb>::diff_spin_two_body(
         // Get determinants and inverses
         Tc detDa = arma::det(tmpDa);
         Tc detDb = arma::det(tmpDb);
-        if(detDa * detDb == 0) continue;
+        if(std::abs(detDa * detDb) == 0.0) continue;
         arma::Mat<Tc> invDa = arma::inv(tmpDa).t();
         arma::Mat<Tc> invDb = arma::inv(tmpDb).t();
         

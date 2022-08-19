@@ -1,6 +1,13 @@
 #include <cassert>
 #include "eri_ao2mo.h"
 
+namespace {
+
+double conj2(double x) { return x; }
+std::complex<double> conj2(std::complex<double> x) { return std::conj(x); }
+
+} // unnamed namespace
+
 namespace libgnme {
 
 template<typename Tc, typename Tb>
@@ -42,7 +49,7 @@ void eri_ao2mo_split(
     for(size_t k=0; k<nmo; k++)
     for(size_t l=0; l<nmo; l++)
         for(size_t r=0; r<nbsf; r++)
-            IItmp2(p*nbsf+q, k*nmo+l) += IItmp1(p*nbsf+q, r*nmo+l) * std::conj(C3(r,k));
+            IItmp2(p*nbsf+q, k*nmo+l) += IItmp1(p*nbsf+q, r*nmo+l) * conj2(C3(r,k));
      
     // (p2|34)
     IItmp1.zeros();
@@ -65,10 +72,10 @@ void eri_ao2mo_split(
         for(size_t p=0; p<nbsf; p++)
         {
             // Save Coulomb integrals
-            II_J(i*nmo+j, k*nmo+l) += IItmp1(p*nmo+j, k*nmo+l) * std::conj(C1(p,i));
+            II_J(i*nmo+j, k*nmo+l) += IItmp1(p*nmo+j, k*nmo+l) * conj2(C1(p,i));
             // Add exchange integral if same spin
             if(antisym)
-                II_K(i*nmo+j, k*nmo+l) -= IItmp1(p*nmo+l, k*nmo+j) * std::conj(C1(p,i)); 
+                II_K(i*nmo+j, k*nmo+l) -= IItmp1(p*nmo+l, k*nmo+j) * conj2(C1(p,i)); 
         }
 }
 template void eri_ao2mo_split(
