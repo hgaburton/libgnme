@@ -243,7 +243,7 @@ void wick_uscf<Tc,Tf,Tb>::same_spin_two_body(
             arma::Mat<Tc> Dtmp = D * arma::diagmat(1-ind1) + Db * arma::diagmat(ind1);
 
             // Get determinant and (transposed) inverse
-            Tc detDtmp            = arma::det(Dtmp);
+            Tc detDtmp = arma::det(Dtmp);
             if(detDtmp == 0) continue;
             // More efficient to store transpose for later column extraction
             arma::Mat<Tc> invDtmp = arma::inv(Dtmp).t();
@@ -286,7 +286,7 @@ void wick_uscf<Tc,Tf,Tb>::same_spin_two_body(
                 Dtmp2 = D2 * arma::diagmat(1-ind2) + Db2 * arma::diagmat(ind2);
 
                 // Get determinant and (transposed) inverse
-                Tc detDtmp2            = arma::det(Dtmp2);
+                Tc detDtmp2 = arma::det(Dtmp2);
                 if(detDtmp2 == 0) continue;
                 arma::Mat<Tc> invDtmp2 = arma::inv(Dtmp2).t();
 

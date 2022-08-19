@@ -54,8 +54,8 @@ int test_ref_ref(const char *testcase, unsigned thresh)
     assert(Cread.n_cols == 2*nmo);
 
     // Initialise memory for bra and ket orbitals with memory access views
-    arma::mat Cx(Cread.colptr(0), nbsf, nmo, true, true);
-    arma::mat Cw(Cread.colptr(nmo), nbsf, nmo, true, true);
+    arma::mat Cx(Cread.colptr(0), nbsf, nmo, false, true);
+    arma::mat Cw(Cread.colptr(nmo), nbsf, nmo, false, true);
 
     // Construct the wick_orbitals object
     wick_orbitals<double,double> orbs(nbsf, nmo, nocca, Cx, Cw, S);
@@ -160,8 +160,8 @@ int test_ref_single(const char *testcase, unsigned thresh)
     assert(Cread.n_cols == 2*nmo);
 
     // Initialise memory for bra and ket orbitals with memory access views
-    arma::mat Cx(Cread.colptr(0), nbsf, nmo, true, true);
-    arma::mat Cw(Cread.colptr(nmo), nbsf, nmo, true, true);
+    arma::mat Cx(Cread.colptr(0), nbsf, nmo, false, true);
+    arma::mat Cw(Cread.colptr(nmo), nbsf, nmo, false, true);
 
     // Construct the wick_orbitals object
     wick_orbitals<double,double> orbs(nbsf, nmo, nocca, Cx, Cw, S);
@@ -360,8 +360,8 @@ int test_single_single(const char *testcase, unsigned thresh)
     assert(Cread.n_cols == 2*nmo);
 
     // Initialise memory for bra and ket orbitals with memory access views
-    arma::mat Cx(Cread.colptr(0), nbsf, nmo, true, true);
-    arma::mat Cw(Cread.colptr(nmo), nbsf, nmo, true, true);
+    arma::mat Cx(Cread.colptr(0), nbsf, nmo, false, true);
+    arma::mat Cw(Cread.colptr(nmo), nbsf, nmo, false, true);
 
     // Construct the wick_orbitals object
     wick_orbitals<double,double> orbs(nbsf, nmo, nocca, Cx, Cw, S);
@@ -584,8 +584,8 @@ int test_single_double(const char *testcase, unsigned thresh)
     assert(Cread.n_cols == 2*nmo);
 
     // Initialise memory for bra and ket orbitals with memory access views
-    arma::mat Cx(Cread.colptr(0), nbsf, nmo, true, true);
-    arma::mat Cw(Cread.colptr(nmo), nbsf, nmo, true, true);
+    arma::mat Cx(Cread.colptr(0), nbsf, nmo, false, true);
+    arma::mat Cw(Cread.colptr(nmo), nbsf, nmo, false, true);
 
     // Construct the wick_orbitals object
     wick_orbitals<double,double> orbs(nbsf, nmo, nocca, Cx, Cw, S);

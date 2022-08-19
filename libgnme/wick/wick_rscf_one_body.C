@@ -103,21 +103,24 @@ void wick_rscf<Tc,Tf,Tb>::spin_one_body(
         do {
             // Evaluate overlap contribution
             arma::Mat<Tc> Dtmp = D * arma::diagmat(1-ind) + Db * arma::diagmat(ind);
+
+            // Get determinant and (transposed) inverse
+            Tc detDtmp = arma::det(Dtmp);
+            if(detDtmp == 0) continue;
+            arma::Mat<Tc> invDtmp = arma::inv(Dtmp).t();
             
             // Get the overlap contributions 
-            F += m_F0(m[0]) * arma::det(Dtmp);
+            F += m_F0(m[0]) * detDtmp;
             
             // Loop over the column swaps for contracted terms
             for(size_t i=0; i < nx+nw; i++)
             {   
-                // Take a safe copy of the column
-                arma::Col<Tc> Dcol = Dtmp.col(i);
-                // Make the swap
-                Dtmp.col(i) = Ftmp(m[0],m[i+1]).col(i);
-                // Add the one-body contribution
-                F -= arma::det(Dtmp);
-                // Restore the column
-                Dtmp.col(i) = Dcol;
+                // Get replace column vector
+                arma::Col<Tc> v = Ftmp(m[0],m[i+1]).col(i) - Dtmp.col(i);
+                // Get relevant column from transposed inverse matrix
+                arma::Col<Tc> a(invDtmp.colptr(i), nx+nw, false, true); 
+                // Perform Shermann-Morrison style update
+                F -= (1.0 + arma::dot(v, a)) * detDtmp;
             }
         } while(std::prev_permutation(m.begin(), m.end()));
     }
