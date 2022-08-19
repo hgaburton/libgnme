@@ -25,7 +25,6 @@ bool array_test(arma::Col<T> &arr, arma::Col<T> &arr_ref, int thresh=8)
 };
 
 template bool array_test(arma::Col<double> &arr, arma::Col<double> &arr_ref, int thresh);
-template bool array_test(arma::Col<size_t> &arr, arma::Col<size_t> &arr_ref, int thresh);
 template bool array_test(arma::Col<std::complex<double> > &arr, arma::Col<std::complex<double> > &arr_ref, int thresh);
 
 #endif // LIBGNME_UTILS_TESTING_H
