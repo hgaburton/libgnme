@@ -25,7 +25,7 @@ DOXYFILE_ENCODING      = UTF-8
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded
 # by quotes) that should identify the project.
 
-PROJECT_NAME           = libgnme
+PROJECT_NAME           = libGNME
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number.
 # This could be handy for archiving the generated documentation or
@@ -37,7 +37,7 @@ PROJECT_NUMBER         =
 # for a project that appears at the top of each page and should give viewer
 # a quick idea about the purpose of the project. Keep the description short.
 
-PROJECT_BRIEF          = "A C++ library for non-orthogonal electronic structure"
+PROJECT_BRIEF          = "A C++ library for non-orthogonal electronic structure theory"
 
 # With the PROJECT_LOGO tag one can specify an logo or icon that is
 # included in the documentation. The maximum height of the logo should not
@@ -610,7 +610,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/libgnme @CMAKE_CURRENT_SOURCE_DIR@/tests
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/libgnme @CMAKE_CURRENT_SOURCE_DIR@/test
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
