@@ -19,7 +19,7 @@ int test_real_uhf(const char *testcase, unsigned thresh)
     std::string fname_ov  = testcase + std::string("/ovls.txt");
 
     // Read-in basis information
-    size_t nbsf = 0, nocca = 0, noccb = 0, nmo = 0, nfroz = 0, nact = 0;
+    size_t nbsf = 0, nocca = 0, noccb = 0, nmo = 0, nact = 0;
     std::ifstream nelec_file;
     nelec_file.open(fname_nmo);
     nelec_file >> nbsf >> nocca >> noccb >> nact;

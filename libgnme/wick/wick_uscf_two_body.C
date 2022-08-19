@@ -326,8 +326,6 @@ void wick_uscf<Tc,Tf,Tb>::diff_spin_two_body(
     size_t nwa = wahp.n_rows; // Ket alpha excitations
     size_t nxb = xbhp.n_rows; // Bra beta excitations
     size_t nwb = wbhp.n_rows; // Ket beta excitations
-    size_t nx = nxa + nxb;
-    size_t nw = nwa + nwb;
 
     // Dimensions of multiple contractions
     size_t da = (m_orb_a.m_nz > 0) ? 2 : 1;

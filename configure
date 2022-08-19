@@ -52,7 +52,7 @@ while [ $# -gt 0 ]; do
                             ;;
         clang )             set_compilers "clang" "clang++"
                             ;;
-        pgi )               set_compilers "gpcc" "pgCC"
+        pgi )               set_compilers "gpcc" "pgc++"
                             ;;
         CC=*)               CC="${1#CC=}"
                             ;;

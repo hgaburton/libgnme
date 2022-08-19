@@ -22,7 +22,7 @@ int test_ref_ref(const char *testcase, unsigned thresh)
     std::string fname_hcore = testcase + std::string("/oeis.txt");
 
     // Read-in basis information
-    size_t nbsf = 0, nocca = 0, noccb = 0, nmo = 0, nfroz = 0, nact = 0;
+    size_t nbsf = 0, nocca = 0, noccb = 0, nmo = 0, nact = 0;
     std::ifstream nelec_file;
     nelec_file.open(fname_nmo);
     nelec_file >> nbsf >> nocca >> noccb >> nact;
@@ -132,7 +132,7 @@ int test_ref_single(const char *testcase, unsigned thresh)
     std::string fname_hcore = testcase + std::string("/oeis.txt");
 
     // Read-in basis information
-    size_t nbsf = 0, nocca = 0, noccb = 0, nmo = 0, nfroz = 0, nact = 0;
+    size_t nbsf = 0, nocca = 0, noccb = 0, nmo = 0, nact = 0;
     std::ifstream nelec_file;
     nelec_file.open(fname_nmo);
     nelec_file >> nbsf >> nocca >> noccb >> nact;
@@ -330,7 +330,7 @@ int test_single_single(const char *testcase, unsigned thresh)
     std::string fname_hcore = testcase + std::string("/oeis.txt");
 
     // Read-in basis information
-    size_t nbsf = 0, nocca = 0, noccb = 0, nmo = 0, nfroz = 0, nact = 0;
+    size_t nbsf = 0, nocca = 0, noccb = 0, nmo = 0, nact = 0;
     std::ifstream nelec_file;
     nelec_file.open(fname_nmo);
     nelec_file >> nbsf >> nocca >> noccb >> nact;
@@ -555,7 +555,7 @@ int test_single_double(const char *testcase, unsigned thresh)
     std::string fname_hcore = testcase + std::string("/oeis.txt");
 
     // Read-in basis information
-    size_t nbsf = 0, nocca = 0, noccb = 0, nmo = 0, nfroz = 0, nact = 0;
+    size_t nbsf = 0, nocca = 0, noccb = 0, nmo = 0, nact = 0;
     std::ifstream nelec_file;
     nelec_file.open(fname_nmo);
     nelec_file >> nbsf >> nocca >> noccb >> nact;
@@ -807,6 +807,8 @@ int test_single_double(const char *testcase, unsigned thresh)
             }
         }
     }
+
+    return 0;
 }
 
 int main () {
