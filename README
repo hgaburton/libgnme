@@ -1,0 +1,24 @@
+# LibGNME 
+A C++ library for evaluating non-orthogonal matrix elements in electronic structure.
+ - Hugh G. A. Burton (2022-)
+
+If you incorporate this code in your work, please consider citing the following work:
+ - "Generalised nonorthogonal matrix elements for arbitrary excitations"
+ - "Generalized nonorthogonal matrix elements: Unifying Wick’s theorem and the Slater–Condon rules"; J. Chem. Phys. 154, 144109 (2021)
+</ol>
+
+## Installation
+### Prerequisites
+The libGNME package requires a set of standard libraries:
+1. LAPACK, BLAS or Intel MKL
+2. OpenMP
+3. CMake (version 3.12 or higher)
+
+### Compilation
+The configure script can be run depending on the choice of compiler:
+    ./configure [intel/gcc/pgi]
+    cd build
+    make install
+
+Following installation, the test suite can be executed from the ./build/ directory by running 
+    ctest -j NPROC
