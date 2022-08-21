@@ -1,4 +1,4 @@
-# libGNME 
+# LibGNME 
 A C++ library for evaluating non-orthogonal matrix elements in electronic structure.
 <ul>
 <li>Hugh G. A. Burton (2022&ndash;)</li>
