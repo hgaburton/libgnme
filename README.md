@@ -6,7 +6,7 @@ A C++ library for evaluating non-orthogonal matrix elements in electronic struct
 
 If you incorporate this code in your work, please consider citing the following work:
 <ol reversed>
-<li>"Generalised nonorthogonal matrix elements for arbitrary excitations"</li>
+<li>"Generalised nonorthogonal matrix elements for arbitrary excitations"; <a href="https://doi.org/10.48550/arXiv.2208.10208">arXiv:2208.10208</a></li>
 
 <li>"Generalized nonorthogonal matrix elements: Unifying Wick’s theorem and the Slater–Condon rules"; <a href="https://doi.org/10.1063/5.0045442"><i>J. Chem. Phys.</i> <b>154</b>, 144109 (2021)</a>
 </ol>
