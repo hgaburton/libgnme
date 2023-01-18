@@ -11,10 +11,14 @@ private:
 public:
     bitset() { };
 
-    bitset(std::vector<bool> &bs) : m_v(bs)
-    { };
+    bitset(std::vector<bool> bs) : m_v(bs)
+    { 
+        size_t L = bs.size();
+        m_v.resize(L);
+        for(size_t i=0; i<L; i++) m_v[i] = bs[i];
+    };
 
-    bitset(arma::ivec &occ) 
+    bitset(arma::ivec occ) 
     {
         size_t L = occ.n_elem;
         m_v.resize(L);
@@ -80,8 +84,22 @@ public:
 
     int parity(bitset &other)
     {
-        bitset bs_diff(std::abs(get_int() - other.get_int()), size());
-        return std::pow(-1, ((bitset) (*this) & bs_diff).count());
+        int ss = other.get_int() - get_int();
+        if(ss > 0) 
+        {
+            bitset bs_diff(ss, size());
+            int p = std::pow(-1, ((bitset) other & bs_diff).count());
+            return p;
+        } 
+        else if (ss == 0)
+        {
+            return 1;
+        }
+        else
+        {
+            bitset bs_diff(-ss, size());
+            return std::pow(-1, ((bitset) (*this) & bs_diff).count());
+        }
     }
 };
 
