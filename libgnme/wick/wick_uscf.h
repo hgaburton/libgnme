@@ -2,6 +2,7 @@
 #define LIBGNME_WICK_USCF_H
 
 #include <armadillo>
+#include <libgnme/utils/bitset.h>
 #include "wick_orbitals.h"
 
 namespace libgnme {
@@ -29,6 +30,10 @@ private:
 
     wick_orbitals<Tc,Tb> m_orb_a; //!< Alpha orbital pair
     wick_orbitals<Tc,Tb> m_orb_b; //!< Beta orbital pair
+
+    // Reference bitsets
+    bitset m_bref_a; //!< Reference alpha bitset
+    bitset m_bref_b; //!< Reference beta bitset
 
     // One-body MO matrices
     bool m_one_body = false;
@@ -87,6 +92,14 @@ public:
         assert(orba.m_nbsf == orbb.m_nbsf);
         assert(orba.m_nmo  == orbb.m_nmo);
         assert(orba.m_nact == orbb.m_nact);
+
+        // Set the reference bit strings
+        size_t act_el_a = orba.m_nelec - orba.m_ncore; // Active alpha electrons
+        size_t act_el_b = orbb.m_nelec - orbb.m_ncore; // Active beta  electrons 
+        std::vector<bool> refa(orba.m_nact-act_el_a, 0); refa.resize(orba.m_nact, 1);
+        std::vector<bool> refb(orbb.m_nact-act_el_b, 0); refb.resize(orbb.m_nact, 1);
+        m_bref_a = bitset(refa);
+        m_bref_b = bitset(refb);  
     }
         
     /** \brief Destructor **/
@@ -112,6 +125,12 @@ public:
      **/
     virtual void add_two_body(arma::Mat<Tb> &V);
     ///@}
+    
+    virtual void evaluate(
+        bitset &bxa, bitset &bxb, 
+        bitset &bwa, bitset &bwb,
+        Tc &S, Tc &V);
+    
 
     virtual void evaluate_overlap(
         arma::umat &xa_hp, arma::umat &xb_hp,

@@ -2,6 +2,7 @@
 #define LIBGNME_WICK_RSCF_H
 
 #include <armadillo>
+#include <libgnme/utils/bitset.h>
 #include "wick_orbitals.h"
 
 namespace libgnme {
@@ -55,6 +56,9 @@ private:
     arma::field<arma::Mat<Tc> > m_IIsame;
     arma::field<arma::Mat<Tc> > m_IIdiff;
 
+    // Reference bitset
+    bitset m_bref; //!< Reference bitset for closed-shell determinant
+
 public:
     /** \brief Constructor for the object
         \param nbsf Number of basis functions
@@ -70,7 +74,12 @@ public:
         m_nbsf(orb.m_nbsf), m_nmo(orb.m_nmo), m_nelec(orb.m_nelec), 
         m_nact(orb.m_nact), m_metric(metric), m_Vc(Vc),
         m_orb(orb)
-    { }
+    { 
+        // Set the reference bit strings
+        size_t act_el = orb.m_nelec - orb.m_ncore; // Active alpha electrons
+        std::vector<bool> ref(orb.m_nact-act_el, 0); ref.resize(orb.m_nact, 1);
+        m_bref = bitset(ref);
+    } 
 
     /** \brief Destructor **/
     virtual ~wick_rscf() { }
@@ -89,6 +98,12 @@ public:
      **/
     virtual void add_two_body(arma::Mat<Tb> &V);
     ///@}
+    //
+    
+    virtual void evaluate(
+        bitset &bxa, bitset &bxb, 
+        bitset &bwa, bitset &bwb,
+        Tc &S, Tc &V);
     
     virtual void evaluate_overlap(
         arma::umat &xa_hp, arma::umat &xb_hp,

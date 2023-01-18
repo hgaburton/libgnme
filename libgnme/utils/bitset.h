@@ -5,7 +5,7 @@ namespace libgnme {
 
 class bitset 
 {
-private:
+protected:
     std::vector<bool> m_v;
 
 public:
@@ -101,6 +101,25 @@ public:
             return std::pow(-1, ((bitset) (*this) & bs_diff).count());
         }
     }
+
+
+    arma::umat excitation(bitset &other)
+    {
+        // Find particle and hole indices
+        int s = size();
+        arma::ivec diff(s, arma::fill::zeros);
+        for(size_t i=0; i<s; i++) diff(s-1-i) = other.m_v[i] - m_v[i];
+
+        // Return particle/hole indices in arma format
+        return arma::join_rows(arma::find(diff == -1), arma::reverse(arma::find(diff == 1)));
+    }
+
+
+    bool next()
+    {
+        return std::next_permutation(m_v.begin(), m_v.end());
+    }
+
 };
 
 }

@@ -6,6 +6,31 @@
 namespace libgnme {
 
 template<typename Tc, typename Tf, typename Tb>
+void wick_uscf<Tc,Tf,Tb>::evaluate(
+    bitset &bxa, bitset &bxb, 
+    bitset &bwa, bitset &bwb,
+    Tc &S, Tc &V)
+{
+    // Get excitation indices
+    arma::umat xahp = m_bref_a.excitation(bxa);
+    arma::umat xbhp = m_bref_b.excitation(bxb);
+    arma::umat wahp = m_bref_a.excitation(bwa);
+    arma::umat wbhp = m_bref_b.excitation(bwb);
+
+    // Call original functionality
+    evaluate(xahp, xbhp, wahp, wbhp, S, V);
+
+    // Get parity 
+    int parity = m_bref_a.parity(bxa) * m_bref_b.parity(bxb) 
+               * m_bref_a.parity(bwa) * m_bref_b.parity(bwb);
+               
+    // Multiply matrix elements by parity
+    S *= parity;
+    V *= parity;
+}
+
+
+template<typename Tc, typename Tf, typename Tb>
 void wick_uscf<Tc,Tf,Tb>::evaluate_overlap(
     arma::umat &xahp, arma::umat &xbhp,
     arma::umat &wahp, arma::umat &wbhp,
