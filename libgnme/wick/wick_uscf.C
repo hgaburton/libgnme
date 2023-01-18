@@ -81,6 +81,11 @@ void wick_uscf<Tc,Tf,Tb>::evaluate(
         // Different spin terms
         diff_spin_two_body(xahp, xbhp, wahp, wbhp, Vab);
         // Recombine
+        //std::cout << "WICK = " 
+        //          << std::fixed << std::setprecision(6) << std::setw(12) << 0.5 * Vaa * sb  
+        //          << std::fixed << std::setprecision(6) << std::setw(12) << 0.5 * Vbb * sa  
+        //          << std::fixed << std::setprecision(6) << std::setw(12) << Vab  
+        //          << std::endl;
         V += 0.5 * m_orb_a.m_redS * m_orb_b.m_redS * (Vaa * sb + Vbb * sa + 2.0 * Vab);
     }
 }

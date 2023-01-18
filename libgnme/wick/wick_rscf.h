@@ -89,7 +89,7 @@ public:
      **/
     virtual void add_two_body(arma::Mat<Tb> &V);
     ///@}
-
+    
     virtual void evaluate_overlap(
         arma::umat &xa_hp, arma::umat &xb_hp,
         arma::umat &wa_hp, arma::umat &wb_hp,
