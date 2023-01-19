@@ -12,17 +12,18 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
     Tc &S, Tc &V)
 {
     // Get excitation indices
-    arma::umat xahp = m_bref.excitation(bxa);
-    arma::umat xbhp = m_bref.excitation(bxb);
-    arma::umat wahp = m_bref.excitation(bwa);
-    arma::umat wbhp = m_bref.excitation(bwb);
+    arma::umat xahp, xbhp, wahp, wbhp; 
+    int pxa, pxb, pwa, pwb;
+    m_bref.excitation(bxa, xahp, pxa);
+    m_bref.excitation(bxb, xbhp, pxb);
+    m_bref.excitation(bwa, wahp, pwa);
+    m_bref.excitation(bwb, wbhp, pwb);
 
     // Call original functionality
     evaluate(xahp, xbhp, wahp, wbhp, S, V);
 
     // Get parity 
-    int parity = m_bref.parity(bxa) * m_bref.parity(bxb) 
-               * m_bref.parity(bwa) * m_bref.parity(bwb);
+    int parity = pxa * pxb * pwa * pwb;
                
     // Multiply matrix elements by parity
     S *= parity;

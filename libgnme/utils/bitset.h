@@ -1,127 +1,124 @@
 #ifndef LIBGNME_BITSET_H
 #define LIBGNME_BITSET_H
 
+#include <armadillo>
+#include <cassert>
+
 namespace libgnme {
 
 class bitset 
 {
-protected:
+private:
     std::vector<bool> m_v;
+    size_t m_size;
 
 public:
-    bitset() { };
+    // Default constructor
+    bitset() : m_size(0) { };
 
-    bitset(std::vector<bool> bs) : m_v(bs)
-    { 
-        size_t L = bs.size();
-        m_v.resize(L);
-        for(size_t i=0; i<L; i++) m_v[i] = bs[i];
-    };
+    // Copy constructor
+    bitset(const bitset &other) : m_v(other.m_v), m_size(other.m_size) { };
 
-    bitset(arma::ivec occ) 
-    {
-        size_t L = occ.n_elem;
-        m_v.resize(L);
-        for(size_t i=0; i<L; i++)
-        {
-            if(occ(i) == 1) m_v[L-i-1] = 1;
-            else m_v[L-i-1] = 0;
-        }
-    }
+    // Construct from bool vector
+    bitset(std::vector<bool> bs) : m_v(bs), m_size(bs.size()) { };
 
-    bitset(int n, int d)
+    // Construct from integer value
+    bitset(int n, int m) : m_size(m), m_v(m,0)
     {
         // Find highest power of two
         int dummy = 1, dmax = 1;
         bool divisible = (n / 1 > 0);
-        while(n / dummy > 0) 
-        {
-            dummy *= 2; dmax  += 1;
-        }
-        assert(dmax - 2 < d);
+        while(n / dummy > 0) { dummy *= 2; dmax  += 1; }
+        assert(dmax - 2 < int(m_size));
         
         // Convert integer to a bit string representation
-        m_v.resize(d);
         dummy = 1;
-        for(size_t i=0; i<d; i++)
+        for(size_t i=0; i<m_size; i++)
         {
-            m_v[d-i-1] = (n % (dummy * 2)) / dummy;
+            m_v[m_size-i-1] = (n % (dummy * 2)) / dummy;
             dummy *= 2;
         }
+    }
+
+    // Access element of the bitset
+    //const bool& operator()(size_t index) const;
+    //bool& operator()(size_t index);
+    
+
+    void flip(size_t i) { m_v[m_size-1-i] = not m_v[m_size-1-i]; };
+
+    void print()
+    {
+        for(size_t i=0; i<m_size; i++)  std::cout << m_v[i];
+        std::cout << std::endl;
     };
     
+    
+    int count(size_t min, size_t max) 
+    {
+        if(min==0 and max==0)
+            return std::accumulate(m_v.begin(), m_v.end(), 0);
+        int sum = 0;
+        for(size_t i=min; i<max; i++) sum += m_v[m_size-1-i];
+        return sum;
+    }; 
+
     int get_int()
     {
-        int n = 0, dummy = 1, L = m_v.size();
-        for(size_t i=0; i < L; i++) 
+        int n = 0, dummy = 1; 
+        for(size_t i=0; i < m_size; i++) 
         {
-            if(m_v[L-i-1]) n += dummy;
+            if(m_v[m_size-i-1]) n += dummy;
             dummy *= 2;
         }
         return n;
     };
 
-    void print()
+
+    bitset operator& (const bitset& other) 
     {
-        for(size_t i=0; i<m_v.size(); i++)  std::cout << m_v[i];
-        std::cout << std::endl;
+        bitset tmp(0,m_size);
+        for(size_t i=0; i<m_size; i++) tmp.m_v[i] = m_v[i] & other.m_v[i];
+        return tmp;
     };
 
-    int size() { return m_v.size(); };
-
-    int count() { return std::accumulate(m_v.begin(), m_v.end(), 0); };
-
-    bitset operator & (const bitset& other) 
+    bitset operator| (const bitset& other) 
     {
-        size_t L = size();
-
-        bitset tmp;
-        tmp.m_v.resize(L);
-        for(size_t i=0; i<L; i++) tmp.m_v[i] = m_v[i] & other.m_v[i];
-
+        bitset tmp(0,m_size);
+        for(size_t i=0; i<m_size; i++) tmp.m_v[i] = m_v[i] | other.m_v[i];
         return tmp;
-    }
-
-    int parity(bitset &other)
+    };
+    bitset operator^ (const bitset& other) 
     {
-        int ss = other.get_int() - get_int();
-        if(ss > 0) 
+        bitset tmp(0,m_size);
+        for(size_t i=0; i<m_size; i++) tmp.m_v[i] = m_v[i] ^ other.m_v[i];
+        return tmp;
+    };
+
+    void excitation(bitset &other, arma::umat &hp, int &parity)
+    {
+        arma::ivec diff(m_size, arma::fill::zeros);
+        for(size_t i=0; i<m_size; i++) 
+            diff(m_size-1-i) = other.m_v[i] - m_v[i];
+
+        // Define hole-particle array
+        hp = arma::join_rows(arma::find(diff==-1), arma::reverse(arma::find(diff==1)));
+
+        // Get parity relative to reference
+        parity = 1;
+        bitset tmp(*this); // Temporary bitset copy
+        for(size_t i=0; i<hp.n_rows; i++)
         {
-            bitset bs_diff(ss, size());
-            int p = std::pow(-1, ((bitset) other & bs_diff).count());
-            return p;
-        } 
-        else if (ss == 0)
-        {
-            return 1;
+            size_t h = hp(i,0), p = hp(i,1);
+            tmp.flip(h); tmp.flip(p);
+            parity *= std::pow(-1, ((bitset) (*this) & tmp).count(h,p));
         }
-        else
-        {
-            bitset bs_diff(-ss, size());
-            return std::pow(-1, ((bitset) (*this) & bs_diff).count());
-        }
-    }
+    };
 
-
-    arma::umat excitation(bitset &other)
-    {
-        // Find particle and hole indices
-        int s = size();
-        arma::ivec diff(s, arma::fill::zeros);
-        for(size_t i=0; i<s; i++) diff(s-1-i) = other.m_v[i] - m_v[i];
-
-        // Return particle/hole indices in arma format
-        return arma::join_rows(arma::find(diff == -1), arma::reverse(arma::find(diff == 1)));
-    }
-
-
-    bool next()
-    {
-        return std::next_permutation(m_v.begin(), m_v.end());
-    }
-
+    bool next_fci() { return std::next_permutation(m_v.begin(), m_v.end()); }
 };
 
-}
+
+} // namespace libgnme
 
 #endif // LIBGNME_BITSET_H
