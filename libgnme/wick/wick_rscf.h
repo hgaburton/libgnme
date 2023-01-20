@@ -33,6 +33,9 @@ private:
     bool m_one_body = false;
     bool m_two_body = false;
 
+    // Occupied core
+    arma::uvec m_core;
+
     /* Information about this pair */
 public:
     size_t m_nz; //!< Number of zero-overlap orbitals
@@ -79,6 +82,8 @@ public:
         size_t act_el = orb.m_nelec - orb.m_ncore; // Active alpha electrons
         std::vector<bool> ref(orb.m_nact-act_el, 0); ref.resize(orb.m_nact, 1);
         m_bref = bitset(ref);
+        m_core.resize(orb.m_ncore);
+        for(size_t i=0; i<orb.m_ncore; i++) m_core(i) = i;
     } 
 
     /** \brief Destructor **/
@@ -123,7 +128,9 @@ public:
         arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb);
 
     virtual void spin_rdm1(
-        arma::umat xhp, arma::umat whp, arma::Mat<Tc> &P);
+        arma::umat xhp, arma::umat whp, 
+        arma::uvec xocc, arma::uvec wocc, 
+        arma::Mat<Tc> &P);
 
 private:
     virtual void spin_overlap(

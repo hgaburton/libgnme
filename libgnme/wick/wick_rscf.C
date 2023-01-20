@@ -45,9 +45,14 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
     m_bref.excitation(bwa, wahp, pwa);
     m_bref.excitation(bwb, wbhp, pwb);
 
+    arma::uvec occ_xa = arma::join_cols(m_core,bxa.occ()+m_orb.m_ncore);
+    arma::uvec occ_xb = arma::join_cols(m_core,bxb.occ()+m_orb.m_ncore);
+    arma::uvec occ_wa = arma::join_cols(m_core,bwa.occ()+m_orb.m_ncore);
+    arma::uvec occ_wb = arma::join_cols(m_core,bwb.occ()+m_orb.m_ncore);
+
     // Treat each spin sector separately
-    spin_rdm1(xahp, wahp, Pa);
-    spin_rdm1(xbhp, wbhp, Pb);
+    spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa);
+    spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb);
 
     // Get parity 
     int parity = pxa * pxb * pwa * pwb;

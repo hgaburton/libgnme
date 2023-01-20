@@ -54,7 +54,7 @@ public:
     };
     
     
-    int count(size_t min, size_t max) 
+    size_t count(size_t min=0, size_t max=0) 
     {
         if(min==0 and max==0)
             return std::accumulate(m_v.begin(), m_v.end(), 0);
@@ -114,6 +114,18 @@ public:
             parity *= std::pow(-1, ((bitset) (*this) & tmp).count(h,p));
         }
     };
+
+    arma::uvec occ()
+    {
+        size_t n = count(), it=0;
+        arma::uvec v_occ(n, arma::fill::zeros);
+        for(size_t i=0; i<m_size; i++) 
+        {
+            if(m_v[m_size-i-1]) v_occ(it++) = i;
+            if(it==n) break;
+        }
+        return v_occ;
+    }
 
     bool next_fci() { return std::next_permutation(m_v.begin(), m_v.end()); }
 };
