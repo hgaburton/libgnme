@@ -1,6 +1,6 @@
 #include <cassert>
 #include <algorithm>
-#include <libgnme/utils/lowdin_pair.h>
+#include <libgnme/utils/linalg.h>
 #include "wick_uscf.h"
 
 namespace libgnme {
@@ -134,9 +134,16 @@ void wick_uscf<Tc,Tf,Tb>::spin_one_body(
             arma::Mat<Tc> Dtmp = D * arma::diagmat(1-ind) + Db * arma::diagmat(ind);
             
             // Get determinant and (transposed) inverse
-            Tc detDtmp            = arma::det(Dtmp);
-            if(std::abs(detDtmp) == 0.0) continue;
-            arma::Mat<Tc> invDtmp = arma::inv(Dtmp).t();
+            //Tc detDtmp            = arma::det(Dtmp);
+            //if(std::abs(detDtmp) == 0.0) continue;
+            //arma::Mat<Tc> invDtmp = arma::inv(Dtmp).t();
+
+            // Get matrix adjoint and determinant
+            Tc detDtmp;
+            size_t nzero;
+            arma::Mat<Tc> adjDtmp; 
+            adjoint_matrix(Dtmp, adjDtmp, detDtmp, nzero);
+            adjDtmp = adjDtmp.t(); // Transpose makes row access easier later
 
             // Get the overlap contributions 
             F += F0(m[0]) * detDtmp;
@@ -145,11 +152,13 @@ void wick_uscf<Tc,Tf,Tb>::spin_one_body(
             for(size_t i=0; i < nx+nw; i++)
             {   
                 // Get replace column vector
-                arma::Col<Tc> v = Ftmp(m[0],m[i+1]).col(i) - Dtmp.col(i);
+                arma::Col<Tc> v1(Ftmp(m[0],m[i+1]).colptr(i), nx+nw, false, true);
+                arma::Col<Tc> v2(Dtmp.colptr(i), nx+nw, false, true);
+                //arma::Col<Tc> v = Ftmp(m[0],m[i+1]).col(i) - Dtmp.col(i);
                 // Get relevant column from transposed inverse matrix
-                arma::Col<Tc> a(invDtmp.colptr(i), nx+nw, false, true); 
+                arma::Col<Tc> a(adjDtmp.colptr(i), nx+nw, false, true); 
                 // Perform Shermann-Morrison style update
-                F -= (1.0 + arma::dot(v, a)) * detDtmp;
+                F -= (detDtmp + arma::dot(v1-v2, a));
             }
         } while(std::prev_permutation(m.begin(), m.end()));
     }
