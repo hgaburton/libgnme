@@ -197,11 +197,12 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_two_body(
             for(size_t i=0; i < nx+nw; i++)
             {   
                 // Get replace column vector
-                arma::Col<Tc> v = JKtmp(m[0],m[1],m[i+2]).col(i) - Dtmp.col(i);
+                arma::Col<Tc> v1(JKtmp(m[0],m[1],m[i+2]).colptr(i), nx+nw, false, true);
+                arma::Col<Tc> v2(Dtmp.colptr(i), nx+nw, false, true);
                 // Get relevant column from transposed inverse matrix
                 arma::Col<Tc> a(adjDtmp.colptr(i), nx+nw, false, true); 
                 // Perform Shermann-Morrison style update
-                V -= 2.0 * (detDtmp + arma::dot(v, a));
+                V -= 2.0 * (detDtmp + arma::dot(v1 - v2, a));
 
                 // Take a safe copy of the column
                 //arma::Col<Tc> Dcol = Dtmp.col(i);
@@ -255,11 +256,13 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_two_body(
                 for(size_t k=0; k < nx+nw-1; k++)
                 {   
                     // Get replace column vector
-                    arma::Col<Tc> v = IItmp(m[k+3]).col(k) - Dtmp2.col(k);
+                    arma::Col<Tc> v1(IItmp(m[k+3]).colptr(k), nx+nw-1, false, true);
+                    arma::Col<Tc> v2(Dtmp2.colptr(k), nx+nw-1, false, true);
+                    //arma::Col<Tc> v = IItmp(m[k+3]).col(k) - Dtmp2.col(k);
                     // Get relevant column from transposed inverse matrix
                     arma::Col<Tc> a(adjDtmp2.colptr(k), nx+nw-1, false, true); 
                     // Perform Shermann-Morrison style update
-                    V += 0.5 * phase * (detDtmp2 + arma::dot(v, a));
+                    V += 0.5 * phase * (detDtmp2 + arma::dot(v1-v2, a));
 
                     // Take a safe copy of the column
                     //arma::Col<Tc> Dcol = Dtmp2.col(k);
@@ -406,11 +409,13 @@ void wick_rscf<Tc,Tf,Tb>::diff_spin_two_body(
         for(size_t i=0; i < nxa+nwa; i++)
         {   
             // Get replace column vector
-            arma::Col<Tc> v = Jba(ma[0],mb[0],ma[i+1]).col(i) - tmpDa.col(i);
+            arma::Col<Tc> v1(Jba(ma[0],mb[0],ma[i+1]).colptr(i), nxa+nwa, false, true);
+            arma::Col<Tc> v2(tmpDa.colptr(i), nxa+nwa, false, true);
+            //arma::Col<Tc> v = Jba(ma[0],mb[0],ma[i+1]).col(i) - tmpDa.col(i);
             // Get relevant column from transposed inverse matrix
             arma::Col<Tc> a(adjDa.colptr(i), nxa+nwa, false, true); 
             // Perform determinant update formula
-            V -= (detDa + arma::dot(v,a)) * detDb;
+            V -= (detDa + arma::dot(v1-v2,a)) * detDb;
 
             // Take a safe copy of the column
             //arma::Col<Tc> Dcol = tmpDa.col(i);
@@ -425,11 +430,13 @@ void wick_rscf<Tc,Tf,Tb>::diff_spin_two_body(
         for(size_t i=0; i < nxb+nwb; i++)
         {   
             // Get replace column vector
-            arma::Col<Tc> v = Jab(mb[0],ma[0],mb[i+1]).col(i) - tmpDb.col(i);
+            arma::Col<Tc> v1(Jab(mb[0],ma[0],mb[i+1]).colptr(i), nxb+nwb, false, true);
+            arma::Col<Tc> v2(tmpDb.colptr(i), nxb+nwb, false, true);
+            //arma::Col<Tc> v = Jab(mb[0],ma[0],mb[i+1]).col(i) - tmpDb.col(i);
             // Get relevant column from transposed inverse matrix
             arma::Col<Tc> a(adjDb.colptr(i), nxb+nwb, false, true); 
             // Perform determinant update formula
-            V -= (detDb + arma::dot(v,a)) * detDa;
+            V -= (detDb + arma::dot(v1-v2,a)) * detDa;
 
             // Take a safe copy of the column
             //arma::Col<Tc> Dcol = tmpDb.col(i);
@@ -471,11 +478,13 @@ void wick_rscf<Tc,Tf,Tb>::diff_spin_two_body(
             for(size_t k=0; k < nxb+nwb; k++)
             {   
                 // Get replace column vector
-                arma::Col<Tc> v = IItmp(mb[k+1]).col(k) - tmpDb.col(k);
+                arma::Col<Tc> v1(IItmp(mb[k+1]).colptr(k), nxb+nwb, false, true);
+                arma::Col<Tc> v2(tmpDb.colptr(k), nxb+nwb, false, true);
+                //arma::Col<Tc> v = IItmp(mb[k+1]).col(k) - tmpDb.col(k);
                 // Get relevant column from transposed inverse matrix
                 arma::Col<Tc> a(adjDb.colptr(k), nxb+nwb, false, true); 
                 // Perform determinant update formula
-                V += 0.5 * phase * (detDb + arma::dot(v,a)) * detDa2;
+                V += 0.5 * phase * (detDb + arma::dot(v1-v2,a)) * detDa2;
 
                 // Take a safe copy of the column
                 //arma::Col<Tc> Dcol = tmpDb.col(k);
@@ -515,11 +524,13 @@ void wick_rscf<Tc,Tf,Tb>::diff_spin_two_body(
             for(size_t k=0; k < nxa+nwa; k++)
             {   
                 // Get replace column vector
-                arma::Col<Tc> v = IItmp(ma[k+1]).col(k) - tmpDa.col(k);
+                arma::Col<Tc> v1(IItmp(ma[k+1]).colptr(k), nxa+nwa, false, true);
+                arma::Col<Tc> v2(tmpDa.colptr(k), nxa+nwa, false, true);
+                //arma::Col<Tc> v = IItmp(ma[k+1]).col(k) - tmpDa.col(k);
                 // Get relevant column from transposed inverse matrix
                 arma::Col<Tc> a(adjDa.colptr(k), nxa+nwa, false, true); 
                 // Perform determinant update formula
-                V += 0.5 * phase * (detDa + arma::dot(v,a)) * detDb2;
+                V += 0.5 * phase * (detDa + arma::dot(v1-v2,a)) * detDb2;
 
                 // Take a safe copy of the column
                 //arma::Col<Tc> Dcol = tmpDa.col(k);
