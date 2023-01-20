@@ -1,6 +1,6 @@
 set(SRC
     wick_orbitals.C
-#    wick_1rdm.C
+    wick_rscf_1rdm.C
     wick_rscf.C
     wick_rscf_overlap.C
     wick_rscf_one_body.C

@@ -117,11 +117,13 @@ public:
         arma::umat &wa_hp, arma::umat &wb_hp,
         Tc &S, Tc &M);
 
-    virtual void evaluate_1rdm(
-        arma::umat &xa_hp, arma::umat &xb_hp,
-        arma::umat &wa_hp, arma::umat &wb_hp,
-        Tc &S, arma::Mat<Tc> &P) {};
+    virtual void evaluate_rdm1(
+        bitset &bxa, bitset &bxb, 
+        bitset &bwa, bitset &bwb,
+        arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb);
 
+    virtual void spin_rdm1(
+        arma::umat xhp, arma::umat whp, arma::Mat<Tc> &P);
 
 private:
     virtual void spin_overlap(

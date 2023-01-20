@@ -31,6 +31,36 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
 }
 
 
+template<typename Tc, typename Tf, typename Tb>
+void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
+    bitset &bxa, bitset &bxb, 
+    bitset &bwa, bitset &bwb,
+    arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb)
+{
+    // Get excitation indices
+    arma::umat xahp, xbhp, wahp, wbhp; 
+    int pxa, pxb, pwa, pwb;
+    m_bref.excitation(bxa, xahp, pxa);
+    m_bref.excitation(bxb, xbhp, pxb);
+    m_bref.excitation(bwa, wahp, pwa);
+    m_bref.excitation(bwb, wbhp, pwb);
+
+    // Treat each spin sector separately
+    spin_rdm1(xahp, wahp, Pa);
+    spin_rdm1(xbhp, wbhp, Pb);
+
+    // Get parity 
+    int parity = pxa * pxb * pwa * pwb;
+
+    Tc sa = 0.0, sb = 0.0;
+    spin_overlap(xahp, wahp, sa);
+    spin_overlap(xbhp, wbhp, sb);
+               
+    // Multiply matrix elements by parity
+    Pa *= parity * m_orb.m_redS * m_orb.m_redS * sb; 
+    Pb *= parity * m_orb.m_redS * m_orb.m_redS * sa; 
+}
+
 
 template<typename Tc, typename Tf, typename Tb>
 void wick_rscf<Tc,Tf,Tb>::evaluate_overlap(
