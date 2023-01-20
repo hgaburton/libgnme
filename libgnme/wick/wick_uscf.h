@@ -39,6 +39,10 @@ private:
     bool m_one_body = false;
     bool m_two_body = false;
 
+    // Occupied core
+    arma::uvec m_corea;
+    arma::uvec m_coreb;
+
     /* Information about this pair */
 public:
     size_t m_nza; //!< Number of alpha zero-overlap orbitals
@@ -100,6 +104,10 @@ public:
         std::vector<bool> refb(orbb.m_nact-act_el_b, 0); refb.resize(orbb.m_nact, 1);
         m_bref_a = bitset(refa);
         m_bref_b = bitset(refb);  
+        m_corea.resize(orba.m_ncore);
+        m_coreb.resize(orbb.m_ncore);
+        for(size_t i=0; i<orba.m_ncore; i++) m_corea(i) = i;
+        for(size_t i=0; i<orbb.m_ncore; i++) m_coreb(i) = i;
     }
         
     /** \brief Destructor **/
@@ -144,15 +152,18 @@ public:
         arma::umat &wa_hp, arma::umat &wb_hp,
         Tc &S, Tc &M);
 
-//    virtual void evaluate_1rdm(
-//        arma::umat &xa_hp, arma::umat &xb_hp,
-//        arma::umat &wa_hp, arma::umat &wb_hp,
-//        Tc &S, arma::Mat<Tc> &P);
+    virtual void evaluate_rdm1(
+        bitset &bxa, bitset &bxb, 
+        bitset &bwa, bitset &bwb,
+        Tc &S,
+        arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb);
 
 
 private:
-//    virtual void spin_1rdm(
-//        arma::umat &x_hp, arma::umat &w_hp, arma::Mat<Tc> &P, bool alpha);
+    virtual void spin_rdm1(
+        arma::umat xhp, arma::umat whp, 
+        arma::uvec xocc, arma::uvec wocc, 
+        arma::Mat<Tc> &P, bool alpha);
     virtual void spin_overlap(
         arma::umat xhp, arma::umat whp,
         Tc &S, bool alpha);

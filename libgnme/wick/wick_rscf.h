@@ -127,12 +127,11 @@ public:
         bitset &bwa, bitset &bwb,
         arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb);
 
+private:
     virtual void spin_rdm1(
         arma::umat xhp, arma::umat whp, 
         arma::uvec xocc, arma::uvec wocc, 
         arma::Mat<Tc> &P);
-
-private:
     virtual void spin_overlap(
         arma::umat xhp, arma::umat whp, Tc &S);
     virtual void spin_one_body(
