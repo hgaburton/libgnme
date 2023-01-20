@@ -132,11 +132,6 @@ void wick_uscf<Tc,Tf,Tb>::spin_one_body(
             // Evaluate overlap contribution
             // TODO: Can we put a Shermann-Morrison update here as well?
             arma::Mat<Tc> Dtmp = D * arma::diagmat(1-ind) + Db * arma::diagmat(ind);
-            
-            // Get determinant and (transposed) inverse
-            //Tc detDtmp            = arma::det(Dtmp);
-            //if(std::abs(detDtmp) == 0.0) continue;
-            //arma::Mat<Tc> invDtmp = arma::inv(Dtmp).t();
 
             // Get matrix adjoint and determinant
             Tc detDtmp;
@@ -154,7 +149,6 @@ void wick_uscf<Tc,Tf,Tb>::spin_one_body(
                 // Get replace column vector
                 arma::Col<Tc> v1(Ftmp(m[0],m[i+1]).colptr(i), nx+nw, false, true);
                 arma::Col<Tc> v2(Dtmp.colptr(i), nx+nw, false, true);
-                //arma::Col<Tc> v = Ftmp(m[0],m[i+1]).col(i) - Dtmp.col(i);
                 // Get relevant column from transposed inverse matrix
                 arma::Col<Tc> a(adjDtmp.colptr(i), nx+nw, false, true); 
                 // Perform Shermann-Morrison style update

@@ -243,12 +243,6 @@ void wick_uscf<Tc,Tf,Tb>::same_spin_two_body(
             // Evaluate overlap contribution
             arma::Mat<Tc> Dtmp = D * arma::diagmat(1-ind1) + Db * arma::diagmat(ind1);
 
-            /* TODO: Can we reimplement the determinant update? */
-            // Get determinant and (transposed) inverse
-            //Tc detDtmp = arma::det(Dtmp);
-            //if(std::abs(detDtmp) == 0.0) continue;
-            // More efficient to store transpose for later column extraction
-            //arma::Mat<Tc> invDtmp = arma::inv(Dtmp).t();
             // Get matrix adjoint and determinant
             Tc detDtmp;
             size_t nzero;
@@ -257,7 +251,6 @@ void wick_uscf<Tc,Tf,Tb>::same_spin_two_body(
             adjDtmp = adjDtmp.t(); // Transpose makes row access easier later
             
             // Get the overlap contributions 
-            //V += V0(m[0]+m[1]) * arma::det(Dtmp);
             V += V0(m[0]+m[1]) * detDtmp;
             
             // Get the effective one-body contribution
@@ -267,20 +260,10 @@ void wick_uscf<Tc,Tf,Tb>::same_spin_two_body(
                 // Get replace column vector
                 arma::Col<Tc> v1(JKtmp(m[0],m[1],m[i+2]).colptr(i), nx+nw, false, true);
                 arma::Col<Tc> v2(Dtmp.colptr(i), nx+nw, false, true);
-                //arma::Col<Tc> v = JKtmp(m[0],m[1],m[i+2]).col(i) - Dtmp.col(i);
                 // Get relevant column from transposed inverse matrix
                 arma::Col<Tc> a(adjDtmp.colptr(i), nx+nw, false, true); 
                 // Perform Shermann-Morrison style update
                 V -= 2.0 * (detDtmp + arma::dot(v1 - v2, a));
-
-                // Take a safe copy of the column
-                //arma::Col<Tc> Dcol = Dtmp.col(i);
-                // Make the swap
-                //Dtmp.col(i) = JKtmp(m[0],m[1],m[i+2]).col(i);
-                // Add the one-body contribution
-                //V -= 2.0 * arma::det(Dtmp);
-                // Restore the column
-                //Dtmp.col(i) = Dcol;
             }
 
             arma::field<arma::Mat<Tc> > IItmp(d);
@@ -304,11 +287,6 @@ void wick_uscf<Tc,Tf,Tb>::same_spin_two_body(
                 D2  = D;   D2.shed_row(i);  D2.shed_col(j);
                 Db2 = Db; Db2.shed_row(i); Db2.shed_col(j);
                 Dtmp2 = D2 * arma::diagmat(1-ind2) + Db2 * arma::diagmat(ind2);
-
-                // Get determinant and (transposed) inverse
-                //Tc detDtmp2 = arma::det(Dtmp2);
-                //if(std::abs(detDtmp2) == 0.0) continue;
-                //arma::Mat<Tc> invDtmp2 = arma::inv(Dtmp2).t();
                 
                 // Get matrix adjoint and determinant
                 Tc detDtmp2;
@@ -326,20 +304,10 @@ void wick_uscf<Tc,Tf,Tb>::same_spin_two_body(
                     // Get replace column vector
                     arma::Col<Tc> v1(IItmp(m[k+3]).colptr(k), nx+nw-1, false, true);
                     arma::Col<Tc> v2(Dtmp2.colptr(k), nx+nw-1, false, true);
-                    //arma::Col<Tc> v = IItmp(m[k+3]).col(k) - Dtmp2.col(k);
                     // Get relevant column from transposed inverse matrix
                     arma::Col<Tc> a(adjDtmp2.colptr(k), nx+nw-1, false, true); 
                     // Perform Shermann-Morrison style update
                     V += 0.5 * phase * (detDtmp2 + arma::dot(v1-v2, a));
-
-                    // Take a safe copy of the column
-                    //arma::Col<Tc> Dcol = Dtmp2.col(k);
-                    // Make the swap
-                    //Dtmp2.col(k) = IItmp(m[k+3]).col(k);
-                    // Add the one-body contribution
-                    //V += 0.5 * phase * arma::det(Dtmp2);
-                    // Restore the column
-                    //Dtmp2.col(k) = Dcol;
                 }
             }
         } while(std::prev_permutation(m.begin(), m.end()));
@@ -460,14 +428,6 @@ void wick_uscf<Tc,Tf,Tb>::diff_spin_two_body(
         // Evaluate overlap contribution
         tmpDa = Da * arma::diagmat(1-inda1) + DaB * arma::diagmat(inda1);
         tmpDb = Db * arma::diagmat(1-indb1) + DbB * arma::diagmat(indb1);
-
-        // Get determinants and inverses
-        //Tc detDa = arma::det(tmpDa);
-        //Tc detDb = arma::det(tmpDb);
-        //std::cout << std::abs(detDa * detDb) << std::endl;
-        //if(std::abs(detDa * detDb) == 0.0) continue;
-        //arma::Mat<Tc> invDa = arma::inv(tmpDa).t();
-        //arma::Mat<Tc> invDb = arma::inv(tmpDb).t();
         
         // Get matrix adjoint and determinant
         Tc detDa, detDb;
@@ -479,7 +439,6 @@ void wick_uscf<Tc,Tf,Tb>::diff_spin_two_body(
         adjDb = adjDb.t(); // Transpose makes row access easier later
         
         // Get the zeroth-order contributions 
-        //V += m_Vab(ma[0],mb[0]) * arma::det(tmpDa) * arma::det(tmpDb);
         V += m_Vab(ma[0],mb[0]) * detDa * detDb;
 
         // Get the effective one-body contribution
@@ -489,20 +448,10 @@ void wick_uscf<Tc,Tf,Tb>::diff_spin_two_body(
             // Get replace column vector
             arma::Col<Tc> v1(Jba(ma[0],mb[0],ma[i+1]).colptr(i), nxa+nwa, false, true);
             arma::Col<Tc> v2(tmpDa.colptr(i), nxa+nwa, false, true);
-            //arma::Col<Tc> v = Jba(ma[0],mb[0],ma[i+1]).col(i) - tmpDa.col(i);
             // Get relevant column from transposed inverse matrix
             arma::Col<Tc> a(adjDa.colptr(i), nxa+nwa, false, true); 
             // Perform determinant update formula
             V -= (detDa + arma::dot(v1-v2,a)) * detDb;
-
-            // Take a safe copy of the column
-            //arma::Col<Tc> Dcol = tmpDa.col(i);
-            // Make the swap
-            //tmpDa.col(i) = Jba(ma[0],mb[0],ma[i+1]).col(i);
-            // Add the one-body contribution
-            //V -= arma::det(tmpDa) * arma::det(tmpDb);
-            // Restore the column
-            //tmpDa.col(i) = Dcol;
         }
         // Loop over the beta column swaps for contracted terms
         for(size_t i=0; i < nxb+nwb; i++)
@@ -515,15 +464,6 @@ void wick_uscf<Tc,Tf,Tb>::diff_spin_two_body(
             arma::Col<Tc> a(adjDb.colptr(i), nxb+nwb, false, true); 
             // Perform determinant update formula
             V -= (detDb + arma::dot(v1-v2,a)) * detDa;
-
-            // Take a safe copy of the column
-            //arma::Col<Tc> Dcol = tmpDb.col(i);
-            // Make the swap
-            //tmpDb.col(i) = Jab(mb[0],ma[0],mb[i+1]).col(i);
-            // Add the one-body contribution
-            //V -= arma::det(tmpDa) * arma::det(tmpDb);
-            // Restore the column
-            //tmpDb.col(i) = Dcol;
         }
 
         arma::field<arma::Mat<Tc> > IItmp(std::max(da,db));
@@ -558,20 +498,10 @@ void wick_uscf<Tc,Tf,Tb>::diff_spin_two_body(
                 // Get replace column vector
                 arma::Col<Tc> v1(IItmp(mb[k+1]).colptr(k), nxb+nwb, false, true);
                 arma::Col<Tc> v2(tmpDb.colptr(k), nxb+nwb, false, true);
-                //arma::Col<Tc> v = IItmp(mb[k+1]).col(k) - tmpDb.col(k);
                 // Get relevant column from transposed inverse matrix
                 arma::Col<Tc> a(adjDb.colptr(k), nxb+nwb, false, true); 
                 // Perform determinant update formula
                 V += 0.5 * phase * (detDb + arma::dot(v1-v2,a)) * detDa2;
-
-                // Take a safe copy of the column
-                //arma::Col<Tc> Dcol = tmpDb.col(k);
-                // Make the swap
-                //tmpDb.col(k) = IItmp(mb[k+1]).col(k);
-                // Add the one-body contribution
-                //V += 0.5 * phase * arma::det(tmpDa2) * arma::det(tmpDb);
-                // Restore the column
-                //tmpDb.col(k) = Dcol;
            }
         }
         // Loop over beta particle-hole pairs for two-body interaction
@@ -604,20 +534,10 @@ void wick_uscf<Tc,Tf,Tb>::diff_spin_two_body(
                 // Get replace column vector
                 arma::Col<Tc> v1(IItmp(ma[k+1]).colptr(k), nxa+nwa, false, true);
                 arma::Col<Tc> v2(tmpDa.colptr(k), nxa+nwa, false, true);
-                //arma::Col<Tc> v = IItmp(ma[k+1]).col(k) - tmpDa.col(k);
                 // Get relevant column from transposed inverse matrix
                 arma::Col<Tc> a(adjDa.colptr(k), nxa+nwa, false, true); 
                 // Perform determinant update formula
                 V += 0.5 * phase * (detDa + arma::dot(v1-v2,a)) * detDb2;
-
-                // Take a safe copy of the column
-                //arma::Col<Tc> Dcol = tmpDa.col(k);
-                // Make the swap
-                //tmpDa.col(k) = IItmp(ma[k+1]).col(k);
-                // Add the one-body contribution
-                //V += 0.5 * phase * arma::det(tmpDa) * arma::det(tmpDb2);
-                // Restore the column
-                //tmpDa.col(k) = Dcol;
             }
         }
     } while(std::prev_permutation(ma.begin(), ma.end()));
