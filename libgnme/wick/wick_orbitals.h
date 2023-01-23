@@ -34,6 +34,11 @@ public:
     arma::field<arma::Mat<Tc> > m_CX; //! CX transformed coefficients (2 * nbsf * nmo)
     arma::field<arma::Mat<Tc> > m_XC; //! XC transformed coefficients (2 * nbsf * nmo)
 
+    // 1RDM variables
+    arma::field<arma::Mat<Tc> > m_wxP; //! Reference density
+    arma::field<arma::Mat<Tc> > m_R;  //! (xxY_ap,...,wxX_lp)
+    arma::field<arma::Mat<Tc> > m_Q;  //! (wxX_qi,...,wwY_qd)
+
 private:
     // Store the reference coefficients (nbsf * nmo)
     arma::Mat<Tc> m_Cx; // Bra coefficients

@@ -78,6 +78,25 @@ void wick_orbitals<Tc,Tb>::init(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw)
             = m_Cw.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * m_Cw; // ww
     }
 
+    // 1-RDM variables
+    m_wxP.set_size(2);
+    for(size_t i=0; i<2; i++)
+        m_wxP(i) = Cw.t() * m_metric * m_M(i) * m_metric * Cx; // wx
+    m_R.set_size(2);
+    for(size_t i=0; i<2; i++)
+    {
+        m_R(i).resize(2*m_nact, m_nmo);
+        m_R(i).rows(0,m_nact-1)        = m_Cx.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * Cx; 
+        m_R(i).rows(m_nact,2*m_nact-1) = m_Cw.t() * m_metric * m_M(i) * m_metric * Cx;
+    }
+    m_Q.set_size(2);
+    for(size_t i=0; i<2; i++)
+    {
+        m_Q(i).resize(m_nmo, 2*m_nact);
+        m_Q(i).cols(0,m_nact-1)        = Cw.t() * m_metric * m_M(i) * m_metric * m_Cx;
+        m_Q(i).cols(m_nact,2*m_nact-1) = Cw.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * m_Cw; 
+    }
+
     // Construct transformed coefficients
     m_CX.set_size(2);
     m_XC.set_size(2);

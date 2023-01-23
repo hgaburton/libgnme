@@ -1,4 +1,5 @@
 set(SRC
+    bitset_tools.C
     eri_ao2mo.C  
     linalg.C  
     lowdin_pair.C  

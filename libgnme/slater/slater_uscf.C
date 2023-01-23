@@ -48,7 +48,6 @@ void slater_uscf<Tc,Tf,Tb>::evaluate(
     Tc redOv_a = 1.0, redOv_b = 1.0;
     libgnme::reduced_overlap(Sxx_a, inv_Sxx_a, redOv_a, nZeros_a, zeros_a);
     libgnme::reduced_overlap(Sxx_b, inv_Sxx_b, redOv_b, nZeros_b, zeros_b);
-//    ((arma::Mat<Tc>) arma::join_rows(Sxx_a,Sxx_b)).print("Sxx");
 
     // Zeroth order terms
     Ov = ((nZeros_a + nZeros_b) == 0) ? redOv_a * redOv_b : 0.0;

@@ -12,7 +12,7 @@
 
     \ref gnme "Components of the GNME library"
 
-    \authors Hugh Burton 2020-
+    \authors Hugh Burton 2022-
  **/
 
 /** \defgroup gnme GNME library

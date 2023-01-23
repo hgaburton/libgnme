@@ -2,6 +2,7 @@
 #define LIBGNME_WICK_RSCF_H
 
 #include <armadillo>
+#include <libgnme/utils/bitset.h>
 #include "wick_orbitals.h"
 
 namespace libgnme {
@@ -32,6 +33,9 @@ private:
     bool m_one_body = false;
     bool m_two_body = false;
 
+    // Occupied core
+    arma::uvec m_core;
+
     /* Information about this pair */
 public:
     size_t m_nz; //!< Number of zero-overlap orbitals
@@ -55,6 +59,9 @@ private:
     arma::field<arma::Mat<Tc> > m_IIsame;
     arma::field<arma::Mat<Tc> > m_IIdiff;
 
+    // Reference bitset
+    bitset m_bref; //!< Reference bitset for closed-shell determinant
+
 public:
     /** \brief Constructor for the object
         \param nbsf Number of basis functions
@@ -70,7 +77,14 @@ public:
         m_nbsf(orb.m_nbsf), m_nmo(orb.m_nmo), m_nelec(orb.m_nelec), 
         m_nact(orb.m_nact), m_metric(metric), m_Vc(Vc),
         m_orb(orb)
-    { }
+    { 
+        // Set the reference bit strings
+        size_t act_el = orb.m_nelec - orb.m_ncore; // Active alpha electrons
+        std::vector<bool> ref(orb.m_nact-act_el, 0); ref.resize(orb.m_nact, 1);
+        m_bref = bitset(ref);
+        m_core.resize(orb.m_ncore);
+        for(size_t i=0; i<orb.m_ncore; i++) m_core(i) = i;
+    } 
 
     /** \brief Destructor **/
     virtual ~wick_rscf() { }
@@ -89,7 +103,13 @@ public:
      **/
     virtual void add_two_body(arma::Mat<Tb> &V);
     ///@}
-
+    //
+    
+    virtual void evaluate(
+        bitset &bxa, bitset &bxb, 
+        bitset &bwa, bitset &bwb,
+        Tc &S, Tc &V);
+    
     virtual void evaluate_overlap(
         arma::umat &xa_hp, arma::umat &xb_hp,
         arma::umat &wa_hp, arma::umat &wb_hp,
@@ -102,13 +122,17 @@ public:
         arma::umat &wa_hp, arma::umat &wb_hp,
         Tc &S, Tc &M);
 
-    virtual void evaluate_1rdm(
-        arma::umat &xa_hp, arma::umat &xb_hp,
-        arma::umat &wa_hp, arma::umat &wb_hp,
-        Tc &S, arma::Mat<Tc> &P) {};
-
+    virtual void evaluate_rdm1(
+        bitset &bxa, bitset &bxb, 
+        bitset &bwa, bitset &bwb,
+        Tc &S,
+        arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb);
 
 private:
+    virtual void spin_rdm1(
+        arma::umat xhp, arma::umat whp, 
+        arma::uvec xocc, arma::uvec wocc, 
+        arma::Mat<Tc> &P);
     virtual void spin_overlap(
         arma::umat xhp, arma::umat whp, Tc &S);
     virtual void spin_one_body(

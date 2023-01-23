@@ -6,46 +6,19 @@
 namespace libgnme {
 
 template<typename Tc, typename Tf, typename Tb>
-void wick_rscf<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &F) 
+void wick_rscf<Tc,Tf,Tb>::spin_rdm1(
+    arma::umat xhp, arma::umat whp, 
+    arma::uvec xocc, arma::uvec wocc,
+    arma::Mat<Tc> &P)
 {
-    // Check input
-    assert(F.n_rows == m_nbsf);
-    assert(F.n_cols == m_nbsf);
+    // Temporary density matrix
+    assert(P.n_rows == m_nmo);
+    assert(P.n_cols == m_nmo);
+    P.zeros();
 
-    // Setup control variable to indicate one-body initialised
-    m_one_body = true;
-
-    // Get dimensions needed for temporary arrays
-    size_t d = (m_orb.m_nz > 0) ? 2 : 1;
-
-    // Construct 'F0' terms
-    m_F0.resize(d); 
-    for(size_t i=0; i<d; i++)
-        m_F0(i) = arma::dot(F, m_orb.m_M(i).st());
-
-    // We only have to worry about
-    //    xx[YFX]    xw[YFY]
-    //    wx[XFX]    ww[XFY]
-    // Construct the XFX super matrices
-    m_XFX.set_size(d,d); 
-    for(size_t i=0; i<d; i++)
-    for(size_t j=0; j<d; j++)
-        m_XFX(i,j) = m_orb.m_CX(i).t() * F * m_orb.m_XC(j);
-}
-
-template<typename Tc, typename Tf, typename Tb>
-void wick_rscf<Tc,Tf,Tb>::spin_one_body(
-    arma::umat xhp, arma::umat whp, Tc &F)
-{
-    // Ensure outputs are zero'd
-    F = 0.0; 
-    
     // Establish number of bra/ket excitations
     size_t nx = xhp.n_rows; // Bra excitations
     size_t nw = whp.n_rows; // Ket excitations
-
-    // Get dimensions of zero-contractions
-    size_t dim = (m_orb.m_nz > 0) ? 2 : 1; 
 
     // Check we don't have a non-zero element
     if(m_orb.m_nz > nw + nx + 1) return;
@@ -70,15 +43,14 @@ void wick_rscf<Tc,Tf,Tb>::spin_one_body(
     // Start with overlap contribution
     if(nx == 0 and nw == 0)
     {   // No excitations, so return simple overlap
-        F = m_F0(m_orb.m_nz);
+        P.submat(wocc,xocc) = m_orb.m_wxP(m_orb.m_nz).submat(wocc,xocc);
     }
-    else if((nx+nw) == 1)
-    {   // One excitation doesn't require determinant
-        // Distribute zeros over 2 contractions
+    else if((nx + nw) ==1)
+    {   // One excitation is a special case
         std::vector<size_t> m(m_orb.m_nz, 1); m.resize(2, 0); 
         do {
-            F += m_orb.m_X(m[0])(rows(0),cols(0)) * m_F0(m[1]) 
-               - m_XFX(m[0],m[1])(rows(0),cols(0));
+            P.submat(wocc,xocc) += m_orb.m_wxP(m[0]).submat(wocc,xocc) * m_orb.m_X(m[1])(rows(0),cols(0))
+                                 - m_orb.m_Q(m[0]).submat(wocc,cols) * m_orb.m_R(m[1]).submat(rows,xocc);
         } while(std::prev_permutation(m.begin(), m.end()));
     }
     else
@@ -90,11 +62,13 @@ void wick_rscf<Tc,Tf,Tb>::spin_one_body(
         arma::Mat<Tc> Db = arma::trimatl(m_orb.m_X(1).submat(rows,cols)) 
                          + arma::trimatu(m_orb.m_Y(1).submat(rows,cols),1);
 
-        // Matrix of F contractions
-        arma::field<arma::Mat<Tc> > Ftmp(dim,dim); 
-        for(size_t i=0; i<dim; i++)
-        for(size_t j=0; j<dim; j++)
-            Ftmp(i,j) = m_XFX(i,j).submat(rows,cols);
+        // Temporary matrices
+        arma::field<arma::Mat<Tc> > R(2);
+        R(0) = m_orb.m_R(0).submat(rows,xocc);
+        R(1) = m_orb.m_R(1).submat(rows,xocc);
+        arma::field<arma::Mat<Tc> > Q(2);
+        Q(0) = m_orb.m_Q(0).submat(wocc,cols);
+        Q(1) = m_orb.m_Q(1).submat(wocc,cols);
 
         // Compute contribution from the overlap and zeroth term
         std::vector<size_t> m(m_orb.m_nz, 1); m.resize(nx+nw+1, 0); 
@@ -112,27 +86,22 @@ void wick_rscf<Tc,Tf,Tb>::spin_one_body(
             adjDtmp = adjDtmp.t(); // Transpose makes row access easier later
             
             // Get the overlap contributions 
-            F += m_F0(m[0]) * detDtmp;
+            P.submat(wocc,xocc) += m_orb.m_wxP(m[0]).submat(wocc,xocc) * detDtmp;
             
             // Loop over the column swaps for contracted terms
             for(size_t i=0; i < nx+nw; i++)
             {   
-                // Get replace column vector
-                arma::Col<Tc> v1(Ftmp(m[0],m[i+1]).colptr(i), nx+nw, false, true);
-                arma::Col<Tc> v2(Dtmp.colptr(i), nx+nw, false, true);
                 // Get relevant column from transposed inverse matrix
+                arma::Col<Tc> Qtmp(Q(m[0]).colptr(i), m_orb.m_nelec, false, true);
                 arma::Col<Tc> a(adjDtmp.colptr(i), nx+nw, false, true); 
-                // Perform Shermann-Morrison style update
-                F -= (detDtmp + arma::dot(v1-v2, a));
+                // Additional constant
+                Tc shift = arma::dot(a, Dtmp.col(i));
+                P.submat(wocc,xocc) -= Qtmp * (detDtmp - shift + a.t() * R(m[i+1]));
             }
         } while(std::prev_permutation(m.begin(), m.end()));
     }
 
-    // Shift w indices
-    // TODO: Do we want to keep this?
     whp -= m_nact;
-
-    return;
 }
 
 template class wick_rscf<double, double, double>;

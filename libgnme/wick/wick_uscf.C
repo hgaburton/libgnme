@@ -6,6 +6,72 @@
 namespace libgnme {
 
 template<typename Tc, typename Tf, typename Tb>
+void wick_uscf<Tc,Tf,Tb>::evaluate(
+    bitset &bxa, bitset &bxb, 
+    bitset &bwa, bitset &bwb,
+    Tc &S, Tc &V)
+{
+    // Get excitation indices
+    arma::umat xahp, xbhp, wahp, wbhp; 
+    int pxa, pxb, pwa, pwb;
+    m_bref_a.excitation(bxa, xahp, pxa);
+    m_bref_b.excitation(bxb, xbhp, pxb);
+    m_bref_a.excitation(bwa, wahp, pwa);
+    m_bref_b.excitation(bwb, wbhp, pwb);
+
+    // Call original functionality
+    evaluate(xahp, xbhp, wahp, wbhp, S, V);
+
+    // Get parity 
+    int parity = pxa * pxb * pwa * pwb;
+               
+    // Multiply matrix elements by parity
+    S *= parity;
+    V *= parity;
+}
+
+
+template<typename Tc, typename Tf, typename Tb>
+void wick_uscf<Tc,Tf,Tb>::evaluate_rdm1(
+    bitset &bxa, bitset &bxb, 
+    bitset &bwa, bitset &bwb,
+    Tc &S,
+    arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb)
+{
+    // Get excitation indices
+    arma::umat xahp, xbhp, wahp, wbhp; 
+    int pxa, pxb, pwa, pwb;
+    m_bref_a.excitation(bxa, xahp, pxa);
+    m_bref_b.excitation(bxb, xbhp, pxb);
+    m_bref_a.excitation(bwa, wahp, pwa);
+    m_bref_b.excitation(bwb, wbhp, pwb);
+
+    // Get parity 
+    int parity = pxa * pxb * pwa * pwb;
+
+    // Get spin overlaps
+    Tc sa = 0.0, sb = 0.0;
+    spin_overlap(xahp, wahp, sa, true);
+    spin_overlap(xbhp, wbhp, sb, false);
+    S = parity * m_orb_a.m_redS * m_orb_b.m_redS * sa * sb;
+
+    // Get occupied orbitals to simplify density matrix computation
+    arma::uvec occ_xa = arma::join_cols(m_corea, bxa.occ()+m_orb_a.m_ncore);
+    arma::uvec occ_xb = arma::join_cols(m_coreb, bxb.occ()+m_orb_b.m_ncore);
+    arma::uvec occ_wa = arma::join_cols(m_corea, bwa.occ()+m_orb_a.m_ncore);
+    arma::uvec occ_wb = arma::join_cols(m_coreb, bwb.occ()+m_orb_b.m_ncore);
+
+    // Treat each spin sector separately
+    spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa, true);
+    spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb, false);
+               
+    // Multiply matrix elements by parity
+    Pa *= parity * m_orb_a.m_redS * m_orb_b.m_redS * sb; 
+    Pb *= parity * m_orb_a.m_redS * m_orb_b.m_redS * sa; 
+}
+
+
+template<typename Tc, typename Tf, typename Tb>
 void wick_uscf<Tc,Tf,Tb>::evaluate_overlap(
     arma::umat &xahp, arma::umat &xbhp,
     arma::umat &wahp, arma::umat &wbhp,
@@ -81,6 +147,11 @@ void wick_uscf<Tc,Tf,Tb>::evaluate(
         // Different spin terms
         diff_spin_two_body(xahp, xbhp, wahp, wbhp, Vab);
         // Recombine
+        //std::cout << "WICK = " 
+        //          << std::fixed << std::setprecision(6) << std::setw(12) << 0.5 * Vaa * sb  
+        //          << std::fixed << std::setprecision(6) << std::setw(12) << 0.5 * Vbb * sa  
+        //          << std::fixed << std::setprecision(6) << std::setw(12) << Vab  
+        //          << std::endl;
         V += 0.5 * m_orb_a.m_redS * m_orb_b.m_redS * (Vaa * sb + Vbb * sa + 2.0 * Vab);
     }
 }

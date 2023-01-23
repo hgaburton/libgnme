@@ -1,4 +1,4 @@
-set(TESTS
+set(TESTS 
     wick_orbitals_test
     wick_uscf_one_body_test
     wick_uscf_two_body_test
