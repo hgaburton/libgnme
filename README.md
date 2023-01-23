@@ -34,9 +34,6 @@ icpc -Wall -std=c++11 -fopenmp -I${GNMEROOT}/external/armadillo-10.1.2/include -
 Here, <tt>${GNMEROOT}</tt> is an environment variable that points towards the root directory of your LibGNME installation. 
 Subsequently running your compiled progarm <tt>mycalc</tt> requires <tt>${GNMEROOT}/lib</tt> to be included in the <tt>$LD_LIBRARY_PATH</tt>.
 
-### Compiling programs using LibGNME
-To compile 
-
 ## Code structure
 The primary functionality of LibGNME is to compute matrix elements between non-orthogonal Slater determiants. This can be achieved using either extended nonorthogonal Wick's theory, or using the more computationally expensive Slater&ndash;Condon rules. 
 
