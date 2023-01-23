@@ -35,6 +35,7 @@ template<typename Tc, typename Tf, typename Tb>
 void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
     bitset &bxa, bitset &bxb, 
     bitset &bwa, bitset &bwb,
+    Tc &S,
     arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb)
 {
     // Get excitation indices
@@ -45,6 +46,16 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
     m_bref.excitation(bwa, wahp, pwa);
     m_bref.excitation(bwb, wbhp, pwb);
 
+    // Get parity 
+    int parity = pxa * pxb * pwa * pwb;
+
+    // Get spin overlaps
+    Tc sa = 0.0, sb = 0.0;
+    spin_overlap(xahp, wahp, sa);
+    spin_overlap(xbhp, wbhp, sb);
+    S = parity * m_orb.m_redS * m_orb.m_redS * sa * sb;
+
+    // Get occupied orbitals to simplify density matrix computation
     arma::uvec occ_xa = arma::join_cols(m_core,bxa.occ()+m_orb.m_ncore);
     arma::uvec occ_xb = arma::join_cols(m_core,bxb.occ()+m_orb.m_ncore);
     arma::uvec occ_wa = arma::join_cols(m_core,bwa.occ()+m_orb.m_ncore);
@@ -53,13 +64,6 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
     // Treat each spin sector separately
     spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa);
     spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb);
-
-    // Get parity 
-    int parity = pxa * pxb * pwa * pwb;
-
-    Tc sa = 0.0, sb = 0.0;
-    spin_overlap(xahp, wahp, sa);
-    spin_overlap(xbhp, wbhp, sb);
                
     // Multiply matrix elements by parity
     Pa *= parity * m_orb.m_redS * m_orb.m_redS * sb; 

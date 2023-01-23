@@ -125,6 +125,7 @@ public:
     virtual void evaluate_rdm1(
         bitset &bxa, bitset &bxb, 
         bitset &bwa, bitset &bwb,
+        Tc &S,
         arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb);
 
 private:

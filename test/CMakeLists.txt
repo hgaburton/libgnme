@@ -1,5 +1,5 @@
 set(TESTS 
-    casscf_recoupling
+    casci_coupling
     wick_orbitals_test
     wick_uscf_one_body_test
     wick_uscf_two_body_test
