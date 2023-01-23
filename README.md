@@ -14,7 +14,7 @@ If you incorporate this code in your work, please consider citing the following 
 ## Installation
 ### Prerequisites
 The libGNME package requires a set of standard libraries:
-1. LAPACK, BLAS or Intel MKL
+1. LAPACK, BLAS or Intel MKL, with <tt>$MKLROOT</tt> set.
 2. OpenMP
 3. CMake (version 3.12 or higher)
 
@@ -25,6 +25,17 @@ The configure script can be run depending on the choice of compiler:
 3. <tt>make install</tt>
 
 Following installation, the test suite can be executed from the <tt>build/</tt> directory by running <tt>ctest</tt>.
+
+### Compiling programs using LibGNME
+As LibGNME produces dynamic libraries, compiling a program (e.g. <tt>mycalc.C</tt>) requires these to be linked at the compilation state. The example below illustrates this for a typical program <tt>mycalc.C</tt>
+```
+icpc -Wall -std=c++11 -fopenmp -I${GNMEROOT}/external/armadillo-10.1.2/include -I${GNMEROOT} -L${MKLROOT}/lib/intel64_lin -L${GNMEROOT}/lib -g mycalc.C -lgnme_wick -lgnme_utils -lmkl_core -lmkl_intel_thread -lmkl_intel_lp64  -omycalc
+```
+Here, <tt>${GNMEROOT}</tt> is an environment variable that points towards the root directory of your LibGNME installation. 
+Subsequently running your compiled progarm <tt>mycalc</tt> requires <tt>${GNMEROOT}/lib</tt> to be included in the <tt>$LD_LIBRARY_PATH</tt>.
+
+### Compiling programs using LibGNME
+To compile 
 
 ## Code structure
 The primary functionality of LibGNME is to compute matrix elements between non-orthogonal Slater determiants. This can be achieved using either extended nonorthogonal Wick's theory, or using the more computationally expensive Slater&ndash;Condon rules. 
