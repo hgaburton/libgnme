@@ -39,7 +39,7 @@ The primary functionality of LibGNME is to compute matrix elements between non-o
 
 The code is split into three different libraries:
 
-### gnme_utils
+### 1. gnme_utils
 Support functions including:
 <ul>
 <li>Generalised eigenvalue problem solver;</.li>
@@ -66,7 +66,7 @@ libgnme::bitset b(nval,6);
 b.print();
 ```
 
-### gnme_wick
+### 2. gnme_wick
 Compute matrix elements using the generalised nonorthogonal Wick's theorem. 
 
 Here, the computation is divided into two types of objects:
@@ -102,7 +102,7 @@ mb.evaluate(bxa, bxb, bwa, bwb, Swx, Hwx);
 ```
 The <tt>wick_uscf</tt> object differs only in that it can compute matrix elements for unrestricted reference states with different molecular orbitals for different spins. This object is initialised using two <tt>wick_orbtals</tt> objects for the high- and low-spin orbitals as e.g. ```libgnme::wick_uscf<double,double,double> mb(orba, orbb, S, enuc);```
 
-### gnme_slater
+### 3. gnme_slater
 Alternatively, the LibGNME library can also be used to compute matrix elements using the older generalised Slater&ndash;Condon rules. This achieved using the similar objects <tt>slater_rscf</tt> and <tt>slater_uscf</tt> objects that take the AO integrals as an input. For example, the nonorthogonal coupling term illustrated about could be computed as
 ```
 // Setup the matrix builder object
