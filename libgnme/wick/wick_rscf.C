@@ -26,8 +26,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
     int parity = pxa * pxb * pwa * pwb;
                
     // Multiply matrix elements by parity
-    S *= parity;
-    V *= parity;
+    S *= ((Tc) parity);
+    V *= ((Tc) parity);
 }
 
 
@@ -53,7 +53,7 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
     Tc sa = 0.0, sb = 0.0;
     spin_overlap(xahp, wahp, sa);
     spin_overlap(xbhp, wbhp, sb);
-    S = parity * m_orb.m_redS * m_orb.m_redS * sa * sb;
+    S = m_orb.m_redS * m_orb.m_redS * sa * sb * ((Tc) parity);
 
     // Get occupied orbitals to simplify density matrix computation
     arma::uvec occ_xa = arma::join_cols(m_core,bxa.occ()+m_orb.m_ncore);
@@ -66,8 +66,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
     spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb);
                
     // Multiply matrix elements by parity
-    Pa *= parity * m_orb.m_redS * m_orb.m_redS * sb; 
-    Pb *= parity * m_orb.m_redS * m_orb.m_redS * sa; 
+    Pa *= ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * sb; 
+    Pb *= ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * sa; 
 }
 
 
