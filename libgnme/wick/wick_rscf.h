@@ -128,8 +128,21 @@ public:
         Tc &S,
         arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb);
 
+    virtual void evaluate_rdm2(
+        bitset &bxa, bitset &bxb, 
+        bitset &bwa, bitset &bwb,
+        Tc &S,
+        arma::Mat<Tc> &Paa, 
+        arma::Mat<Tc> &Pbb, 
+        arma::Mat<Tc> &Pab);
+
+
 private:
     virtual void spin_rdm1(
+        arma::umat xhp, arma::umat whp, 
+        arma::uvec xocc, arma::uvec wocc, 
+        arma::Mat<Tc> &P);
+    virtual void same_spin_rdm2(
         arma::umat xhp, arma::umat whp, 
         arma::uvec xocc, arma::uvec wocc, 
         arma::Mat<Tc> &P);

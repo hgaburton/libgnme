@@ -43,21 +43,23 @@ void wick_orbitals<Tc,Tb>::init(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw)
         m_M(1) += Cw_tmp.col(zeros(i)) * Cx_tmp.col(zeros(i)).t();
 
     // Initialise X contraction arrays
-    m_X.set_size(2);
+    m_fX.set_size(2); m_X.set_size(2);
     for(size_t i=0; i<2; i++)
     {
         // Initialise the memory
+        m_fX(i).set_size(2*m_nmo,2*m_nmo); m_fX(i).zeros();
         m_X(i).set_size(2*m_nact,2*m_nact); m_X(i).zeros();
 
         // Compute
-        m_X(i).submat(0,0, m_nact-1,m_nact-1)               
-            = m_Cx.t() * m_metric * m_M(i) * m_metric * m_Cx; // xx
-        m_X(i).submat(0,m_nact, m_nact-1,2*m_nact-1)        
-            = m_Cx.t() * m_metric * m_M(i) * m_metric * m_Cw; // xw
-        m_X(i).submat(m_nact,0, 2*m_nact-1,m_nact-1)        
-            = m_Cw.t() * m_metric * m_M(i) * m_metric * m_Cx; // wx
-        m_X(i).submat(m_nact,m_nact, 2*m_nact-1,2*m_nact-1) 
-            = m_Cw.t() * m_metric * m_M(i) * m_metric * m_Cw; // ww
+        m_fX(i).submat(0,0, m_nmo-1,m_nmo-1)             = Cx.t() * m_metric * m_M(i) * m_metric * Cx; // xx
+        m_fX(i).submat(0,m_nmo, m_nmo-1,2*m_nmo-1)       = Cx.t() * m_metric * m_M(i) * m_metric * Cw; // xw
+        m_fX(i).submat(m_nmo,0, 2*m_nmo-1,m_nmo-1)       = Cw.t() * m_metric * m_M(i) * m_metric * Cx; // wx
+        m_fX(i).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1) = Cw.t() * m_metric * m_M(i) * m_metric * Cw; // ww
+        // Compute
+        m_X(i).submat(0,0, m_nact-1,m_nact-1)               = m_fX(i).submat(m_ncore,m_ncore, m_ncore+m_nact-1,m_ncore+m_nact-1);
+        m_X(i).submat(0,m_nact, m_nact-1,2*m_nact-1)        = m_fX(i).submat(m_ncore,m_nmo+m_ncore, m_ncore+m_nact-1,m_nmo+m_ncore+m_nact-1);
+        m_X(i).submat(m_nact,0, 2*m_nact-1,m_nact-1)        = m_fX(i).submat(m_nmo+m_ncore,m_ncore, m_nmo+m_ncore+m_nact-1,m_ncore+m_nact-1);
+        m_X(i).submat(m_nact,m_nact, 2*m_nact-1,2*m_nact-1) = m_fX(i).submat(m_nmo+m_ncore,m_nmo+m_ncore, m_nmo+m_ncore+m_nact-1,m_nmo+m_ncore+m_nact-1);
     }
 
     // Intialise Y contraction arrays

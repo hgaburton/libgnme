@@ -72,6 +72,48 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
 
 
 template<typename Tc, typename Tf, typename Tb>
+void wick_rscf<Tc,Tf,Tb>::evaluate_rdm2(
+    bitset &bxa, bitset &bxb, 
+    bitset &bwa, bitset &bwb,
+    Tc &S,
+    arma::Mat<Tc> &Paa, 
+    arma::Mat<Tc> &Pbb, 
+    arma::Mat<Tc> &Pab)
+{
+    // Get excitation indices
+    arma::umat xahp, xbhp, wahp, wbhp; 
+    int pxa, pxb, pwa, pwb;
+    m_bref.excitation(bxa, xahp, pxa);
+    m_bref.excitation(bxb, xbhp, pxb);
+    m_bref.excitation(bwa, wahp, pwa);
+    m_bref.excitation(bwb, wbhp, pwb);
+
+    // Get parity 
+    int parity = pxa * pxb * pwa * pwb;
+
+    // Get spin overlaps
+    Tc sa = 0.0, sb = 0.0;
+    spin_overlap(xahp, wahp, sa);
+    spin_overlap(xbhp, wbhp, sb);
+    S = m_orb.m_redS * m_orb.m_redS * sa * sb * ((Tc) parity);
+
+    // Get occupied orbitals to simplify density matrix computation
+    arma::uvec occ_xa = arma::join_cols(m_core,bxa.occ()+m_orb.m_ncore);
+    arma::uvec occ_xb = arma::join_cols(m_core,bxb.occ()+m_orb.m_ncore);
+    arma::uvec occ_wa = arma::join_cols(m_core,bwa.occ()+m_orb.m_ncore);
+    arma::uvec occ_wb = arma::join_cols(m_core,bwb.occ()+m_orb.m_ncore);
+
+    // Treat each spin sector separately
+    same_spin_rdm2(xahp, wahp, occ_xa, occ_wa, Paa);
+    same_spin_rdm2(xbhp, wbhp, occ_xb, occ_wb, Pbb);
+               
+    // Multiply matrix elements by parity
+    Paa *= ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * sb; 
+    Pbb *= ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * sa; 
+}
+
+
+template<typename Tc, typename Tf, typename Tb>
 void wick_rscf<Tc,Tf,Tb>::evaluate_overlap(
     arma::umat &xahp, arma::umat &xbhp,
     arma::umat &wahp, arma::umat &wbhp,
@@ -142,7 +184,7 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
         same_spin_two_body(xahp, wahp, Vaa);
         same_spin_two_body(xbhp, wbhp, Vbb);
         // Different spin terms
-        diff_spin_two_body(xahp, xbhp, wahp, wbhp, Vab);
+        //diff_spin_two_body(xahp, xbhp, wahp, wbhp, Vab);
         // Recombine
         V += 0.5 * m_orb.m_redS * m_orb.m_redS * (Vaa * sb + Vbb * sa + 2.0 * Vab);
     }
