@@ -148,15 +148,24 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_rdm2(
         // Loop over all possible contributions of zero overlaps
         do {
             for(size_t ip=0; ip<xocc.n_elem; ip++)
-            for(size_t ir=0; ir<xocc.n_elem; ir++)
+            for(size_t ir=0; ir<ip; ir++)
             for(size_t iq=0; iq<wocc.n_elem; iq++)
-            for(size_t is=0; is<wocc.n_elem; is++)
+            for(size_t is=0; is<iq; is++)
             {
-                size_t p = xocc(ip);
-                size_t r = xocc(ir);
-                size_t q = wocc(iq);
-                size_t s = wocc(is);
+                // Get occupied orbital indices
+                size_t p = xocc(ip), r = xocc(ir), q = wocc(iq), s = wocc(is);
+
+                // Increment contribution
                 P(p*m_nmo+q, r*m_nmo+s) += m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_fX(m[1])(s+m_nmo,r)
+                                         - m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_fX(m[1])(q+m_nmo,r);
+                // Symmetry term for r <-> p
+                P(r*m_nmo+q, p*m_nmo+s) -= m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_fX(m[1])(s+m_nmo,r)
+                                         - m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_fX(m[1])(q+m_nmo,r);
+                // Symmetry term for q <-> s
+                P(p*m_nmo+s, r*m_nmo+q) -= m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_fX(m[1])(s+m_nmo,r)
+                                         - m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_fX(m[1])(q+m_nmo,r);
+                // Symmetry term for q <-> s
+                P(r*m_nmo+s, p*m_nmo+q) += m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_fX(m[1])(s+m_nmo,r)
                                          - m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_fX(m[1])(q+m_nmo,r);
             }
         } while(std::prev_permutation(m.begin(), m.end()));
@@ -167,24 +176,46 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_rdm2(
         std::vector<size_t> m(m_orb.m_nz, 1); m.resize(3,0);
         do {
             for(size_t ip=0; ip<xocc.n_elem; ip++)
-            for(size_t ir=0; ir<xocc.n_elem; ir++)
+            for(size_t ir=0; ir<ip; ir++)
             for(size_t iq=0; iq<wocc.n_elem; iq++)
-            for(size_t is=0; is<wocc.n_elem; is++)
+            for(size_t is=0; is<iq; is++)
             {
-                size_t p = xocc(ip);
-                size_t r = xocc(ir);
-                size_t q = wocc(iq);
-                size_t s = wocc(is);
+                // Get occupied orbital indices
+                size_t p = xocc(ip), r = xocc(ir), q = wocc(iq), s = wocc(is);
+
                 // Zeroth-order term
-                P(p*m_nmo+q, r*m_nmo+s) += m_orb.m_X(m[2])(rows(0), cols(0)) * 
-                    (  m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_fX(m[1])(s+m_nmo,r)
-                     - m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_fX(m[1])(q+m_nmo,r));
+                P(p*m_nmo+q, r*m_nmo+s) += m_orb.m_X(m[2])(rows(0), cols(0)) * (m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_fX(m[1])(s+m_nmo,r)
+                                                                              - m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_fX(m[1])(q+m_nmo,r));
+                // Symmetry term for r <-> p
+                P(r*m_nmo+q, p*m_nmo+s) -= m_orb.m_X(m[2])(rows(0), cols(0)) * (m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_fX(m[1])(s+m_nmo,r)
+                                                                              - m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_fX(m[1])(q+m_nmo,r));
+                // Symmetry term for q <-> s
+                P(p*m_nmo+s, r*m_nmo+q) -= m_orb.m_X(m[2])(rows(0), cols(0)) * (m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_fX(m[1])(s+m_nmo,r)
+                                                                              - m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_fX(m[1])(q+m_nmo,r));
+                // Symmetry term for q <-> s
+                P(r*m_nmo+s, p*m_nmo+q) += m_orb.m_X(m[2])(rows(0), cols(0)) * (m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_fX(m[1])(s+m_nmo,r)
+                                                                              - m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_fX(m[1])(q+m_nmo,r));
 
                 // First-order J/K term
                 P(p*m_nmo+q, r*m_nmo+s) -= m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_Q(m[1])(s,cols(0)) * m_orb.m_R(m[2])(rows(0),r);
                 P(p*m_nmo+q, r*m_nmo+s) -= m_orb.m_fX(m[0])(s+m_nmo,r) * m_orb.m_Q(m[1])(q,cols(0)) * m_orb.m_R(m[2])(rows(0),p);
                 P(p*m_nmo+q, r*m_nmo+s) += m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_Q(m[1])(q,cols(0)) * m_orb.m_R(m[2])(rows(0),r);
                 P(p*m_nmo+q, r*m_nmo+s) += m_orb.m_fX(m[0])(q+m_nmo,r) * m_orb.m_Q(m[1])(s,cols(0)) * m_orb.m_R(m[2])(rows(0),p);
+                // Symmetry term for r <-> p
+                P(r*m_nmo+q, p*m_nmo+s) += m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_Q(m[1])(s,cols(0)) * m_orb.m_R(m[2])(rows(0),r);
+                P(r*m_nmo+q, p*m_nmo+s) += m_orb.m_fX(m[0])(s+m_nmo,r) * m_orb.m_Q(m[1])(q,cols(0)) * m_orb.m_R(m[2])(rows(0),p);
+                P(r*m_nmo+q, p*m_nmo+s) -= m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_Q(m[1])(q,cols(0)) * m_orb.m_R(m[2])(rows(0),r);
+                P(r*m_nmo+q, p*m_nmo+s) -= m_orb.m_fX(m[0])(q+m_nmo,r) * m_orb.m_Q(m[1])(s,cols(0)) * m_orb.m_R(m[2])(rows(0),p);
+                // Symmetry term for q <-> s
+                P(p*m_nmo+s, r*m_nmo+q) += m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_Q(m[1])(s,cols(0)) * m_orb.m_R(m[2])(rows(0),r);
+                P(p*m_nmo+s, r*m_nmo+q) += m_orb.m_fX(m[0])(s+m_nmo,r) * m_orb.m_Q(m[1])(q,cols(0)) * m_orb.m_R(m[2])(rows(0),p);
+                P(p*m_nmo+s, r*m_nmo+q) -= m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_Q(m[1])(q,cols(0)) * m_orb.m_R(m[2])(rows(0),r);
+                P(p*m_nmo+s, r*m_nmo+q) -= m_orb.m_fX(m[0])(q+m_nmo,r) * m_orb.m_Q(m[1])(s,cols(0)) * m_orb.m_R(m[2])(rows(0),p);
+                // Symmetry term for q <-> s
+                P(r*m_nmo+s, p*m_nmo+q) -= m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_Q(m[1])(s,cols(0)) * m_orb.m_R(m[2])(rows(0),r);
+                P(r*m_nmo+s, p*m_nmo+q) -= m_orb.m_fX(m[0])(s+m_nmo,r) * m_orb.m_Q(m[1])(q,cols(0)) * m_orb.m_R(m[2])(rows(0),p);
+                P(r*m_nmo+s, p*m_nmo+q) += m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_Q(m[1])(q,cols(0)) * m_orb.m_R(m[2])(rows(0),r);
+                P(r*m_nmo+s, p*m_nmo+q) += m_orb.m_fX(m[0])(q+m_nmo,r) * m_orb.m_Q(m[1])(s,cols(0)) * m_orb.m_R(m[2])(rows(0),p);
             }
         } while(std::prev_permutation(m.begin(), m.end()));
     }
@@ -237,23 +268,47 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_rdm2(
             }
             
             // Get the overlap contributions 
-            for(size_t ip=0; ip<m_nmo; ip++)
-            for(size_t ir=0; ir<m_nmo; ir++)
-            for(size_t iq=0; iq<m_nmo; iq++)
-            for(size_t is=0; is<m_nmo; is++)
+            for(size_t ip=0; ip<xocc.n_elem; ip++)
+            for(size_t ir=0; ir<ip; ir++)
+            for(size_t iq=0; iq<wocc.n_elem; iq++)
+            for(size_t is=0; is<iq; is++)
             {
-                size_t p = ip;
-                size_t r = ir;
-                size_t q = iq;
-                size_t s = is;
+                // Occupied orbital indices
+                size_t p = xocc(ip), r = xocc(ir), q = wocc(iq), s = wocc(is);
+
                 // Zeroth-order term
-                P(p*m_nmo+q, r*m_nmo+s) += detDtmp *
-                    (  m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_fX(m[1])(s+m_nmo,r)
-                     - m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_fX(m[1])(q+m_nmo,r));
+                P(p*m_nmo+q, r*m_nmo+s) += detDtmp * (m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_fX(m[1])(s+m_nmo,r)
+                                                    - m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_fX(m[1])(q+m_nmo,r));
+                // Symmetry term for r <-> p
+                P(r*m_nmo+q, p*m_nmo+s) -= detDtmp * (m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_fX(m[1])(s+m_nmo,r)
+                                                    - m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_fX(m[1])(q+m_nmo,r));
+                // Symmetry term for q <-> s
+                P(p*m_nmo+s, r*m_nmo+q) -= detDtmp * (m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_fX(m[1])(s+m_nmo,r)
+                                                    - m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_fX(m[1])(q+m_nmo,r));
+                // Symmetry term for q <-> s
+                P(r*m_nmo+s, p*m_nmo+q) += detDtmp * (m_orb.m_fX(m[0])(q+m_nmo,p) * m_orb.m_fX(m[1])(s+m_nmo,r)
+                                                    - m_orb.m_fX(m[0])(s+m_nmo,p) * m_orb.m_fX(m[1])(q+m_nmo,r));
+
+                // First-order term
                 P(p*m_nmo+q, r*m_nmo+s) += m_orb.m_fX(m[0])(q+m_nmo,p) * P1tmp(s,r);
                 P(p*m_nmo+q, r*m_nmo+s) += m_orb.m_fX(m[0])(s+m_nmo,r) * P1tmp(q,p);
                 P(p*m_nmo+q, r*m_nmo+s) -= m_orb.m_fX(m[0])(q+m_nmo,r) * P1tmp(s,p);
                 P(p*m_nmo+q, r*m_nmo+s) -= m_orb.m_fX(m[0])(s+m_nmo,p) * P1tmp(q,r);
+                // Symmetry term for r <-> p
+                P(r*m_nmo+q, p*m_nmo+s) -= m_orb.m_fX(m[0])(q+m_nmo,p) * P1tmp(s,r);
+                P(r*m_nmo+q, p*m_nmo+s) -= m_orb.m_fX(m[0])(s+m_nmo,r) * P1tmp(q,p);
+                P(r*m_nmo+q, p*m_nmo+s) += m_orb.m_fX(m[0])(q+m_nmo,r) * P1tmp(s,p);
+                P(r*m_nmo+q, p*m_nmo+s) += m_orb.m_fX(m[0])(s+m_nmo,p) * P1tmp(q,r);
+                // Symmetry term for q <-> s
+                P(p*m_nmo+s, r*m_nmo+q) -= m_orb.m_fX(m[0])(q+m_nmo,p) * P1tmp(s,r);
+                P(p*m_nmo+s, r*m_nmo+q) -= m_orb.m_fX(m[0])(s+m_nmo,r) * P1tmp(q,p);
+                P(p*m_nmo+s, r*m_nmo+q) += m_orb.m_fX(m[0])(q+m_nmo,r) * P1tmp(s,p);
+                P(p*m_nmo+s, r*m_nmo+q) += m_orb.m_fX(m[0])(s+m_nmo,p) * P1tmp(q,r);
+                // Symmetry term for q <-> s
+                P(r*m_nmo+s, p*m_nmo+q) += m_orb.m_fX(m[0])(q+m_nmo,p) * P1tmp(s,r);
+                P(r*m_nmo+s, p*m_nmo+q) += m_orb.m_fX(m[0])(s+m_nmo,r) * P1tmp(q,p);
+                P(r*m_nmo+s, p*m_nmo+q) -= m_orb.m_fX(m[0])(q+m_nmo,r) * P1tmp(s,p);
+                P(r*m_nmo+s, p*m_nmo+q) -= m_orb.m_fX(m[0])(s+m_nmo,p) * P1tmp(q,r);
             }
 
             arma::Mat<Tc> D2, Db2, Dtmp2;
@@ -297,20 +352,37 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_rdm2(
                     P2tmp -= Qvec * (detDtmp2 - shift + a.t() * Rtmp(m[j+3]));
                 }
             
-                for(size_t ip=0; ip<m_nmo; ip++)
-                for(size_t ir=0; ir<m_nmo; ir++)
-                for(size_t iq=0; iq<m_nmo; iq++)
-                for(size_t is=0; is<m_nmo; is++)
+                for(size_t ip=0; ip<xocc.n_elem; ip++)
+                for(size_t ir=0; ir<ip; ir++)
+                for(size_t iq=0; iq<wocc.n_elem; iq++)
+                for(size_t is=0; is<iq; is++)
                 {
-                    size_t p = ip;
-                    size_t r = ir;
-                    size_t q = iq;
-                    size_t s = is;
+                    // Occupied orbital indices
+                    size_t p = xocc(ip), r = xocc(ir), q = wocc(iq), s = wocc(is);
+
                     // Zeroth-order term
                     P(p*m_nmo+q, r*m_nmo+s) -= 0.25 * phase * m_orb.m_Q(m[0])(q,cols(a)) * m_orb.m_R(m[1])(rows(i),p) * P2tmp(s,r);
                     P(p*m_nmo+q, r*m_nmo+s) -= 0.25 * phase * m_orb.m_Q(m[0])(s,cols(a)) * m_orb.m_R(m[1])(rows(i),r) * P2tmp(q,p);
                     P(p*m_nmo+q, r*m_nmo+s) += 0.25 * phase * m_orb.m_Q(m[0])(s,cols(a)) * m_orb.m_R(m[1])(rows(i),p) * P2tmp(q,r);
                     P(p*m_nmo+q, r*m_nmo+s) += 0.25 * phase * m_orb.m_Q(m[0])(q,cols(a)) * m_orb.m_R(m[1])(rows(i),r) * P2tmp(s,p);
+
+                    // Symmetry term for r <-> p
+                    P(r*m_nmo+q, p*m_nmo+s) += 0.25 * phase * m_orb.m_Q(m[0])(q,cols(a)) * m_orb.m_R(m[1])(rows(i),p) * P2tmp(s,r);
+                    P(r*m_nmo+q, p*m_nmo+s) += 0.25 * phase * m_orb.m_Q(m[0])(s,cols(a)) * m_orb.m_R(m[1])(rows(i),r) * P2tmp(q,p);
+                    P(r*m_nmo+q, p*m_nmo+s) -= 0.25 * phase * m_orb.m_Q(m[0])(s,cols(a)) * m_orb.m_R(m[1])(rows(i),p) * P2tmp(q,r);
+                    P(r*m_nmo+q, p*m_nmo+s) -= 0.25 * phase * m_orb.m_Q(m[0])(q,cols(a)) * m_orb.m_R(m[1])(rows(i),r) * P2tmp(s,p);
+
+                    // Symmetry term for q <-> s
+                    P(p*m_nmo+s, r*m_nmo+q) += 0.25 * phase * m_orb.m_Q(m[0])(q,cols(a)) * m_orb.m_R(m[1])(rows(i),p) * P2tmp(s,r);
+                    P(p*m_nmo+s, r*m_nmo+q) += 0.25 * phase * m_orb.m_Q(m[0])(s,cols(a)) * m_orb.m_R(m[1])(rows(i),r) * P2tmp(q,p);
+                    P(p*m_nmo+s, r*m_nmo+q) -= 0.25 * phase * m_orb.m_Q(m[0])(s,cols(a)) * m_orb.m_R(m[1])(rows(i),p) * P2tmp(q,r);
+                    P(p*m_nmo+s, r*m_nmo+q) -= 0.25 * phase * m_orb.m_Q(m[0])(q,cols(a)) * m_orb.m_R(m[1])(rows(i),r) * P2tmp(s,p);
+
+                    // Symmetry term for q <-> s
+                    P(r*m_nmo+s, p*m_nmo+q) -= 0.25 * phase * m_orb.m_Q(m[0])(q,cols(a)) * m_orb.m_R(m[1])(rows(i),p) * P2tmp(s,r);
+                    P(r*m_nmo+s, p*m_nmo+q) -= 0.25 * phase * m_orb.m_Q(m[0])(s,cols(a)) * m_orb.m_R(m[1])(rows(i),r) * P2tmp(q,p);
+                    P(r*m_nmo+s, p*m_nmo+q) += 0.25 * phase * m_orb.m_Q(m[0])(s,cols(a)) * m_orb.m_R(m[1])(rows(i),p) * P2tmp(q,r);
+                    P(r*m_nmo+s, p*m_nmo+q) += 0.25 * phase * m_orb.m_Q(m[0])(q,cols(a)) * m_orb.m_R(m[1])(rows(i),r) * P2tmp(s,p);
                 }
             }
 

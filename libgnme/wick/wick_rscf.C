@@ -184,7 +184,7 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
         same_spin_two_body(xahp, wahp, Vaa);
         same_spin_two_body(xbhp, wbhp, Vbb);
         // Different spin terms
-        //diff_spin_two_body(xahp, xbhp, wahp, wbhp, Vab);
+        diff_spin_two_body(xahp, xbhp, wahp, wbhp, Vab);
         // Recombine
         V += 0.5 * m_orb.m_redS * m_orb.m_redS * (Vaa * sb + Vbb * sa + 2.0 * Vab);
     }
