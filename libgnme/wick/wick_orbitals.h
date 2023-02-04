@@ -28,11 +28,11 @@ public:
     // Reference reduced overlaps
     Tc m_redS; //!< Reduced overlap
 
-    arma::field<arma::Mat<Tc> > m_M; //! Co-density matrices (2 * nbsf * nbsf)
+    arma::field<arma::Mat<Tc> > m_M;  //! Co-density matrices (2 * nbsf * nbsf)
     arma::field<arma::Mat<Tc> > m_fX; //! X fundamental contractions (2 * nbsf * nbsf)
     arma::field<arma::Mat<Tc> > m_fY; //! Y fundamental contractions (2 * nbsf * nbsf)
-    arma::field<arma::Mat<Tc> > m_X; //! X fundamental contractions (2 * nbsf * nbsf)
-    arma::field<arma::Mat<Tc> > m_Y; //! Y fundamental contractions (2 * nbsf * nbsf)
+    arma::field<arma::Mat<Tc> > m_X;  //! X fundamental contractions (2 * nbsf * nbsf)
+    arma::field<arma::Mat<Tc> > m_Y;  //! Y fundamental contractions (2 * nbsf * nbsf)
     arma::field<arma::Mat<Tc> > m_CX; //! CX transformed coefficients (2 * nbsf * nmo)
     arma::field<arma::Mat<Tc> > m_XC; //! XC transformed coefficients (2 * nbsf * nmo)
 

@@ -35,8 +35,7 @@ template<typename Tc, typename Tf, typename Tb>
 void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
     bitset &bxa, bitset &bxb, 
     bitset &bwa, bitset &bwb,
-    Tc &S,
-    arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb)
+    Tc &S, arma::Mat<Tc> &P1)
 {
     // Get excitation indices
     arma::umat xahp, xbhp, wahp, wbhp; 
@@ -62,23 +61,22 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
     arma::uvec occ_wb = arma::join_cols(m_core,bwb.occ()+m_orb.m_ncore);
 
     // Treat each spin sector separately
+    arma::Mat<Tc> Pa(m_nmo, m_nmo, arma::fill::zeros);
+    arma::Mat<Tc> Pb(m_nmo, m_nmo, arma::fill::zeros);
     spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa);
     spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb);
                
     // Multiply matrix elements by parity
-    Pa *= ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * sb; 
-    Pb *= ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * sa; 
+    P1 = ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * (sb * Pa + sa * Pb);
 }
 
 
 template<typename Tc, typename Tf, typename Tb>
-void wick_rscf<Tc,Tf,Tb>::evaluate_rdm2(
+void wick_rscf<Tc,Tf,Tb>::evaluate_rdm12(
     bitset &bxa, bitset &bxb, 
     bitset &bwa, bitset &bwb,
-    Tc &S,
-    arma::Mat<Tc> &Paa, 
-    arma::Mat<Tc> &Pbb, 
-    arma::Mat<Tc> &Pab)
+    Tc &S, 
+    arma::Mat<Tc> &P1, arma::Mat<Tc> &P2) 
 {
     // Get excitation indices
     arma::umat xahp, xbhp, wahp, wbhp; 
@@ -104,12 +102,23 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm2(
     arma::uvec occ_wb = arma::join_cols(m_core,bwb.occ()+m_orb.m_ncore);
 
     // Treat each spin sector separately
-    same_spin_rdm2(xahp, wahp, occ_xa, occ_wa, Paa);
-    same_spin_rdm2(xbhp, wbhp, occ_xb, occ_wb, Pbb);
+    arma::Mat<Tc> Pa(m_nmo, m_nmo, arma::fill::zeros);
+    arma::Mat<Tc> Pb(m_nmo, m_nmo, arma::fill::zeros);
+    spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa);
+    spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb);
                
-    // Multiply matrix elements by parity
-    Paa *= ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * sb; 
-    Pbb *= ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * sa; 
+    // Multiply 1RDM matrix elements by parity
+    P1 = ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * (sb * Pa + sa * Pb);
+
+    // Temporary variables for 2RDM
+    arma::Mat<Tc> tmpP(m_nmo*m_nmo,m_nmo*m_nmo);
+    // Treat each spin sector separately
+    same_spin_rdm2(xahp, wahp, occ_xa, occ_wa, tmpP);
+    P2 += ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * sb * tmpP;
+    same_spin_rdm2(xbhp, wbhp, occ_xb, occ_wb, tmpP);
+    P2 += ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * sa * tmpP;
+    diff_spin_rdm2(xahp, xbhp, wahp, wbhp, occ_xa, occ_xb, occ_wa, occ_wb, Pa, Pb, tmpP);
+    P2 += ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * tmpP;
 }
 
 
