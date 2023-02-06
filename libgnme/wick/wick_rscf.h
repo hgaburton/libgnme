@@ -3,7 +3,7 @@
 
 #include <armadillo>
 #include <libgnme/utils/bitset.h>
-#include "wick.h"
+#include "wick_base.h"
 #include "wick_orbitals.h"
 
 namespace libgnme {
@@ -16,12 +16,12 @@ namespace libgnme {
     \ingroup gnme_wick
  **/
 template<typename Tc, typename Tf, typename Tb>
-class wick_rscf : public wick<Tc,Tf,Tb>
+class wick_rscf : public wick_base<Tc,Tf,Tb>
 {
 protected:
-    using wick<Tc,Tf,Tb>::m_nbsf; 
-    using wick<Tc,Tf,Tb>::m_nmo; 
-    using wick<Tc,Tf,Tb>::m_nact; 
+    using wick_base<Tc,Tf,Tb>::m_nbsf; 
+    using wick_base<Tc,Tf,Tb>::m_nmo; 
+    using wick_base<Tc,Tf,Tb>::m_nact; 
 
 private:
     /* Useful constants */
@@ -78,7 +78,7 @@ public:
     wick_rscf(
         wick_orbitals<Tc,Tb> &orb,
         const arma::Mat<Tb> &metric, double Vc=0) :
-        wick<Tc,Tf,Tb>(orb.m_nbsf, orb.m_nmo, orb.m_nact),
+        wick_base<Tc,Tf,Tb>(orb.m_nbsf, orb.m_nmo, orb.m_nact),
         m_nelec(orb.m_nelec), m_metric(metric), m_Vc(Vc),
         m_orb(orb)
     { 

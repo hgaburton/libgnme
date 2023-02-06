@@ -1,12 +1,12 @@
 #include <cassert>
 #include <algorithm>
 #include <libgnme/utils/linalg.h>
-#include "wick.h"
+#include "wick_base.h"
 
 namespace libgnme {
 
 template<typename Tc, typename Tf, typename Tb>
-void wick<Tc,Tf,Tb>::spin_rdm1(
+void wick_base<Tc,Tf,Tb>::spin_rdm1(
     arma::umat xhp, arma::umat whp, 
     arma::uvec xocc, arma::uvec wocc,
     arma::Mat<Tc> &P, bool alpha)
@@ -117,7 +117,7 @@ void wick<Tc,Tf,Tb>::spin_rdm1(
 
 
 template<typename Tc, typename Tf, typename Tb>
-void wick<Tc,Tf,Tb>::same_spin_rdm2(
+void wick_base<Tc,Tf,Tb>::same_spin_rdm2(
         arma::umat xhp, arma::umat whp, 
         arma::uvec xocc, arma::uvec wocc, 
         arma::Mat<Tc> &P, bool alpha)
@@ -363,7 +363,7 @@ void wick<Tc,Tf,Tb>::same_spin_rdm2(
 
 
 template<typename Tc, typename Tf, typename Tb>
-void wick<Tc,Tf,Tb>::diff_spin_rdm2(
+void wick_base<Tc,Tf,Tb>::diff_spin_rdm2(
         arma::umat xahp, arma::umat xbhp, 
         arma::umat wahp, arma::umat wbhp, 
         arma::uvec xocca, arma::uvec xoccb, 
@@ -393,9 +393,9 @@ void wick<Tc,Tf,Tb>::diff_spin_rdm2(
     }
 }
 
-template class wick<double, double, double>;
-template class wick<std::complex<double>, double, double>;
-template class wick<std::complex<double>, std::complex<double>, double>;
-template class wick<std::complex<double>, std::complex<double>, std::complex<double> >;
+template class wick_base<double, double, double>;
+template class wick_base<std::complex<double>, double, double>;
+template class wick_base<std::complex<double>, std::complex<double>, double>;
+template class wick_base<std::complex<double>, std::complex<double>, std::complex<double> >;
 
 } // namespace libgnme

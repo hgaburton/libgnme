@@ -1,13 +1,13 @@
 #include <cassert>
 #include <algorithm>
 #include <libgnme/utils/lowdin_pair.h>
-#include "wick.h"
+#include "wick_base.h"
 
 namespace libgnme {
 
 
 template<typename Tc, typename Tf, typename Tb>
-void wick<Tc,Tf,Tb>::spin_overlap(
+void wick_base<Tc,Tf,Tb>::spin_overlap(
     arma::umat xhp, arma::umat whp,
     Tc &S, bool alpha)
 {
@@ -80,9 +80,9 @@ void wick<Tc,Tf,Tb>::spin_overlap(
     return;
 }
 
-template class wick<double, double, double>;
-template class wick<std::complex<double>, double, double>;
-template class wick<std::complex<double>, std::complex<double>, double>;
-template class wick<std::complex<double>, std::complex<double>, std::complex<double> >;
+template class wick_base<double, double, double>;
+template class wick_base<std::complex<double>, double, double>;
+template class wick_base<std::complex<double>, std::complex<double>, double>;
+template class wick_base<std::complex<double>, std::complex<double>, std::complex<double> >;
 
 } // namespace libgnme

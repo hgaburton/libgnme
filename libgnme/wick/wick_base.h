@@ -1,5 +1,5 @@
-#ifndef LIBGNME_WICK_H 
-#define LIBGNME_WICK_H
+#ifndef LIBGNME_WICK_BASE_H 
+#define LIBGNME_WICK_BASE_H
 
 #include <armadillo>
 #include <libgnme/utils/bitset.h>
@@ -14,7 +14,7 @@ namespace libgnme {
     \ingroup gnme_wick
  **/
 template<typename Tc, typename Tf, typename Tb>
-class wick
+class wick_base
 {
 protected:
     /* Useful constants */
@@ -32,12 +32,12 @@ public:
         \param metric Overlap matrix of the basis functions
         \param Vc Constant term in the corresponding operator
      **/
-    wick(size_t nbsf, size_t nmo, size_t nact) : 
+    wick_base(size_t nbsf, size_t nmo, size_t nact) : 
         m_nbsf(nbsf), m_nmo(nmo), m_nact(nact)
     { }
 
     /** \brief Destructor **/
-    virtual ~wick() { }
+    virtual ~wick_base() { }
 
 protected:
     virtual void spin_overlap(
@@ -86,4 +86,4 @@ private:
 
 } // namespace libgnme
 
-#endif // LIBGNME_WICK_H
+#endif // LIBGNME_WICK_BASE_H
