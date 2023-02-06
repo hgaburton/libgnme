@@ -143,10 +143,10 @@ private:
     //    arma::umat xhp, arma::umat whp, 
     //    arma::uvec xocc, arma::uvec wocc, 
     //    arma::Mat<Tc> &P);
-    void same_spin_rdm2(
-        arma::umat xhp, arma::umat whp, 
-        arma::uvec xocc, arma::uvec wocc, 
-        arma::Mat<Tc> &P);
+    //void same_spin_rdm2(
+    //    arma::umat xhp, arma::umat whp, 
+    //    arma::uvec xocc, arma::uvec wocc, 
+    //    arma::Mat<Tc> &P);
     void  diff_spin_rdm2(
         arma::umat xahp, arma::umat xbhp, 
         arma::umat wahp, arma::umat wbhp, 

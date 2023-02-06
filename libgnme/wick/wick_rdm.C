@@ -116,12 +116,11 @@ void wick<Tc,Tf,Tb>::spin_rdm1(
 }
 
 
-/*
 template<typename Tc, typename Tf, typename Tb>
-void wick_rscf<Tc,Tf,Tb>::same_spin_rdm2(
+void wick<Tc,Tf,Tb>::same_spin_rdm2(
         arma::umat xhp, arma::umat whp, 
         arma::uvec xocc, arma::uvec wocc, 
-        arma::Mat<Tc> &P)
+        arma::Mat<Tc> &P, bool alpha)
 {
     // Temporary RDM-2
     assert(P.n_rows == m_nmo * m_nmo);
@@ -133,17 +132,17 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_rdm2(
     size_t nw = whp.n_rows; // Ket excitations
 
     // Get reference to number of zeros for this spin
-    const size_t &nz = m_orb.m_nz; 
+    const size_t &nz = get_nz(alpha);
 
     // Check we don't have a non-zero element
     if(nz > nw + nx + 2) return;
 
     // Get reference to relevant contractions
-    const arma::field<arma::Mat<Tc> > &fX = m_orb.m_fX;
-    const arma::field<arma::Mat<Tc> > &X  = m_orb.m_X;
-    const arma::field<arma::Mat<Tc> > &Y  = m_orb.m_Y;
-    const arma::field<arma::Mat<Tc> > &Q  = m_orb.m_Q;
-    const arma::field<arma::Mat<Tc> > &R  = m_orb.m_R;
+    const arma::field<arma::Mat<Tc> > &fX = get_fX(alpha);
+    const arma::field<arma::Mat<Tc> > &X  = get_X(alpha);
+    const arma::field<arma::Mat<Tc> > &Y  = get_Y(alpha);
+    const arma::field<arma::Mat<Tc> > &Q  = get_Q(alpha);
+    const arma::field<arma::Mat<Tc> > &R  = get_R(alpha);
 
     // Shift w indices
     // TODO: Do we want to keep this?
@@ -362,7 +361,7 @@ void wick_rscf<Tc,Tf,Tb>::same_spin_rdm2(
     whp -= m_nact;
 }
 
-
+/*
 template<typename Tc, typename Tf, typename Tb>
 void wick_rscf<Tc,Tf,Tb>::diff_spin_rdm2(
         arma::umat xahp, arma::umat xbhp, 
@@ -396,6 +395,7 @@ void wick_rscf<Tc,Tf,Tb>::diff_spin_rdm2(
 }
 
 */
+
 template class wick<double, double, double>;
 template class wick<std::complex<double>, double, double>;
 template class wick<std::complex<double>, std::complex<double>, double>;

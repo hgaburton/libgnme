@@ -113,9 +113,9 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm12(
     // Temporary variables for 2RDM
     arma::Mat<Tc> tmpP(m_nmo*m_nmo,m_nmo*m_nmo);
     // Treat each spin sector separately
-    same_spin_rdm2(xahp, wahp, occ_xa, occ_wa, tmpP);
+    same_spin_rdm2(xahp, wahp, occ_xa, occ_wa, tmpP, true);
     P2 += ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * sb * tmpP;
-    same_spin_rdm2(xbhp, wbhp, occ_xb, occ_wb, tmpP);
+    same_spin_rdm2(xbhp, wbhp, occ_xb, occ_wb, tmpP, false);
     P2 += ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * sa * tmpP;
     diff_spin_rdm2(xahp, xbhp, wahp, wbhp, occ_xa, occ_xb, occ_wa, occ_wb, Pa, Pb, tmpP);
     P2 += ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * tmpP;
