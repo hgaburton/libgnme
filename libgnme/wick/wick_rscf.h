@@ -139,10 +139,8 @@ public:
 
 
 private:
-    //void spin_overlap(
-    //    arma::umat xhp, arma::umat whp, Tc &S);
-    void spin_one_body(
-        arma::umat xhp, arma::umat whp, Tc &F);
+    //void spin_one_body(
+    //    arma::umat xhp, arma::umat whp, Tc &F);
     void same_spin_two_body(
         arma::umat xhp, arma::umat whp, Tc &V);
     void diff_spin_two_body(
@@ -159,6 +157,8 @@ private:
     const arma::field<arma::Mat<Tc> >& get_Q(bool alpha)   { return m_orb.m_Q;   }
     const arma::field<arma::Mat<Tc> >& get_R(bool alpha)   { return m_orb.m_R;   }
     const arma::field<arma::Mat<Tc> >& get_wxP(bool alpha) { return m_orb.m_wxP; }
+    const arma::Col<Tc>& get_F0(bool alpha) { return m_F0; } 
+    const arma::field<arma::Mat<Tc> >& get_XFX(bool alpha) { return m_XFX; } 
 };
 
 } // namespace libgnme

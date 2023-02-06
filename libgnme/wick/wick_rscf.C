@@ -151,7 +151,7 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_one_body_spin(
     // Evaluate one-body terms
     Tc Vspin = 0.0;
     // Evaluate separate spin one-body terms
-    spin_one_body(xhp, whp, Vspin);
+    spin_one_body(xhp, whp, Vspin, true);
     // Recombine and increment output
     V = m_orb.m_redS * Vspin;
 }
@@ -178,8 +178,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
         // Temporary variables
         Tc Va = 0.0, Vb = 0.0;
         // Evaluate separate spin one-body terms
-        spin_one_body(xahp, wahp, Va);
-        spin_one_body(xbhp, wbhp, Vb);
+        spin_one_body(xahp, wahp, Va, true);
+        spin_one_body(xbhp, wbhp, Vb, false);
         // Recombine and increment output
         V += m_orb.m_redS * m_orb.m_redS * (Va * sb + Vb * sa);
     }

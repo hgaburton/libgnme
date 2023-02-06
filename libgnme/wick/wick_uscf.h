@@ -170,9 +170,9 @@ private:
     //virtual void spin_overlap(
     //    arma::umat xhp, arma::umat whp,
     //    Tc &S, bool alpha);
-    virtual void spin_one_body(
-        arma::umat xhp, arma::umat whp,
-        Tc &F, bool alpha);
+    //virtual void spin_one_body(
+    //    arma::umat xhp, arma::umat whp,
+    //    Tc &F, bool alpha);
     virtual void same_spin_two_body(
         arma::umat xhp, arma::umat whp,
         Tc &V, bool alpha);
@@ -190,6 +190,8 @@ private:
     const arma::field<arma::Mat<Tc> >& get_Q(bool alpha)   { return alpha ? m_orb_a.m_Q   : m_orb_b.m_Q;   }
     const arma::field<arma::Mat<Tc> >& get_R(bool alpha)   { return alpha ? m_orb_a.m_R   : m_orb_b.m_R;   }
     const arma::field<arma::Mat<Tc> >& get_wxP(bool alpha) { return alpha ? m_orb_a.m_wxP : m_orb_b.m_wxP; }
+    const arma::Col<Tc>& get_F0(bool alpha) { return alpha ? m_F0a : m_F0b; } 
+    const arma::field<arma::Mat<Tc> >& get_XFX(bool alpha) { return alpha ? m_XFXa : m_XFXb; } 
     
 };
 

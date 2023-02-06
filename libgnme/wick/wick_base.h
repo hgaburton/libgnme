@@ -60,11 +60,11 @@ protected:
         arma::Mat<Tc> &P1a, arma::Mat<Tc> &P1b, 
         arma::Mat<Tc> &P2ab);
 
+    virtual void spin_one_body(
+        arma::umat xhp, arma::umat whp, Tc &F, bool alpha);
 
 private:
 /*
-    virtual void spin_one_body(
-        arma::umat xhp, arma::umat whp, Tc &F);
     virtual void same_spin_two_body(
         arma::umat xhp, arma::umat whp, Tc &V);
     virtual void diff_spin_two_body(
@@ -82,6 +82,8 @@ private:
     virtual const arma::field<arma::Mat<Tc> >& get_Q(bool alpha) = 0;
     virtual const arma::field<arma::Mat<Tc> >& get_R(bool alpha) = 0;
     virtual const arma::field<arma::Mat<Tc> >& get_wxP(bool alpha) = 0;
+    virtual const arma::Col<Tc>& get_F0(bool alpha) = 0; 
+    virtual const arma::field<arma::Mat<Tc> >& get_XFX(bool alpha) = 0;
 };
 
 } // namespace libgnme
