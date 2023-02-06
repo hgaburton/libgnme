@@ -3,6 +3,7 @@
 
 #include <armadillo>
 #include <libgnme/utils/bitset.h>
+#include "wick.h"
 #include "wick_orbitals.h"
 
 namespace libgnme {
@@ -15,15 +16,17 @@ namespace libgnme {
     \ingroup gnme_wick
  **/
 template<typename Tc, typename Tf, typename Tb>
-class wick_uscf
+class wick_uscf : public wick<Tc,Tf,Tb>
 {
+protected:
+    using wick<Tc,Tf,Tb>::m_nbsf; 
+    using wick<Tc,Tf,Tb>::m_nmo; 
+    using wick<Tc,Tf,Tb>::m_nact; 
+
 private:
     /* Useful constants */
-    const size_t m_nbsf; //!< Number of basis functions
-    const size_t m_nmo; //!< Number of (linearly independent) MOs
     const size_t m_nalpha; //!< Number of alpha electrons
     const size_t m_nbeta; //!< Number of beta electrons
-    const size_t m_nact; //!< Number of active orbitals
     const arma::Mat<Tb> &m_metric; //!< Basis overlap metric
 
     double m_Vc; //!< constant component
@@ -86,10 +89,8 @@ public:
     wick_uscf(
         wick_orbitals<Tc,Tb> &orba, wick_orbitals<Tc,Tb> &orbb,
         const arma::Mat<Tb> &metric, double Vc=0) :
-
-        m_nbsf(orba.m_nbsf), m_nmo(orba.m_nmo), 
+        wick<Tc,Tf,Tb>(orba.m_nbsf, orba.m_nmo, orba.m_nact),
         m_nalpha(orba.m_nelec), m_nbeta(orbb.m_nelec),
-        m_nact(orba.m_nact),
         m_metric(metric), m_Vc(Vc),
         m_orb_a(orba), m_orb_b(orbb)
     { 
@@ -138,7 +139,6 @@ public:
         bitset &bxa, bitset &bxb, 
         bitset &bwa, bitset &bwb,
         Tc &S, Tc &V);
-    
 
     virtual void evaluate_overlap(
         arma::umat &xa_hp, arma::umat &xb_hp,
@@ -167,10 +167,10 @@ public:
         arma::Mat<Tc> &P2ab);
 
 private:
-    virtual void spin_rdm1(
-        arma::umat xhp, arma::umat whp, 
-        arma::uvec xocc, arma::uvec wocc, 
-        arma::Mat<Tc> &P, bool alpha);
+    //virtual void spin_rdm1(
+    //    arma::umat xhp, arma::umat whp, 
+    //    arma::uvec xocc, arma::uvec wocc, 
+    //    arma::Mat<Tc> &P, bool alpha);
     virtual void same_spin_rdm2(
         arma::umat xhp, arma::umat whp, 
         arma::uvec xocc, arma::uvec wocc, 
@@ -196,6 +196,17 @@ private:
         arma::umat xa_hp, arma::umat xb_hp, 
         arma::umat wa_hp, arma::umat wb_hp, 
         Tc &V);
+
+    /* Getters */
+    const size_t& get_nz(bool alpha) { return alpha ? m_orb_a.m_nz : m_orb_b.m_nz; }
+    const size_t& get_ne(bool alpha) { return alpha ? m_orb_a.m_nelec : m_orb_b.m_nelec; }
+    const arma::field<arma::Mat<Tc> >& get_fX(bool alpha)  { return alpha ? m_orb_a.m_fX  : m_orb_b.m_fX;  }
+    const arma::field<arma::Mat<Tc> >& get_X(bool alpha)   { return alpha ? m_orb_a.m_X   : m_orb_b.m_X;   }
+    const arma::field<arma::Mat<Tc> >& get_Y(bool alpha)   { return alpha ? m_orb_a.m_Y   : m_orb_b.m_Y;   }
+    const arma::field<arma::Mat<Tc> >& get_Q(bool alpha)   { return alpha ? m_orb_a.m_Q   : m_orb_b.m_Q;   }
+    const arma::field<arma::Mat<Tc> >& get_R(bool alpha)   { return alpha ? m_orb_a.m_R   : m_orb_b.m_R;   }
+    const arma::field<arma::Mat<Tc> >& get_wxP(bool alpha) { return alpha ? m_orb_a.m_wxP : m_orb_b.m_wxP; }
+    
 };
 
 } // namespace libgnme

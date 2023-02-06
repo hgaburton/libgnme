@@ -1,4 +1,5 @@
-set(SRC
+set(SRC 
+    wick_rdm.C
     wick_orbitals.C
     wick_rscf_rdm.C
     wick_rscf.C

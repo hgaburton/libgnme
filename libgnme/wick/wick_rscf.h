@@ -3,6 +3,7 @@
 
 #include <armadillo>
 #include <libgnme/utils/bitset.h>
+#include "wick.h"
 #include "wick_orbitals.h"
 
 namespace libgnme {
@@ -15,14 +16,17 @@ namespace libgnme {
     \ingroup gnme_wick
  **/
 template<typename Tc, typename Tf, typename Tb>
-class wick_rscf
+class wick_rscf : public wick<Tc,Tf,Tb>
 {
+protected:
+    using wick<Tc,Tf,Tb>::m_nbsf; 
+    using wick<Tc,Tf,Tb>::m_nmo; 
+    using wick<Tc,Tf,Tb>::m_nact; 
+
 private:
     /* Useful constants */
-    const size_t m_nbsf; //!< Number of basis functions
-    const size_t m_nmo; //!< Number of (linearly independent) MOs
     const size_t m_nelec; //!< Number of electrons
-    size_t m_nact; //!< Number of active orbitals
+    //size_t m_nact; //!< Number of active orbitals
     const arma::Mat<Tb> &m_metric; //!< Basis overlap metric
 
     double m_Vc; //!< constant component
@@ -74,8 +78,8 @@ public:
     wick_rscf(
         wick_orbitals<Tc,Tb> &orb,
         const arma::Mat<Tb> &metric, double Vc=0) :
-        m_nbsf(orb.m_nbsf), m_nmo(orb.m_nmo), m_nelec(orb.m_nelec), 
-        m_nact(orb.m_nact), m_metric(metric), m_Vc(Vc),
+        wick<Tc,Tf,Tb>(orb.m_nbsf, orb.m_nmo, orb.m_nact),
+        m_nelec(orb.m_nelec), m_metric(metric), m_Vc(Vc),
         m_orb(orb)
     { 
         // Set the reference bit strings
@@ -95,39 +99,39 @@ public:
     /** \brief Add a one-body operator with spin-restricted integrals 
         \param F One-body integrals in AO basis
      **/
-    virtual void add_one_body(arma::Mat<Tf> &F);
+    void add_one_body(arma::Mat<Tf> &F);
 
     /** \brief Add a two-body operator with spin-restricted integrals
         \param V Two-body integrals in AO basis. These are represented as matrices in chemists
                   notation, e.g. (ij|kl) = V(i*nbsf+j,k*nbsf+l)
      **/
-    virtual void add_two_body(arma::Mat<Tb> &V);
+    void add_two_body(arma::Mat<Tb> &V);
     ///@}
     //
     
-    virtual void evaluate(
+    void evaluate(
         bitset &bxa, bitset &bxb, 
         bitset &bwa, bitset &bwb,
         Tc &S, Tc &V);
     
-    virtual void evaluate_overlap(
+    void evaluate_overlap(
         arma::umat &xa_hp, arma::umat &xb_hp,
         arma::umat &wa_hp, arma::umat &wb_hp,
         Tc &S);
-    virtual void evaluate_one_body_spin(
+    void evaluate_one_body_spin(
         arma::umat &xhp, arma::umat &whp,
         Tc &S, Tc &V);
-    virtual void evaluate(
+    void evaluate(
         arma::umat &xa_hp, arma::umat &xb_hp,
         arma::umat &wa_hp, arma::umat &wb_hp,
         Tc &S, Tc &M);
 
-    virtual void evaluate_rdm1(
+    void evaluate_rdm1(
         bitset &bxa, bitset &bxb, 
         bitset &bwa, bitset &bwb,
         Tc &S, arma::Mat<Tc> &P1);
 
-    virtual void evaluate_rdm12(
+    void evaluate_rdm12(
         bitset &bxa, bitset &bxb, 
         bitset &bwa, bitset &bwb,
         Tc &S, 
@@ -135,31 +139,41 @@ public:
 
 
 private:
-    virtual void spin_rdm1(
+    //void spin_rdm1(
+    //    arma::umat xhp, arma::umat whp, 
+    //    arma::uvec xocc, arma::uvec wocc, 
+    //    arma::Mat<Tc> &P);
+    void same_spin_rdm2(
         arma::umat xhp, arma::umat whp, 
         arma::uvec xocc, arma::uvec wocc, 
         arma::Mat<Tc> &P);
-    virtual void same_spin_rdm2(
-        arma::umat xhp, arma::umat whp, 
-        arma::uvec xocc, arma::uvec wocc, 
-        arma::Mat<Tc> &P);
-    virtual void  diff_spin_rdm2(
+    void  diff_spin_rdm2(
         arma::umat xahp, arma::umat xbhp, 
         arma::umat wahp, arma::umat wbhp, 
         arma::uvec xocca, arma::uvec xoccb, 
         arma::uvec wocca, arma::uvec woccb, 
         arma::Mat<Tc> &P1a, arma::Mat<Tc> &P1b, 
         arma::Mat<Tc> &P2);
-    virtual void spin_overlap(
+    void spin_overlap(
         arma::umat xhp, arma::umat whp, Tc &S);
-    virtual void spin_one_body(
+    void spin_one_body(
         arma::umat xhp, arma::umat whp, Tc &F);
-    virtual void same_spin_two_body(
+    void same_spin_two_body(
         arma::umat xhp, arma::umat whp, Tc &V);
-    virtual void diff_spin_two_body(
+    void diff_spin_two_body(
         arma::umat xa_hp, arma::umat xb_hp, 
         arma::umat wa_hp, arma::umat wb_hp, 
         Tc &V);
+
+    /* Getters */
+    const size_t& get_nz(bool alpha) { return m_orb.m_nz; }
+    const size_t& get_ne(bool alpha) { return m_orb.m_nelec; }
+    const arma::field<arma::Mat<Tc> >& get_fX(bool alpha)  { return m_orb.m_fX;  }
+    const arma::field<arma::Mat<Tc> >& get_X(bool alpha)   { return m_orb.m_X;   }
+    const arma::field<arma::Mat<Tc> >& get_Y(bool alpha)   { return m_orb.m_Y;   }
+    const arma::field<arma::Mat<Tc> >& get_Q(bool alpha)   { return m_orb.m_Q;   }
+    const arma::field<arma::Mat<Tc> >& get_R(bool alpha)   { return m_orb.m_R;   }
+    const arma::field<arma::Mat<Tc> >& get_wxP(bool alpha) { return m_orb.m_wxP; }
 };
 
 } // namespace libgnme

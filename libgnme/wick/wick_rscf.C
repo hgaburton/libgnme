@@ -63,8 +63,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
     // Treat each spin sector separately
     arma::Mat<Tc> Pa(m_nmo, m_nmo, arma::fill::zeros);
     arma::Mat<Tc> Pb(m_nmo, m_nmo, arma::fill::zeros);
-    spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa);
-    spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb);
+    spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa, true);
+    spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb, false);
                
     // Multiply matrix elements by parity
     P1 = ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * (sb * Pa + sa * Pb);
@@ -104,8 +104,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm12(
     // Treat each spin sector separately
     arma::Mat<Tc> Pa(m_nmo, m_nmo, arma::fill::zeros);
     arma::Mat<Tc> Pb(m_nmo, m_nmo, arma::fill::zeros);
-    spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa);
-    spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb);
+    spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa, true);
+    spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb, false);
                
     // Multiply 1RDM matrix elements by parity
     P1 = ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * (sb * Pa + sa * Pb);
