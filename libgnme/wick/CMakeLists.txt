@@ -1,12 +1,11 @@
 set(SRC 
+    wick_overlap.C
     wick_rdm.C
     wick_orbitals.C
     wick_rscf.C
-    wick_rscf_overlap.C
     wick_rscf_one_body.C
     wick_rscf_two_body.C
     wick_uscf.C
-    wick_uscf_overlap.C
     wick_uscf_one_body.C
     wick_uscf_two_body.C
 )

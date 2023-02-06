@@ -40,16 +40,18 @@ public:
     virtual ~wick() { }
 
 protected:
+    virtual void spin_overlap(
+        arma::umat xhp, arma::umat whp, 
+        Tc &S, bool alpha);
+
     virtual void spin_rdm1(
         arma::umat xhp, arma::umat whp, 
         arma::uvec xocc, arma::uvec wocc, 
         arma::Mat<Tc> &P, bool alpha);
-
     virtual void same_spin_rdm2(
         arma::umat xhp, arma::umat whp, 
         arma::uvec xocc, arma::uvec wocc, 
         arma::Mat<Tc> &P, bool alpha);
-
     virtual void  diff_spin_rdm2(
         arma::umat xahp, arma::umat xbhp, 
         arma::umat wahp, arma::umat wbhp, 
@@ -58,10 +60,9 @@ protected:
         arma::Mat<Tc> &P1a, arma::Mat<Tc> &P1b, 
         arma::Mat<Tc> &P2ab);
 
+
 private:
 /*
-    virtual void spin_overlap(
-        arma::umat xhp, arma::umat whp, Tc &S);
     virtual void spin_one_body(
         arma::umat xhp, arma::umat whp, Tc &F);
     virtual void same_spin_two_body(

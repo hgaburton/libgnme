@@ -35,8 +35,7 @@ template<typename Tc, typename Tf, typename Tb>
 void wick_uscf<Tc,Tf,Tb>::evaluate_rdm1(
     bitset &bxa, bitset &bxb, 
     bitset &bwa, bitset &bwb,
-    Tc &S,
-    arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb)
+    Tc &S, arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb)
 {
     // Get excitation indices
     arma::umat xahp, xbhp, wahp, wbhp; 
@@ -204,28 +203,6 @@ void wick_uscf<Tc,Tf,Tb>::evaluate(
         V += 0.5 * m_orb_a.m_redS * m_orb_b.m_redS * (Vaa * sb + Vbb * sa + 2.0 * Vab);
     }
 }
-
-//template<typename Tc, typename Tf, typename Tb>
-//void wick_uscf<Tc,Tf,Tb>::evaluate_1rdm(
-//    arma::umat &xahp, arma::umat &xbhp,
-//    arma::umat &wahp, arma::umat &wbhp,
-//    Tc &S, arma::Mat<Tc> &P)
-//{
-//    // Evaluate overlap terms
-//    Tc sa = 0.0, sb = 0.0;
-//    spin_overlap(xahp, wahp, sa, true);
-//    spin_overlap(xbhp, wbhp, sb, false);
-//    // Save total overlap
-//    S = m_orb_a.m_redS * m_orb_b.m_redS * sa * sb;
-//
-//    // Evaluate spin RDMs
-//    arma::Mat<Tc> Pa, Pb;
-//    spin_1rdm(xahp, wahp, Pa, true);
-//    spin_1rdm(xbhp, wbhp, Pb, false);
-//
-//    // Combine to get full 1RDM
-//    P = m_orb_a.m_redS * m_orb_b.m_redS * (Pa * sb + sa * Pb);
-//}
 
 
 

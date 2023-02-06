@@ -50,8 +50,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
 
     // Get spin overlaps
     Tc sa = 0.0, sb = 0.0;
-    spin_overlap(xahp, wahp, sa);
-    spin_overlap(xbhp, wbhp, sb);
+    spin_overlap(xahp, wahp, sa, true);
+    spin_overlap(xbhp, wbhp, sb, false);
     S = m_orb.m_redS * m_orb.m_redS * sa * sb * ((Tc) parity);
 
     // Get occupied orbitals to simplify density matrix computation
@@ -91,8 +91,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm12(
 
     // Get spin overlaps
     Tc sa = 0.0, sb = 0.0;
-    spin_overlap(xahp, wahp, sa);
-    spin_overlap(xbhp, wbhp, sb);
+    spin_overlap(xahp, wahp, sa, true);
+    spin_overlap(xbhp, wbhp, sb, false);
     S = m_orb.m_redS * m_orb.m_redS * sa * sb * ((Tc) parity);
 
     // Get occupied orbitals to simplify density matrix computation
@@ -130,8 +130,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_overlap(
 {
     // Evaluate overlap terms
     Tc sa = 0.0, sb = 0.0;
-    spin_overlap(xahp, wahp, sa);
-    spin_overlap(xbhp, wbhp, sb);
+    spin_overlap(xahp, wahp, sa, true);
+    spin_overlap(xbhp, wbhp, sb, false);
     // Save total overlap
     S = m_orb.m_redS * m_orb.m_redS * sa * sb;
 }
@@ -143,7 +143,7 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_one_body_spin(
 {
     // Evaluate overlap terms
     Tc sspin = 0.0;
-    spin_overlap(xhp, whp, sspin);
+    spin_overlap(xhp, whp, sspin, true);
 
     // Save total spin-overlap
     S = m_orb.m_redS * sspin;
@@ -164,8 +164,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
 {
     // Evaluate overlap terms
     Tc sa = 0.0, sb = 0.0;
-    spin_overlap(xahp, wahp, sa);
-    spin_overlap(xbhp, wbhp, sb);
+    spin_overlap(xahp, wahp, sa, true);
+    spin_overlap(xbhp, wbhp, sb, false);
     // Save total overlap
     S = m_orb.m_redS * m_orb.m_redS * sa * sb;
 
