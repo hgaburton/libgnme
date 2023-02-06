@@ -56,8 +56,8 @@ private:
     arma::Col<Tc> m_Vdiff;
 
     // Store the '[X/Y](J-K)[X/Y]' super matrices (8 * nmo^2)
+    arma::field<arma::Mat<Tc> > m_XJKX;
     arma::field<arma::Mat<Tc> > m_XJX;
-    arma::field<arma::Mat<Tc> > m_XKX;
 
     // Store two-electron repulsion integrals (16 * nmo^4)
     arma::field<arma::Mat<Tc> > m_IIsame;
@@ -139,12 +139,6 @@ public:
 
 
 private:
-    void same_spin_two_body(
-        arma::umat xhp, arma::umat whp, Tc &V);
-    //void diff_spin_two_body(
-    //    arma::umat xa_hp, arma::umat xb_hp, 
-    //    arma::umat wa_hp, arma::umat wb_hp, 
-    //    Tc &V);
 
     /* Getters */
     const size_t& get_nz(bool alpha) { return m_orb.m_nz; }
@@ -157,11 +151,9 @@ private:
     const arma::field<arma::Mat<Tc> >& get_wxP(bool alpha) { return m_orb.m_wxP; }
     const arma::Col<Tc>& get_F0(bool alpha) { return m_F0; } 
     const arma::field<arma::Mat<Tc> >& get_XFX(bool alpha) { return m_XFX; } 
-    const arma::field<arma::Mat<Tc> >& get_XVbXa() { return m_XJX; }
-    const arma::field<arma::Mat<Tc> >& get_XVaXb() { return m_XJX; }
-    arma::field<arma::Mat<Tc> >& get_IIab() { return m_IIdiff; }
-    arma::field<arma::Mat<Tc> >& get_IIba() { return m_IIdiff; }
-    const arma::Mat<Tc>& get_Vab() { return m_Vdiff; }
+    const arma::field<arma::Mat<Tc> >& get_XVX(bool a, bool b){ return (a==b) ? m_XJKX : m_XJX; }
+    arma::field<arma::Mat<Tc> >& get_II(bool a, bool b){ return (a==b) ? m_IIsame : m_IIdiff; };
+    const arma::Mat<Tc>& get_V0(bool a, bool b) { return (a==b) ? m_Vsame : m_Vdiff; } 
 };
 
 } // namespace libgnme

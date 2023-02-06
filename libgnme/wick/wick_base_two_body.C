@@ -7,7 +7,6 @@
 namespace libgnme {
 
 
-/*
 template<typename Tc, typename Tf, typename Tb>
 void wick_base<Tc,Tf,Tb>::same_spin_two_body(
     arma::umat xhp, arma::umat whp,
@@ -21,7 +20,7 @@ void wick_base<Tc,Tf,Tb>::same_spin_two_body(
     size_t nw = whp.n_rows; // Ket excitations
 
     // Get reference to number of zeros for this spin
-    const size_t &nz = alpha ? m_orb_a.m_nz : m_orb_b.m_nz; 
+    const size_t &nz = get_nz(alpha);
 
     // Dimensions of multiple contractions
     size_t d = (nz > 0) ? 2 : 1;
@@ -30,14 +29,14 @@ void wick_base<Tc,Tf,Tb>::same_spin_two_body(
     if(nz > nw + nx + 2) return;
 
     // Get reference to relevant contractions
-    const arma::field<arma::Mat<Tc> > &X = alpha ? m_orb_a.m_X : m_orb_b.m_X;
-    const arma::field<arma::Mat<Tc> > &Y = alpha ? m_orb_a.m_Y : m_orb_b.m_Y;
+    const arma::field<arma::Mat<Tc> > &X = get_X(alpha);
+    const arma::field<arma::Mat<Tc> > &Y = get_Y(alpha);
     // Get reference to relevant zeroth-order term
-    const arma::Col<Tc> &V0  = alpha ? m_Vaa : m_Vbb;
+    const arma::Col<Tc> &V0  = get_V0(alpha,alpha);
     // Get reference to relevant J/K term
-    const arma::field<arma::Mat<Tc> > &XVX = alpha ? m_XVaXa : m_XVbXb;
+    const arma::field<arma::Mat<Tc> > &XVX = get_XVX(alpha,alpha);
     // Get reference to relevant two-electron integrals
-    arma::field<arma::Mat<Tc> > &II = alpha ? m_IIaa : m_IIbb;
+    arma::field<arma::Mat<Tc> > &II = get_II(alpha,alpha);
 
     // TODO Correct indexing for new code
     whp += m_nact;
@@ -172,7 +171,6 @@ void wick_base<Tc,Tf,Tb>::same_spin_two_body(
     // TODO Correct indexing for old code
     whp -= m_nact;
 }
-*/
 
 
 template<typename Tc, typename Tf, typename Tb>
@@ -197,11 +195,11 @@ void wick_base<Tc,Tf,Tb>::diff_spin_two_body(
     const arma::field<arma::Mat<Tc> > &Xb = get_X(false);
     const arma::field<arma::Mat<Tc> > &Ya = get_Y(true);
     const arma::field<arma::Mat<Tc> > &Yb = get_Y(false);
-    const arma::field<arma::Mat<Tc> > &XVbXa = get_XVbXa();
-    const arma::field<arma::Mat<Tc> > &XVaXb = get_XVaXb();
-    const arma::Mat<Tc> &Vab = get_Vab();
-    arma::field<arma::Mat<Tc> > &IIab = get_IIab();
-    arma::field<arma::Mat<Tc> > &IIba = get_IIba();
+    const arma::field<arma::Mat<Tc> > &XVaXb = get_XVX(true, false);
+    const arma::field<arma::Mat<Tc> > &XVbXa = get_XVX(false, true);
+    const arma::Mat<Tc> &Vab = get_V0(true, false);
+    arma::field<arma::Mat<Tc> > &IIab = get_II(true, false);
+    arma::field<arma::Mat<Tc> > &IIba = get_II(false, true);
 
     // Dimensions of multiple contractions
     size_t da = (nza > 0) ? 2 : 1;

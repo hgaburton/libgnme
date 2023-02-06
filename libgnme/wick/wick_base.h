@@ -63,6 +63,8 @@ protected:
     virtual void spin_one_body(
         arma::umat xhp, arma::umat whp, Tc &F, bool alpha);
 
+    virtual void same_spin_two_body(
+        arma::umat xhp, arma::umat whp, Tc &V, bool alpha);
     virtual void diff_spin_two_body(
         arma::umat xa_hp, arma::umat xb_hp, 
         arma::umat wa_hp, arma::umat wb_hp, 
@@ -70,8 +72,6 @@ protected:
 
 private:
 /*
-    virtual void same_spin_two_body(
-        arma::umat xhp, arma::umat whp, Tc &V);
     */
 
     /* Getters */
@@ -85,11 +85,9 @@ private:
     virtual const arma::field<arma::Mat<Tc> >& get_wxP(bool alpha) = 0;
     virtual const arma::Col<Tc>& get_F0(bool alpha) = 0; 
     virtual const arma::field<arma::Mat<Tc> >& get_XFX(bool alpha) = 0;
-    virtual const arma::field<arma::Mat<Tc> >& get_XVbXa() = 0;
-    virtual const arma::field<arma::Mat<Tc> >& get_XVaXb() = 0;
-    virtual arma::field<arma::Mat<Tc> >& get_IIab() = 0; 
-    virtual arma::field<arma::Mat<Tc> >& get_IIba() = 0;
-    virtual const arma::Mat<Tc>& get_Vab() = 0;
+    virtual const arma::field<arma::Mat<Tc> >& get_XVX(bool a, bool b) = 0;
+    virtual arma::field<arma::Mat<Tc> >& get_II(bool a, bool b) = 0;
+    virtual const arma::Mat<Tc>& get_V0(bool a, bool b) = 0;
 };
 
 } // namespace libgnme

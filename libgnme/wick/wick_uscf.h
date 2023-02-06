@@ -167,13 +167,6 @@ public:
         arma::Mat<Tc> &P2ab);
 
 private:
-    virtual void same_spin_two_body(
-        arma::umat xhp, arma::umat whp,
-        Tc &V, bool alpha);
-    //virtual void diff_spin_two_body(
-    //    arma::umat xa_hp, arma::umat xb_hp, 
-    //    arma::umat wa_hp, arma::umat wb_hp, 
-    //    Tc &V);
 
     /* Getters */
     const size_t& get_nz(bool alpha) { return alpha ? m_orb_a.m_nz : m_orb_b.m_nz; }
@@ -186,11 +179,23 @@ private:
     const arma::field<arma::Mat<Tc> >& get_wxP(bool alpha) { return alpha ? m_orb_a.m_wxP : m_orb_b.m_wxP; }
     const arma::Col<Tc>& get_F0(bool alpha) { return alpha ? m_F0a : m_F0b; } 
     const arma::field<arma::Mat<Tc> >& get_XFX(bool alpha) { return alpha ? m_XFXa : m_XFXb; } 
-    const arma::field<arma::Mat<Tc> >& get_XVbXa() { return m_XVbXa; }
-    const arma::field<arma::Mat<Tc> >& get_XVaXb() { return m_XVaXb; }
-    arma::field<arma::Mat<Tc> >& get_IIab() { return m_IIab; }
-    arma::field<arma::Mat<Tc> >& get_IIba() { return m_IIba; }
-    const arma::Mat<Tc>& get_Vab() { return m_Vab; }
+    const arma::Mat<Tc>& get_V0(bool a, bool b) { 
+        if(a == true  and b == true ) return m_Vaa;
+        if(a == false and b == false) return m_Vbb;
+        return m_Vab;
+    }
+    const arma::field<arma::Mat<Tc> >& get_XVX(bool a, bool b) { 
+        if(a == true  and b == true ) return m_XVaXa; 
+        if(a == false and b == true ) return m_XVbXa;
+        if(a == true  and b == false) return m_XVaXb;
+        return m_XVbXb;
+    }
+    arma::field<arma::Mat<Tc> >& get_II(bool a, bool b) { 
+        if(a == true  and b == true ) return m_IIaa; 
+        if(a == false and b == true ) return m_IIba;
+        if(a == true  and b == false) return m_IIab;
+        return m_IIbb;
+    }
     
 };
 
