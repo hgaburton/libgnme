@@ -139,26 +139,29 @@ public:
 
 
 private:
-    //void spin_one_body(
-    //    arma::umat xhp, arma::umat whp, Tc &F);
     void same_spin_two_body(
         arma::umat xhp, arma::umat whp, Tc &V);
-    void diff_spin_two_body(
-        arma::umat xa_hp, arma::umat xb_hp, 
-        arma::umat wa_hp, arma::umat wb_hp, 
-        Tc &V);
+    //void diff_spin_two_body(
+    //    arma::umat xa_hp, arma::umat xb_hp, 
+    //    arma::umat wa_hp, arma::umat wb_hp, 
+    //    Tc &V);
 
     /* Getters */
     const size_t& get_nz(bool alpha) { return m_orb.m_nz; }
     const size_t& get_ne(bool alpha) { return m_orb.m_nelec; }
-    const arma::field<arma::Mat<Tc> >& get_fX(bool alpha)  { return m_orb.m_fX;  }
-    const arma::field<arma::Mat<Tc> >& get_X(bool alpha)   { return m_orb.m_X;   }
-    const arma::field<arma::Mat<Tc> >& get_Y(bool alpha)   { return m_orb.m_Y;   }
-    const arma::field<arma::Mat<Tc> >& get_Q(bool alpha)   { return m_orb.m_Q;   }
-    const arma::field<arma::Mat<Tc> >& get_R(bool alpha)   { return m_orb.m_R;   }
+    const arma::field<arma::Mat<Tc> >& get_fX(bool alpha) { return m_orb.m_fX; }
+    const arma::field<arma::Mat<Tc> >& get_X(bool alpha) { return m_orb.m_X; }
+    const arma::field<arma::Mat<Tc> >& get_Y(bool alpha) { return m_orb.m_Y; }
+    const arma::field<arma::Mat<Tc> >& get_Q(bool alpha) { return m_orb.m_Q; }
+    const arma::field<arma::Mat<Tc> >& get_R(bool alpha) { return m_orb.m_R; }
     const arma::field<arma::Mat<Tc> >& get_wxP(bool alpha) { return m_orb.m_wxP; }
     const arma::Col<Tc>& get_F0(bool alpha) { return m_F0; } 
     const arma::field<arma::Mat<Tc> >& get_XFX(bool alpha) { return m_XFX; } 
+    const arma::field<arma::Mat<Tc> >& get_XVbXa() { return m_XJX; }
+    const arma::field<arma::Mat<Tc> >& get_XVaXb() { return m_XJX; }
+    arma::field<arma::Mat<Tc> >& get_IIab() { return m_IIdiff; }
+    arma::field<arma::Mat<Tc> >& get_IIba() { return m_IIdiff; }
+    const arma::Mat<Tc>& get_Vab() { return m_Vdiff; }
 };
 
 } // namespace libgnme

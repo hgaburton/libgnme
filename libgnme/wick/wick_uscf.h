@@ -167,31 +167,30 @@ public:
         arma::Mat<Tc> &P2ab);
 
 private:
-    //virtual void spin_overlap(
-    //    arma::umat xhp, arma::umat whp,
-    //    Tc &S, bool alpha);
-    //virtual void spin_one_body(
-    //    arma::umat xhp, arma::umat whp,
-    //    Tc &F, bool alpha);
     virtual void same_spin_two_body(
         arma::umat xhp, arma::umat whp,
         Tc &V, bool alpha);
-    virtual void diff_spin_two_body(
-        arma::umat xa_hp, arma::umat xb_hp, 
-        arma::umat wa_hp, arma::umat wb_hp, 
-        Tc &V);
+    //virtual void diff_spin_two_body(
+    //    arma::umat xa_hp, arma::umat xb_hp, 
+    //    arma::umat wa_hp, arma::umat wb_hp, 
+    //    Tc &V);
 
     /* Getters */
     const size_t& get_nz(bool alpha) { return alpha ? m_orb_a.m_nz : m_orb_b.m_nz; }
     const size_t& get_ne(bool alpha) { return alpha ? m_orb_a.m_nelec : m_orb_b.m_nelec; }
-    const arma::field<arma::Mat<Tc> >& get_fX(bool alpha)  { return alpha ? m_orb_a.m_fX  : m_orb_b.m_fX;  }
-    const arma::field<arma::Mat<Tc> >& get_X(bool alpha)   { return alpha ? m_orb_a.m_X   : m_orb_b.m_X;   }
-    const arma::field<arma::Mat<Tc> >& get_Y(bool alpha)   { return alpha ? m_orb_a.m_Y   : m_orb_b.m_Y;   }
-    const arma::field<arma::Mat<Tc> >& get_Q(bool alpha)   { return alpha ? m_orb_a.m_Q   : m_orb_b.m_Q;   }
-    const arma::field<arma::Mat<Tc> >& get_R(bool alpha)   { return alpha ? m_orb_a.m_R   : m_orb_b.m_R;   }
+    const arma::field<arma::Mat<Tc> >& get_fX(bool alpha) { return alpha ? m_orb_a.m_fX : m_orb_b.m_fX; }
+    const arma::field<arma::Mat<Tc> >& get_X(bool alpha) { return alpha ? m_orb_a.m_X : m_orb_b.m_X; }
+    const arma::field<arma::Mat<Tc> >& get_Y(bool alpha) { return alpha ? m_orb_a.m_Y : m_orb_b.m_Y; }
+    const arma::field<arma::Mat<Tc> >& get_Q(bool alpha) { return alpha ? m_orb_a.m_Q : m_orb_b.m_Q; }
+    const arma::field<arma::Mat<Tc> >& get_R(bool alpha) { return alpha ? m_orb_a.m_R : m_orb_b.m_R; }
     const arma::field<arma::Mat<Tc> >& get_wxP(bool alpha) { return alpha ? m_orb_a.m_wxP : m_orb_b.m_wxP; }
     const arma::Col<Tc>& get_F0(bool alpha) { return alpha ? m_F0a : m_F0b; } 
     const arma::field<arma::Mat<Tc> >& get_XFX(bool alpha) { return alpha ? m_XFXa : m_XFXb; } 
+    const arma::field<arma::Mat<Tc> >& get_XVbXa() { return m_XVbXa; }
+    const arma::field<arma::Mat<Tc> >& get_XVaXb() { return m_XVaXb; }
+    arma::field<arma::Mat<Tc> >& get_IIab() { return m_IIab; }
+    arma::field<arma::Mat<Tc> >& get_IIba() { return m_IIba; }
+    const arma::Mat<Tc>& get_Vab() { return m_Vab; }
     
 };
 
