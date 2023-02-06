@@ -23,6 +23,7 @@ protected:
     using wick_base<Tc,Tf,Tb>::m_nmo; 
     using wick_base<Tc,Tf,Tb>::m_nact; 
     using wick_base<Tc,Tf,Tb>::m_one_body_int;
+    using wick_base<Tc,Tf,Tb>::m_two_body_int;
 
 private:
     /* Useful constants */
@@ -39,7 +40,6 @@ private:
     bitset m_bref_a; //!< Reference alpha bitset
     bitset m_bref_b; //!< Reference beta bitset
 
-    // One-body MO matrices
     bool m_one_body = false;
     bool m_two_body = false;
 
@@ -51,24 +51,6 @@ private:
 public:
     size_t m_nza; //!< Number of alpha zero-overlap orbitals
     size_t m_nzb; //!< Number of beta zero-overlap orbitals
-
-private:
-    // Store the 'V0' terms (3)
-    arma::Col<Tc> m_Vaa;
-    arma::Col<Tc> m_Vbb;
-    arma::Mat<Tc> m_Vab;
-
-    // Store the '[X/Y](J-K)[X/Y]' super matrices (8 * nmo^2)
-    arma::field<arma::Mat<Tc> > m_XVaXa;
-    arma::field<arma::Mat<Tc> > m_XVbXb;
-    arma::field<arma::Mat<Tc> > m_XVaXb;
-    arma::field<arma::Mat<Tc> > m_XVbXa;
-
-    // Store two-electron repulsion integrals (16 * nmo^4)
-    arma::field<arma::Mat<Tc> > m_IIaa;
-    arma::field<arma::Mat<Tc> > m_IIbb;
-    arma::field<arma::Mat<Tc> > m_IIab;
-    arma::field<arma::Mat<Tc> > m_IIba;
 
 public:
     /** \brief Constructor for the object
@@ -160,29 +142,12 @@ public:
         arma::Mat<Tc> &P1a, arma::Mat<Tc> &P1b,
         arma::Mat<Tc> &P2aa, arma::Mat<Tc> &P2bb,
         arma::Mat<Tc> &P2ab);
-
-private:
-
-    /* Getters */
-    const arma::Mat<Tc>& get_V0(bool a, bool b) { 
-        if(a == true  and b == true ) return m_Vaa;
-        if(a == false and b == false) return m_Vbb;
-        return m_Vab;
-    }
-    const arma::field<arma::Mat<Tc> >& get_XVX(bool a, bool b) { 
-        if(a == true  and b == true ) return m_XVaXa; 
-        if(a == false and b == true ) return m_XVbXa;
-        if(a == true  and b == false) return m_XVaXb;
-        return m_XVbXb;
-    }
-    arma::field<arma::Mat<Tc> >& get_II(bool a, bool b) { 
-        if(a == true  and b == true ) return m_IIaa; 
-        if(a == false and b == true ) return m_IIba;
-        if(a == true  and b == false) return m_IIab;
-        return m_IIbb;
-    }
-    
 };
+
+template class wick_uscf<double, double, double>;
+template class wick_uscf<std::complex<double>, double, double>;
+template class wick_uscf<std::complex<double>, std::complex<double>, double>;
+template class wick_uscf<std::complex<double>, std::complex<double>, std::complex<double> >;
 
 } // namespace libgnme
 

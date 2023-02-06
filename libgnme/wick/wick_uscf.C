@@ -3,6 +3,7 @@
 #include <libgnme/utils/lowdin_pair.h>
 #include "wick_uscf.h"
 #include "one_body_uscf.h"
+#include "two_body_uscf.h"
 
 namespace libgnme {
 
@@ -20,6 +21,16 @@ void wick_uscf<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb)
     m_one_body = true;
     // Define new integral object
     m_one_body_int = new one_body_uscf<Tc,Tf,Tb>(m_orb_a, m_orb_b, Fa, Fb);
+}
+
+
+template<typename Tc, typename Tf, typename Tb>
+void wick_uscf<Tc,Tf,Tb>::add_two_body(arma::Mat<Tb> &V)
+{
+    // Setup control variable to indicate two-body initialised 
+    m_two_body = true;
+    // Define new integral object
+    m_two_body_int = new two_body_uscf<Tc,Tf,Tb>(m_orb_a, m_orb_b, V);
 }
 
 
@@ -68,8 +79,8 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_rdm1(
 
     // Get spin overlaps
     Tc sa = 0.0, sb = 0.0;
-    spin_overlap(xahp, wahp, sa, true);
-    spin_overlap(xbhp, wbhp, sb, false);
+    this->spin_overlap(xahp, wahp, sa, true);
+    this->spin_overlap(xbhp, wbhp, sb, false);
     S = ((Tc) parity) * m_orb_a.m_redS * m_orb_b.m_redS * sa * sb;
 
     // Get occupied orbitals to simplify density matrix computation
@@ -79,8 +90,8 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_rdm1(
     arma::uvec occ_wb = arma::join_cols(m_coreb, bwb.occ()+m_orb_b.m_ncore);
 
     // Treat each spin sector separately
-    spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa, true);
-    spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb, false);
+    this->spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa, true);
+    this->spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb, false);
                
     // Multiply matrix elements by parity
     Pa *= ((Tc) parity) * m_orb_a.m_redS * m_orb_b.m_redS * sb; 
@@ -110,8 +121,8 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_rdm12(
 
     // Get spin overlaps
     Tc sa = 0.0, sb = 0.0;
-    spin_overlap(xahp, wahp, sa, true);
-    spin_overlap(xbhp, wbhp, sb, false);
+    this->spin_overlap(xahp, wahp, sa, true);
+    this->spin_overlap(xbhp, wbhp, sb, false);
     S = m_orb_a.m_redS * m_orb_b.m_redS * sa * sb * ((Tc) parity);
 
     // Get occupied orbitals to simplify density matrix computation
@@ -121,13 +132,13 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_rdm12(
     arma::uvec occ_wb = arma::join_cols(m_coreb, bwb.occ()+m_orb_b.m_ncore);
 
     // Treat each spin sector separately
-    spin_rdm1(xahp, wahp, occ_xa, occ_wa, P1a, true);
-    spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, P1b, false);
+    this->spin_rdm1(xahp, wahp, occ_xa, occ_wa, P1a, true);
+    this->spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, P1b, false);
                
     // Treat each spin sector separately
-    same_spin_rdm2(xahp, wahp, occ_xa, occ_wa, P2aa, true);
-    same_spin_rdm2(xbhp, wbhp, occ_xb, occ_wb, P2bb, false);
-    diff_spin_rdm2(xahp, xbhp, wahp, wbhp, occ_xa, occ_xb, occ_wa, occ_wb, P1a, P1b, P2ab);
+    this->same_spin_rdm2(xahp, wahp, occ_xa, occ_wa, P2aa, true);
+    this->same_spin_rdm2(xbhp, wbhp, occ_xb, occ_wb, P2bb, false);
+    this->diff_spin_rdm2(xahp, xbhp, wahp, wbhp, occ_xa, occ_xb, occ_wa, occ_wb, P1a, P1b, P2ab);
 
     // Multiply 1RDM matrix elements by parity and reduced overlap
     P1a *= ((Tc) parity) * m_orb_a.m_redS * m_orb_b.m_redS * sb;
@@ -150,8 +161,8 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_overlap(
 {
     // Evaluate overlap terms
     Tc sa = 0.0, sb = 0.0;
-    spin_overlap(xahp, wahp, sa, true);
-    spin_overlap(xbhp, wbhp, sb, false);
+    this->spin_overlap(xahp, wahp, sa, true);
+    this->spin_overlap(xbhp, wbhp, sb, false);
     // Save total overlap
     S = m_orb_a.m_redS * m_orb_b.m_redS * sa * sb;
 }
@@ -166,7 +177,7 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_one_body_spin(
 
     // Evaluate overlap terms
     Tc sspin = 0.0;
-    spin_overlap(xhp, whp, sspin, alpha);
+    this->spin_overlap(xhp, whp, sspin, alpha);
 
     // Save total spin-overlap
     S = redS * sspin;
@@ -174,7 +185,7 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_one_body_spin(
     // Evaluate one-body terms
     Tc Vspin = 0.0;
     // Evaluate separate spin one-body terms
-    spin_one_body(xhp, whp, Vspin, alpha);
+    this->spin_one_body(xhp, whp, Vspin, alpha);
     // Recombine and increment output
     V = redS * Vspin;
 }
@@ -187,8 +198,8 @@ void wick_uscf<Tc,Tf,Tb>::evaluate(
 {
     // Evaluate overlap terms
     Tc sa = 0.0, sb = 0.0;
-    spin_overlap(xahp, wahp, sa, true);
-    spin_overlap(xbhp, wbhp, sb, false);
+    this->spin_overlap(xahp, wahp, sa, true);
+    this->spin_overlap(xbhp, wbhp, sb, false);
     // Save total overlap
     S = m_orb_a.m_redS * m_orb_b.m_redS * sa * sb;
 
@@ -201,8 +212,8 @@ void wick_uscf<Tc,Tf,Tb>::evaluate(
         // Temporary variables
         Tc Va = 0.0, Vb = 0.0;
         // Evaluate separate spin one-body terms
-        spin_one_body(xahp, wahp, Va, true);
-        spin_one_body(xbhp, wbhp, Vb, false);
+        this->spin_one_body(xahp, wahp, Va, true);
+        this->spin_one_body(xbhp, wbhp, Vb, false);
         // Recombine and increment output
         V += m_orb_a.m_redS * m_orb_b.m_redS * (Va * sb + Vb * sa);
     }
@@ -213,20 +224,13 @@ void wick_uscf<Tc,Tf,Tb>::evaluate(
         // Temporary variables
         Tc Vaa = 0.0, Vbb = 0.0, Vab = 0.0;
         // Same spin terms
-        same_spin_two_body(xahp, wahp, Vaa, true);
-        same_spin_two_body(xbhp, wbhp, Vbb, false);
+        this->same_spin_two_body(xahp, wahp, Vaa, true);
+        this->same_spin_two_body(xbhp, wbhp, Vbb, false);
         // Different spin terms
-        diff_spin_two_body(xahp, xbhp, wahp, wbhp, Vab);
+        this->diff_spin_two_body(xahp, xbhp, wahp, wbhp, Vab);
         // Recombine
         V += 0.5 * m_orb_a.m_redS * m_orb_b.m_redS * (Vaa * sb + Vbb * sa + 2.0 * Vab);
     }
 }
-
-
-
-template class wick_uscf<double, double, double>;
-template class wick_uscf<std::complex<double>, double, double>;
-template class wick_uscf<std::complex<double>, std::complex<double>, double>;
-template class wick_uscf<std::complex<double>, std::complex<double>, std::complex<double> >;
 
 } // namespace libgnme

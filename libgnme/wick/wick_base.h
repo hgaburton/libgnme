@@ -5,6 +5,7 @@
 #include <libgnme/utils/bitset.h>
 #include "wick_orbitals.h"
 #include "one_body.h"
+#include "two_body.h"
 
 namespace libgnme {
 
@@ -27,6 +28,7 @@ protected:
     wick_orbitals<Tc,Tb> &m_orbb; //!< Orbital pair
 
     one_body<Tc,Tf,Tb> *m_one_body_int; //!< Intermediates for one-body integrals
+    two_body<Tc,Tf,Tb> *m_two_body_int; //!< Intermediates for two-body integrals
 
 public:
     /** \brief Constructor for the object
@@ -46,7 +48,7 @@ public:
     virtual ~wick_base() { }
 
 protected:
-    virtual void spin_overlap(
+    void spin_overlap(
         arma::umat xhp, arma::umat whp, 
         Tc &S, bool alpha);
 
@@ -78,10 +80,15 @@ protected:
 
 private:
     /* Getters */
-    virtual const arma::field<arma::Mat<Tc> >& get_XVX(bool a, bool b) = 0;
-    virtual arma::field<arma::Mat<Tc> >& get_II(bool a, bool b) = 0;
-    virtual const arma::Mat<Tc>& get_V0(bool a, bool b) = 0;
+    //virtual const arma::field<arma::Mat<Tc> >& get_XVX(bool a, bool b) = 0;
+    //virtual arma::field<arma::Mat<Tc> >& get_II(bool a, bool b) = 0;
+    //virtual const arma::Mat<Tc>& get_V0(bool a, bool b) = 0;
 };
+
+template class wick_base<double, double, double>;
+template class wick_base<std::complex<double>, double, double>;
+template class wick_base<std::complex<double>, std::complex<double>, double>;
+template class wick_base<std::complex<double>, std::complex<double>, std::complex<double> >;
 
 } // namespace libgnme
 

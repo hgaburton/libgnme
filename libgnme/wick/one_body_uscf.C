@@ -3,7 +3,6 @@
 
 namespace libgnme {
 
-
 template<typename Tc, typename Tf, typename Tb>
 void one_body_uscf<Tc,Tf,Tb>::initialise(
     wick_orbitals<Tc,Tb> &orba, 

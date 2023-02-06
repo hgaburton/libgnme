@@ -33,11 +33,14 @@ void wick_base<Tc,Tf,Tb>::same_spin_two_body(
     const arma::field<arma::Mat<Tc> > &Y = alpha ? m_orba.m_Y : m_orbb.m_Y;
 
     // Get reference to relevant zeroth-order term
-    const arma::Col<Tc> &V0  = get_V0(alpha,alpha);
+    const arma::Col<Tc> &V0  = alpha ? m_two_body_int->Vaa 
+                                     : m_two_body_int->Vbb;
     // Get reference to relevant J/K term
-    const arma::field<arma::Mat<Tc> > &XVX = get_XVX(alpha,alpha);
+    const arma::field<arma::Mat<Tc> > &XVX = alpha ? m_two_body_int->XVaXa 
+                                                   : m_two_body_int->XVbXb;
     // Get reference to relevant two-electron integrals
-    arma::field<arma::Mat<Tc> > &II = get_II(alpha,alpha);
+    arma::field<arma::Mat<Tc> > &II = alpha ? m_two_body_int->IIaa
+                                            : m_two_body_int->IIbb;
 
     // TODO Correct indexing for new code
     whp += m_nact;
@@ -197,11 +200,11 @@ void wick_base<Tc,Tf,Tb>::diff_spin_two_body(
     const arma::field<arma::Mat<Tc> > &Ya = m_orba.m_Y;
     const arma::field<arma::Mat<Tc> > &Yb = m_orbb.m_Y;
 
-    const arma::field<arma::Mat<Tc> > &XVaXb = get_XVX(true, false);
-    const arma::field<arma::Mat<Tc> > &XVbXa = get_XVX(false, true);
-    const arma::Mat<Tc> &Vab = get_V0(true, false);
-    arma::field<arma::Mat<Tc> > &IIab = get_II(true, false);
-    arma::field<arma::Mat<Tc> > &IIba = get_II(false, true);
+    const arma::field<arma::Mat<Tc> > &XVaXb = m_two_body_int->XVaXb;
+    const arma::field<arma::Mat<Tc> > &XVbXa = m_two_body_int->XVbXa;
+    const arma::Mat<Tc> &Vab = m_two_body_int->Vab;
+    arma::field<arma::Mat<Tc> > &IIab = m_two_body_int->IIab;
+    arma::field<arma::Mat<Tc> > &IIba = m_two_body_int->IIba;
 
     // Dimensions of multiple contractions
     size_t da = (nza > 0) ? 2 : 1;
@@ -416,10 +419,5 @@ void wick_base<Tc,Tf,Tb>::diff_spin_two_body(
     wahp -= m_nact;
     wbhp -= m_nact;
 }
-
-template class wick_base<double, double, double>;
-template class wick_base<std::complex<double>, double, double>;
-template class wick_base<std::complex<double>, std::complex<double>, double>;
-template class wick_base<std::complex<double>, std::complex<double>, std::complex<double> >;
 
 } // namespace libgnme

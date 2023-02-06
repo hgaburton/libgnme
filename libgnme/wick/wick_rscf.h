@@ -23,6 +23,7 @@ protected:
     using wick_base<Tc,Tf,Tb>::m_nmo; 
     using wick_base<Tc,Tf,Tb>::m_nact; 
     using wick_base<Tc,Tf,Tb>::m_one_body_int;
+    using wick_base<Tc,Tf,Tb>::m_two_body_int;
 
 private:
     /* Useful constants */
@@ -46,18 +47,6 @@ public:
     size_t m_nz; //!< Number of zero-overlap orbitals
 
 private:
-    // Store the 'V0' terms (3)
-    arma::Col<Tc> m_Vsame;
-    arma::Col<Tc> m_Vdiff;
-
-    // Store the '[X/Y](J-K)[X/Y]' super matrices (8 * nmo^2)
-    arma::field<arma::Mat<Tc> > m_XJKX;
-    arma::field<arma::Mat<Tc> > m_XJX;
-
-    // Store two-electron repulsion integrals (16 * nmo^4)
-    arma::field<arma::Mat<Tc> > m_IIsame;
-    arma::field<arma::Mat<Tc> > m_IIdiff;
-
     // Reference bitset
     bitset m_bref; //!< Reference bitset for closed-shell determinant
 
@@ -133,15 +122,12 @@ public:
         bitset &bwa, bitset &bwb,
         Tc &S, 
         arma::Mat<Tc> &P1, arma::Mat<Tc> &P2);
-
-
-private:
-
-    /* Getters */
-    const arma::field<arma::Mat<Tc> >& get_XVX(bool a, bool b){ return (a==b) ? m_XJKX : m_XJX; }
-    arma::field<arma::Mat<Tc> >& get_II(bool a, bool b){ return (a==b) ? m_IIsame : m_IIdiff; };
-    const arma::Mat<Tc>& get_V0(bool a, bool b) { return (a==b) ? m_Vsame : m_Vdiff; } 
 };
+
+template class wick_rscf<double, double, double>;
+template class wick_rscf<std::complex<double>, double, double>;
+template class wick_rscf<std::complex<double>, std::complex<double>, double>;
+template class wick_rscf<std::complex<double>, std::complex<double>, std::complex<double> >;
 
 } // namespace libgnme
 

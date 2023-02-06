@@ -25,8 +25,8 @@ void wick_base<Tc,Tf,Tb>::spin_one_body(
     const arma::field<arma::Mat<Tc> > &Y = alpha ? m_orba.m_Y : m_orbb.m_Y;
 
     // Get reference to relevant one-body contractions
-    const arma::Col<Tc> &F0 = alpha ? m_one_body_int->m_F0a : m_one_body_int->m_F0b;
-    const arma::field<arma::Mat<Tc> > &XFX = alpha ? m_one_body_int->m_XFXa : m_one_body_int->m_XFXb;
+    const arma::Col<Tc> &F0 = alpha ? m_one_body_int->F0a : m_one_body_int->F0b;
+    const arma::field<arma::Mat<Tc> > &XFX = alpha ? m_one_body_int->XFXa : m_one_body_int->XFXb;
 
     // Get dimensions of zero-contractions
     size_t dim = (nz > 0) ? 2 : 1; 
@@ -118,10 +118,5 @@ void wick_base<Tc,Tf,Tb>::spin_one_body(
 
     return;
 }
-
-template class wick_base<double, double, double>;
-template class wick_base<std::complex<double>, double, double>;
-template class wick_base<std::complex<double>, std::complex<double>, double>;
-template class wick_base<std::complex<double>, std::complex<double>, std::complex<double> >;
 
 } // namespace libgnme

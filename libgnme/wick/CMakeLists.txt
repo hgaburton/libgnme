@@ -1,15 +1,16 @@
 set(SRC 
     one_body_rscf.C
     one_body_uscf.C
+    two_body_rscf.C
+    two_body_uscf.C
     wick_base_overlap.C
     wick_base_rdm.C
     wick_base_one_body.C
     wick_base_two_body.C
     wick_orbitals.C
     wick_rscf.C
-    wick_rscf_two_body.C
     wick_uscf.C
-    wick_uscf_two_body.C
+    #wick_uscf_two_body.C
 )
 
 add_library(gnme_wick ${SRC})

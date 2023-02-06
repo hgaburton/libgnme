@@ -3,6 +3,7 @@
 #include <libgnme/utils/lowdin_pair.h>
 #include "wick_rscf.h"
 #include "one_body_rscf.h"
+#include "two_body_rscf.h"
 
 namespace libgnme {
 
@@ -13,6 +14,15 @@ void wick_rscf<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &F)
     m_one_body = true;
     // Define new integral object
     m_one_body_int = new one_body_rscf<Tc,Tf,Tb>(m_orb, F);
+}
+
+template<typename Tc, typename Tf, typename Tb>
+void wick_rscf<Tc,Tf,Tb>::add_two_body(arma::Mat<Tb> &V)
+{
+    // Setup control variable to indicate two-body initialised
+    m_two_body = true;
+    // Define new integral object
+    m_two_body_int = new two_body_rscf<Tc,Tf,Tb>(m_orb, V);
 }
 
 template<typename Tc, typename Tf, typename Tb>
@@ -60,8 +70,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
 
     // Get spin overlaps
     Tc sa = 0.0, sb = 0.0;
-    spin_overlap(xahp, wahp, sa, true);
-    spin_overlap(xbhp, wbhp, sb, false);
+    this->spin_overlap(xahp, wahp, sa, true);
+    this->spin_overlap(xbhp, wbhp, sb, false);
     S = m_orb.m_redS * m_orb.m_redS * sa * sb * ((Tc) parity);
 
     // Get occupied orbitals to simplify density matrix computation
@@ -73,8 +83,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
     // Treat each spin sector separately
     arma::Mat<Tc> Pa(m_nmo, m_nmo, arma::fill::zeros);
     arma::Mat<Tc> Pb(m_nmo, m_nmo, arma::fill::zeros);
-    spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa, true);
-    spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb, false);
+    this->spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa, true);
+    this->spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb, false);
                
     // Multiply matrix elements by parity
     P1 = ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * (sb * Pa + sa * Pb);
@@ -101,8 +111,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm12(
 
     // Get spin overlaps
     Tc sa = 0.0, sb = 0.0;
-    spin_overlap(xahp, wahp, sa, true);
-    spin_overlap(xbhp, wbhp, sb, false);
+    this->spin_overlap(xahp, wahp, sa, true);
+    this->spin_overlap(xbhp, wbhp, sb, false);
     S = m_orb.m_redS * m_orb.m_redS * sa * sb * ((Tc) parity);
 
     // Get occupied orbitals to simplify density matrix computation
@@ -114,8 +124,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm12(
     // Treat each spin sector separately
     arma::Mat<Tc> Pa(m_nmo, m_nmo, arma::fill::zeros);
     arma::Mat<Tc> Pb(m_nmo, m_nmo, arma::fill::zeros);
-    spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa, true);
-    spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb, false);
+    this->spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa, true);
+    this->spin_rdm1(xbhp, wbhp, occ_xb, occ_wb, Pb, false);
                
     // Multiply 1RDM matrix elements by parity
     P1 = ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * (sb * Pa + sa * Pb);
@@ -123,11 +133,11 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm12(
     // Temporary variables for 2RDM
     arma::Mat<Tc> tmpP(m_nmo*m_nmo,m_nmo*m_nmo);
     // Treat each spin sector separately
-    same_spin_rdm2(xahp, wahp, occ_xa, occ_wa, tmpP, true);
+    this->same_spin_rdm2(xahp, wahp, occ_xa, occ_wa, tmpP, true);
     P2 += ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * sb * tmpP;
-    same_spin_rdm2(xbhp, wbhp, occ_xb, occ_wb, tmpP, false);
+    this->same_spin_rdm2(xbhp, wbhp, occ_xb, occ_wb, tmpP, false);
     P2 += ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * sa * tmpP;
-    diff_spin_rdm2(xahp, xbhp, wahp, wbhp, occ_xa, occ_xb, occ_wa, occ_wb, Pa, Pb, tmpP);
+    this->diff_spin_rdm2(xahp, xbhp, wahp, wbhp, occ_xa, occ_xb, occ_wa, occ_wb, Pa, Pb, tmpP);
     P2 += ((Tc) parity) * m_orb.m_redS * m_orb.m_redS * tmpP;
 }
 
@@ -140,8 +150,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_overlap(
 {
     // Evaluate overlap terms
     Tc sa = 0.0, sb = 0.0;
-    spin_overlap(xahp, wahp, sa, true);
-    spin_overlap(xbhp, wbhp, sb, false);
+    this->spin_overlap(xahp, wahp, sa, true);
+    this->spin_overlap(xbhp, wbhp, sb, false);
     // Save total overlap
     S = m_orb.m_redS * m_orb.m_redS * sa * sb;
 }
@@ -153,7 +163,7 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_one_body_spin(
 {
     // Evaluate overlap terms
     Tc sspin = 0.0;
-    spin_overlap(xhp, whp, sspin, true);
+    this->spin_overlap(xhp, whp, sspin, true);
 
     // Save total spin-overlap
     S = m_orb.m_redS * sspin;
@@ -161,7 +171,7 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_one_body_spin(
     // Evaluate one-body terms
     Tc Vspin = 0.0;
     // Evaluate separate spin one-body terms
-    spin_one_body(xhp, whp, Vspin, true);
+    this->spin_one_body(xhp, whp, Vspin, true);
     // Recombine and increment output
     V = m_orb.m_redS * Vspin;
 }
@@ -174,8 +184,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
 {
     // Evaluate overlap terms
     Tc sa = 0.0, sb = 0.0;
-    spin_overlap(xahp, wahp, sa, true);
-    spin_overlap(xbhp, wbhp, sb, false);
+    this->spin_overlap(xahp, wahp, sa, true);
+    this->spin_overlap(xbhp, wbhp, sb, false);
     // Save total overlap
     S = m_orb.m_redS * m_orb.m_redS * sa * sb;
 
@@ -188,8 +198,8 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
         // Temporary variables
         Tc Va = 0.0, Vb = 0.0;
         // Evaluate separate spin one-body terms
-        spin_one_body(xahp, wahp, Va, true);
-        spin_one_body(xbhp, wbhp, Vb, false);
+        this->spin_one_body(xahp, wahp, Va, true);
+        this->spin_one_body(xbhp, wbhp, Vb, false);
         // Recombine and increment output
         V += m_orb.m_redS * m_orb.m_redS * (Va * sb + Vb * sa);
     }
@@ -200,19 +210,13 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
         // Temporary variables
         Tc Vaa = 0.0, Vbb = 0.0, Vab = 0.0;
         // Same spin terms
-        same_spin_two_body(xahp, wahp, Vaa, true);
-        same_spin_two_body(xbhp, wbhp, Vbb, false);
+        this->same_spin_two_body(xahp, wahp, Vaa, true);
+        this->same_spin_two_body(xbhp, wbhp, Vbb, false);
         // Different spin terms
-        diff_spin_two_body(xahp, xbhp, wahp, wbhp, Vab);
+        this->diff_spin_two_body(xahp, xbhp, wahp, wbhp, Vab);
         // Recombine
         V += 0.5 * m_orb.m_redS * m_orb.m_redS * (Vaa * sb + Vbb * sa + 2.0 * Vab);
     }
 }
-
-
-template class wick_rscf<double, double, double>;
-template class wick_rscf<std::complex<double>, double, double>;
-template class wick_rscf<std::complex<double>, std::complex<double>, double>;
-template class wick_rscf<std::complex<double>, std::complex<double>, std::complex<double> >;
 
 } // namespace libgnme
