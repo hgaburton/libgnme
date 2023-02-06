@@ -22,6 +22,7 @@ protected:
     using wick_base<Tc,Tf,Tb>::m_nbsf; 
     using wick_base<Tc,Tf,Tb>::m_nmo; 
     using wick_base<Tc,Tf,Tb>::m_nact; 
+    using wick_base<Tc,Tf,Tb>::m_one_body_int;
 
 private:
     /* Useful constants */
@@ -52,14 +53,6 @@ public:
     size_t m_nzb; //!< Number of beta zero-overlap orbitals
 
 private:
-    // Store the 'F0' terms (2)
-    arma::Col<Tc> m_F0a;
-    arma::Col<Tc> m_F0b;
-
-    // Store the '(X/Y)F(X/Y)' super matrices (4 * nmo * nmo)
-    arma::field<arma::Mat<Tc> > m_XFXa;
-    arma::field<arma::Mat<Tc> > m_XFXb;
-
     // Store the 'V0' terms (3)
     arma::Col<Tc> m_Vaa;
     arma::Col<Tc> m_Vbb;
@@ -89,7 +82,9 @@ public:
     wick_uscf(
         wick_orbitals<Tc,Tb> &orba, wick_orbitals<Tc,Tb> &orbb,
         const arma::Mat<Tb> &metric, double Vc=0) :
-        wick_base<Tc,Tf,Tb>(orba.m_nbsf, orba.m_nmo, orba.m_nact),
+        wick_base<Tc,Tf,Tb>(
+            orba.m_nbsf, orba.m_nmo, orba.m_nact, 
+            orba, orbb),
         m_nalpha(orba.m_nelec), m_nbeta(orbb.m_nelec),
         m_metric(metric), m_Vc(Vc),
         m_orb_a(orba), m_orb_b(orbb)
@@ -169,16 +164,6 @@ public:
 private:
 
     /* Getters */
-    const size_t& get_nz(bool alpha) { return alpha ? m_orb_a.m_nz : m_orb_b.m_nz; }
-    const size_t& get_ne(bool alpha) { return alpha ? m_orb_a.m_nelec : m_orb_b.m_nelec; }
-    const arma::field<arma::Mat<Tc> >& get_fX(bool alpha) { return alpha ? m_orb_a.m_fX : m_orb_b.m_fX; }
-    const arma::field<arma::Mat<Tc> >& get_X(bool alpha) { return alpha ? m_orb_a.m_X : m_orb_b.m_X; }
-    const arma::field<arma::Mat<Tc> >& get_Y(bool alpha) { return alpha ? m_orb_a.m_Y : m_orb_b.m_Y; }
-    const arma::field<arma::Mat<Tc> >& get_Q(bool alpha) { return alpha ? m_orb_a.m_Q : m_orb_b.m_Q; }
-    const arma::field<arma::Mat<Tc> >& get_R(bool alpha) { return alpha ? m_orb_a.m_R : m_orb_b.m_R; }
-    const arma::field<arma::Mat<Tc> >& get_wxP(bool alpha) { return alpha ? m_orb_a.m_wxP : m_orb_b.m_wxP; }
-    const arma::Col<Tc>& get_F0(bool alpha) { return alpha ? m_F0a : m_F0b; } 
-    const arma::field<arma::Mat<Tc> >& get_XFX(bool alpha) { return alpha ? m_XFXa : m_XFXb; } 
     const arma::Mat<Tc>& get_V0(bool a, bool b) { 
         if(a == true  and b == true ) return m_Vaa;
         if(a == false and b == false) return m_Vbb;

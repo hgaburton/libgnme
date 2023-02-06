@@ -2,8 +2,18 @@
 #include <iomanip>
 #include <libgnme/utils/lowdin_pair.h>
 #include "wick_rscf.h"
+#include "one_body_rscf.h"
 
 namespace libgnme {
+
+template<typename Tc, typename Tf, typename Tb>
+void wick_rscf<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &F) 
+{
+    // Setup control variable to indicate one-body initialised
+    m_one_body = true;
+    // Define new integral object
+    m_one_body_int = new one_body_rscf<Tc,Tf,Tb>(m_orb, F);
+}
 
 template<typename Tc, typename Tf, typename Tb>
 void wick_rscf<Tc,Tf,Tb>::evaluate(

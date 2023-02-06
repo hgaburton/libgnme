@@ -18,15 +18,15 @@ void wick_base<Tc,Tf,Tb>::spin_one_body(
     size_t nw = whp.n_rows; // Ket excitations
 
     // Get reference to number of zeros for this spin
-    const size_t &nz = get_nz(alpha);
+    const size_t &nz = alpha ? m_orba.m_nz : m_orbb.m_nz; 
    
     // Get reference to relevant contractions
-    const arma::field<arma::Mat<Tc> > &X = get_X(alpha);
-    const arma::field<arma::Mat<Tc> > &Y = get_Y(alpha);
+    const arma::field<arma::Mat<Tc> > &X = alpha ? m_orba.m_X : m_orbb.m_X;
+    const arma::field<arma::Mat<Tc> > &Y = alpha ? m_orba.m_Y : m_orbb.m_Y;
 
     // Get reference to relevant one-body contractions
-    const arma::Col<Tc> &F0 = get_F0(alpha);
-    const arma::field<arma::Mat<Tc> > &XFX = get_XFX(alpha);
+    const arma::Col<Tc> &F0 = alpha ? m_one_body_int->m_F0a : m_one_body_int->m_F0b;
+    const arma::field<arma::Mat<Tc> > &XFX = alpha ? m_one_body_int->m_XFXa : m_one_body_int->m_XFXb;
 
     // Get dimensions of zero-contractions
     size_t dim = (nz > 0) ? 2 : 1; 

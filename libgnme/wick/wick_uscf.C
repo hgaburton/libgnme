@@ -2,8 +2,26 @@
 #include <iomanip>
 #include <libgnme/utils/lowdin_pair.h>
 #include "wick_uscf.h"
+#include "one_body_uscf.h"
 
 namespace libgnme {
+
+template<typename Tc, typename Tf, typename Tb>
+void wick_uscf<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &F) 
+{
+    add_one_body(F,F);
+}
+
+
+template<typename Tc, typename Tf, typename Tb>
+void wick_uscf<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb) 
+{
+    // Setup control variable to indicate one-body initialised
+    m_one_body = true;
+    // Define new integral object
+    m_one_body_int = new one_body_uscf<Tc,Tf,Tb>(m_orb_a, m_orb_b, Fa, Fb);
+}
+
 
 template<typename Tc, typename Tf, typename Tb>
 void wick_uscf<Tc,Tf,Tb>::evaluate(

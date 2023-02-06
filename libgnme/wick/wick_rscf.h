@@ -22,6 +22,7 @@ protected:
     using wick_base<Tc,Tf,Tb>::m_nbsf; 
     using wick_base<Tc,Tf,Tb>::m_nmo; 
     using wick_base<Tc,Tf,Tb>::m_nact; 
+    using wick_base<Tc,Tf,Tb>::m_one_body_int;
 
 private:
     /* Useful constants */
@@ -45,12 +46,6 @@ public:
     size_t m_nz; //!< Number of zero-overlap orbitals
 
 private:
-    // Store the 'F0' terms (2)
-    arma::Col<Tc> m_F0;
-
-    // Store the '(X/Y)F(X/Y)' super matrices (4 * nmo * nmo)
-    arma::field<arma::Mat<Tc> > m_XFX;
-
     // Store the 'V0' terms (3)
     arma::Col<Tc> m_Vsame;
     arma::Col<Tc> m_Vdiff;
@@ -78,7 +73,9 @@ public:
     wick_rscf(
         wick_orbitals<Tc,Tb> &orb,
         const arma::Mat<Tb> &metric, double Vc=0) :
-        wick_base<Tc,Tf,Tb>(orb.m_nbsf, orb.m_nmo, orb.m_nact),
+        wick_base<Tc,Tf,Tb>(
+             orb.m_nbsf, orb.m_nmo, orb.m_nact, 
+             orb, orb),
         m_nelec(orb.m_nelec), m_metric(metric), m_Vc(Vc),
         m_orb(orb)
     { 
@@ -141,16 +138,6 @@ public:
 private:
 
     /* Getters */
-    const size_t& get_nz(bool alpha) { return m_orb.m_nz; }
-    const size_t& get_ne(bool alpha) { return m_orb.m_nelec; }
-    const arma::field<arma::Mat<Tc> >& get_fX(bool alpha) { return m_orb.m_fX; }
-    const arma::field<arma::Mat<Tc> >& get_X(bool alpha) { return m_orb.m_X; }
-    const arma::field<arma::Mat<Tc> >& get_Y(bool alpha) { return m_orb.m_Y; }
-    const arma::field<arma::Mat<Tc> >& get_Q(bool alpha) { return m_orb.m_Q; }
-    const arma::field<arma::Mat<Tc> >& get_R(bool alpha) { return m_orb.m_R; }
-    const arma::field<arma::Mat<Tc> >& get_wxP(bool alpha) { return m_orb.m_wxP; }
-    const arma::Col<Tc>& get_F0(bool alpha) { return m_F0; } 
-    const arma::field<arma::Mat<Tc> >& get_XFX(bool alpha) { return m_XFX; } 
     const arma::field<arma::Mat<Tc> >& get_XVX(bool a, bool b){ return (a==b) ? m_XJKX : m_XJX; }
     arma::field<arma::Mat<Tc> >& get_II(bool a, bool b){ return (a==b) ? m_IIsame : m_IIdiff; };
     const arma::Mat<Tc>& get_V0(bool a, bool b) { return (a==b) ? m_Vsame : m_Vdiff; } 

@@ -20,7 +20,7 @@ void wick_base<Tc,Tf,Tb>::same_spin_two_body(
     size_t nw = whp.n_rows; // Ket excitations
 
     // Get reference to number of zeros for this spin
-    const size_t &nz = get_nz(alpha);
+    const size_t &nz = alpha ? m_orba.m_nz : m_orbb.m_nz; 
 
     // Dimensions of multiple contractions
     size_t d = (nz > 0) ? 2 : 1;
@@ -29,8 +29,9 @@ void wick_base<Tc,Tf,Tb>::same_spin_two_body(
     if(nz > nw + nx + 2) return;
 
     // Get reference to relevant contractions
-    const arma::field<arma::Mat<Tc> > &X = get_X(alpha);
-    const arma::field<arma::Mat<Tc> > &Y = get_Y(alpha);
+    const arma::field<arma::Mat<Tc> > &X = alpha ? m_orba.m_X : m_orbb.m_X;
+    const arma::field<arma::Mat<Tc> > &Y = alpha ? m_orba.m_Y : m_orbb.m_Y;
+
     // Get reference to relevant zeroth-order term
     const arma::Col<Tc> &V0  = get_V0(alpha,alpha);
     // Get reference to relevant J/K term
@@ -189,12 +190,13 @@ void wick_base<Tc,Tf,Tb>::diff_spin_two_body(
     size_t nwb = wbhp.n_rows; // Ket beta excitations
 
     // Get references
-    const size_t &nza = get_nz(true);
-    const size_t &nzb = get_nz(false);
-    const arma::field<arma::Mat<Tc> > &Xa = get_X(true);
-    const arma::field<arma::Mat<Tc> > &Xb = get_X(false);
-    const arma::field<arma::Mat<Tc> > &Ya = get_Y(true);
-    const arma::field<arma::Mat<Tc> > &Yb = get_Y(false);
+    const size_t &nza = m_orba.m_nz;
+    const size_t &nzb = m_orbb.m_nz;
+    const arma::field<arma::Mat<Tc> > &Xa = m_orba.m_X;
+    const arma::field<arma::Mat<Tc> > &Xb = m_orbb.m_X;
+    const arma::field<arma::Mat<Tc> > &Ya = m_orba.m_Y;
+    const arma::field<arma::Mat<Tc> > &Yb = m_orbb.m_Y;
+
     const arma::field<arma::Mat<Tc> > &XVaXb = get_XVX(true, false);
     const arma::field<arma::Mat<Tc> > &XVbXa = get_XVX(false, true);
     const arma::Mat<Tc> &Vab = get_V0(true, false);

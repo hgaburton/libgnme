@@ -4,6 +4,7 @@
 #include <armadillo>
 #include <libgnme/utils/bitset.h>
 #include "wick_orbitals.h"
+#include "one_body.h"
 
 namespace libgnme {
 
@@ -21,7 +22,11 @@ protected:
     const size_t m_nbsf; //!< Number of basis functions
     const size_t m_nmo;  //!< Number of (linearly independent) MOs
     const size_t m_nact; //!< Number of active orbitals
-   
+
+    wick_orbitals<Tc,Tb> &m_orba; //!< Orbital pair
+    wick_orbitals<Tc,Tb> &m_orbb; //!< Orbital pair
+
+    one_body<Tc,Tf,Tb> *m_one_body_int; //!< Intermediates for one-body integrals
 
 public:
     /** \brief Constructor for the object
@@ -32,8 +37,9 @@ public:
         \param metric Overlap matrix of the basis functions
         \param Vc Constant term in the corresponding operator
      **/
-    wick_base(size_t nbsf, size_t nmo, size_t nact) : 
-        m_nbsf(nbsf), m_nmo(nmo), m_nact(nact)
+    wick_base(size_t nbsf, size_t nmo, size_t nact, 
+              wick_orbitals<Tc,Tb> &orba, wick_orbitals<Tc,Tb> &orbb
+    ) : m_nbsf(nbsf), m_nmo(nmo), m_nact(nact), m_orba(orba), m_orbb(orbb)
     { }
 
     /** \brief Destructor **/
@@ -71,20 +77,7 @@ protected:
         Tc &V);
 
 private:
-/*
-    */
-
     /* Getters */
-    virtual const size_t& get_nz(bool alpha) = 0;
-    virtual const size_t& get_ne(bool alpha) = 0;
-    virtual const arma::field<arma::Mat<Tc> >& get_fX(bool alpha) = 0;
-    virtual const arma::field<arma::Mat<Tc> >& get_X(bool alpha) = 0;
-    virtual const arma::field<arma::Mat<Tc> >& get_Y(bool alpha) = 0;
-    virtual const arma::field<arma::Mat<Tc> >& get_Q(bool alpha) = 0;
-    virtual const arma::field<arma::Mat<Tc> >& get_R(bool alpha) = 0;
-    virtual const arma::field<arma::Mat<Tc> >& get_wxP(bool alpha) = 0;
-    virtual const arma::Col<Tc>& get_F0(bool alpha) = 0; 
-    virtual const arma::field<arma::Mat<Tc> >& get_XFX(bool alpha) = 0;
     virtual const arma::field<arma::Mat<Tc> >& get_XVX(bool a, bool b) = 0;
     virtual arma::field<arma::Mat<Tc> >& get_II(bool a, bool b) = 0;
     virtual const arma::Mat<Tc>& get_V0(bool a, bool b) = 0;

@@ -21,8 +21,8 @@ void wick_base<Tc,Tf,Tb>::spin_rdm1(
     size_t nw = whp.n_rows; // Ket excitations
 
     // Get reference to number of zeros for this spin
-    const size_t &nz = get_nz(alpha);
-    const size_t &ne = get_ne(alpha);
+    const size_t &nz = alpha ? m_orba.m_nz : m_orbb.m_nz; 
+    const size_t &ne = alpha ? m_orba.m_nelec : m_orbb.m_nelec; 
 
     // Check we don't have a non-zero element
     if(nz > nw + nx + 1) return;
@@ -32,11 +32,11 @@ void wick_base<Tc,Tf,Tb>::spin_rdm1(
     whp += m_nact;
    
     // Get reference to relevant contractions
-    const arma::field<arma::Mat<Tc> > &X   = get_X(alpha);
-    const arma::field<arma::Mat<Tc> > &Y   = get_Y(alpha);
-    const arma::field<arma::Mat<Tc> > &Q   = get_Q(alpha);
-    const arma::field<arma::Mat<Tc> > &R   = get_R(alpha);
-    const arma::field<arma::Mat<Tc> > &wxP = get_wxP(alpha);
+    const arma::field<arma::Mat<Tc> > &X = alpha ? m_orba.m_X : m_orbb.m_X;
+    const arma::field<arma::Mat<Tc> > &Y = alpha ? m_orba.m_Y : m_orbb.m_Y;
+    const arma::field<arma::Mat<Tc> > &Q = alpha ? m_orba.m_Q : m_orbb.m_Q;
+    const arma::field<arma::Mat<Tc> > &R = alpha ? m_orba.m_R : m_orbb.m_R;
+    const arma::field<arma::Mat<Tc> > &wxP = alpha ? m_orba.m_wxP : m_orbb.m_wxP;
 
     // Get particle-hole indices
     arma::uvec rows, cols;
@@ -132,17 +132,17 @@ void wick_base<Tc,Tf,Tb>::same_spin_rdm2(
     size_t nw = whp.n_rows; // Ket excitations
 
     // Get reference to number of zeros for this spin
-    const size_t &nz = get_nz(alpha);
+    const size_t &nz = alpha ? m_orba.m_nz : m_orbb.m_nz; 
 
     // Check we don't have a non-zero element
     if(nz > nw + nx + 2) return;
 
     // Get reference to relevant contractions
-    const arma::field<arma::Mat<Tc> > &fX = get_fX(alpha);
-    const arma::field<arma::Mat<Tc> > &X  = get_X(alpha);
-    const arma::field<arma::Mat<Tc> > &Y  = get_Y(alpha);
-    const arma::field<arma::Mat<Tc> > &Q  = get_Q(alpha);
-    const arma::field<arma::Mat<Tc> > &R  = get_R(alpha);
+    const arma::field<arma::Mat<Tc> > &fX = alpha ? m_orba.m_fX : m_orbb.m_fX;
+    const arma::field<arma::Mat<Tc> > &X  = alpha ? m_orba.m_X : m_orbb.m_X;
+    const arma::field<arma::Mat<Tc> > &Y  = alpha ? m_orba.m_Y : m_orbb.m_Y;
+    const arma::field<arma::Mat<Tc> > &Q  = alpha ? m_orba.m_Q : m_orbb.m_Q;
+    const arma::field<arma::Mat<Tc> > &R  = alpha ? m_orba.m_R : m_orbb.m_R;
 
     // Shift w indices
     // TODO: Do we want to keep this?

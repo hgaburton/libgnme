@@ -19,11 +19,11 @@ void wick_base<Tc,Tf,Tb>::spin_overlap(
     size_t nw = whp.n_rows; // Ket excitations
 
     // Get reference to number of zeros for this spin
-    const size_t &nz = get_nz(alpha);
+    const size_t &nz = alpha ? m_orba.m_nz : m_orbb.m_nz; 
 
     // Get reference to relevant X/Y matrices for this spin
-    const arma::field<arma::Mat<Tc> > &X = get_X(alpha);
-    const arma::field<arma::Mat<Tc> > &Y = get_Y(alpha);
+    const arma::field<arma::Mat<Tc> > &X = alpha ? m_orba.m_X : m_orbb.m_X;
+    const arma::field<arma::Mat<Tc> > &Y = alpha ? m_orba.m_Y : m_orbb.m_Y;
 
     // Check we don't have a non-zero element
     if(nz > nw + nx) return;
