@@ -10,7 +10,6 @@ set(SRC
     wick_orbitals.C
     wick_rscf.C
     wick_uscf.C
-    #wick_uscf_two_body.C
 )
 
 add_library(gnme_wick ${SRC})

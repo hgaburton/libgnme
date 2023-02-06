@@ -2,6 +2,7 @@
 #define LIBGNME_WICK_ORBITALS_H
 
 #include <armadillo>
+#include "reference_state.h"
 
 namespace libgnme {
 
@@ -41,12 +42,31 @@ public:
     arma::field<arma::Mat<Tc> > m_R;  //! (xxY_ap,...,wxX_lp)
     arma::field<arma::Mat<Tc> > m_Q;  //! (wxX_qi,...,wwY_qd)
 
+    reference_state<Tc> m_refx; 
+    reference_state<Tc> m_refw;
+
 private:
     // Store the reference coefficients (nbsf * nmo)
     arma::Mat<Tc> m_Cx; // Bra coefficients
     arma::Mat<Tc> m_Cw; // Ket coefficients
 
 public:
+    wick_orbitals(
+        reference_state<Tc> &refx, 
+        reference_state<Tc> &refw,
+        const arma::Mat<Tb> &metric) :
+    m_refx(refx), m_refw(refw), m_metric(metric),
+    m_nbsf(refx.m_nbsf), m_nmo(refx.m_nmo), m_nelec(refx.m_nelec), 
+    m_nact(refx.m_nact), m_ncore(refx.m_ncore)
+    {
+        assert(refx.m_nbsf  == refw.m_nbsf);
+        assert(refx.m_nmo   == refw.m_nmo);
+        assert(refx.m_nelec == refw.m_nelec);
+        assert(refx.m_nact  == refw.m_nact);
+
+        init(refx.m_C, refw.m_C);
+    }
+
     /** \brief Constructor for the wick_orbitals object
         \param nbsf Number of basis functions
         \param nmo Number of linearly independent molecular orbitals
@@ -60,7 +80,8 @@ public:
         arma::Mat<Tc> Cx, arma::Mat<Tc> Cw, 
         const arma::Mat<Tb> &metric) :
         m_nbsf(nbsf), m_nmo(nmo), m_nelec(nelec),
-        m_metric(metric), m_nact(nmo), m_ncore(0) 
+        m_metric(metric), m_nact(nmo), m_ncore(0), 
+        m_refx(nbsf, nmo, nelec, Cx), m_refw(nbsf, nmo, nelec, Cw) 
     { 
         init(Cx, Cw);
     }
@@ -81,7 +102,8 @@ public:
         const arma::Mat<Tb> &metric,
         const size_t nact, const size_t ncore) :
         m_nbsf(nbsf), m_nmo(nmo), m_nelec(nelec),
-        m_metric(metric), m_nact(nact), m_ncore(ncore)
+        m_metric(metric), m_nact(nact), m_ncore(ncore),
+        m_refx(nbsf, nmo, nelec, nact, ncore, Cx), m_refw(nbsf, nmo, nelec, nact, ncore, Cw) 
     { 
         assert(ncore + nact <= nmo);
         init(Cx, Cw);
