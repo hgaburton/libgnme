@@ -361,15 +361,15 @@ void wick<Tc,Tf,Tb>::same_spin_rdm2(
     whp -= m_nact;
 }
 
-/*
+
 template<typename Tc, typename Tf, typename Tb>
-void wick_rscf<Tc,Tf,Tb>::diff_spin_rdm2(
+void wick<Tc,Tf,Tb>::diff_spin_rdm2(
         arma::umat xahp, arma::umat xbhp, 
         arma::umat wahp, arma::umat wbhp, 
         arma::uvec xocca, arma::uvec xoccb, 
         arma::uvec wocca, arma::uvec woccb, 
         arma::Mat<Tc> &P1a, arma::Mat<Tc> &P1b, 
-        arma::Mat<Tc> &P2)
+        arma::Mat<Tc> &P2ab)
 {
     // Check dimensions of RDM1
     assert(P1a.n_rows == m_nmo);
@@ -378,9 +378,9 @@ void wick_rscf<Tc,Tf,Tb>::diff_spin_rdm2(
     assert(P1b.n_cols == m_nmo);
 
     // Temporary RDM-2
-    assert(P2.n_rows == m_nmo * m_nmo);
-    assert(P2.n_cols == m_nmo * m_nmo);
-    P2.zeros();
+    assert(P2ab.n_rows == m_nmo * m_nmo);
+    assert(P2ab.n_cols == m_nmo * m_nmo);
+    P2ab.zeros();
 
     // Use 1-RDM to compute different spin 2-RDM
     for(size_t ip=0; ip<xocca.n_elem; ip++)
@@ -389,12 +389,9 @@ void wick_rscf<Tc,Tf,Tb>::diff_spin_rdm2(
     for(size_t is=0; is<woccb.n_elem; is++)
     {
         size_t p = xocca(ip), r = xoccb(ir), q = wocca(iq), s = woccb(is);
-        P2(p*m_nmo+q, r*m_nmo+s) += P1a(q,p) * P1b(s,r);
-        P2(r*m_nmo+s, p*m_nmo+q) += P1a(q,p) * P1b(s,r);
+        P2ab(p*m_nmo+q, r*m_nmo+s) += 2.0 * P1a(q,p) * P1b(s,r);
     }
 }
-
-*/
 
 template class wick<double, double, double>;
 template class wick<std::complex<double>, double, double>;
