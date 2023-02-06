@@ -351,7 +351,7 @@ void wick_rscf<Tc,Tf,Tb>::diff_spin_rdm2(
         arma::Mat<Tc> &P1a, arma::Mat<Tc> &P1b, 
         arma::Mat<Tc> &P2)
 {
-    // Temporary RDM-2
+    // Check dimensions of RDM1
     assert(P1a.n_rows == m_nmo);
     assert(P1a.n_cols == m_nmo);
     assert(P1b.n_rows == m_nmo);
