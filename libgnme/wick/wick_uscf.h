@@ -26,31 +26,13 @@ protected:
     using wick_base<Tc,Tf,Tb>::m_two_body_int;
 
 private:
-    /* Useful constants */
-    const size_t m_nalpha; //!< Number of alpha electrons
-    const size_t m_nbeta; //!< Number of beta electrons
-    const arma::Mat<Tb> &m_metric; //!< Basis overlap metric
-
     double m_Vc; //!< constant component
 
-    wick_orbitals<Tc,Tb> m_orb_a; //!< Alpha orbital pair
-    wick_orbitals<Tc,Tb> m_orb_b; //!< Beta orbital pair
-
-    // Reference bitsets
-    bitset m_bref_a; //!< Reference alpha bitset
-    bitset m_bref_b; //!< Reference beta bitset
+    wick_orbitals<Tc,Tb> m_orba; //!< Alpha orbital pair
+    wick_orbitals<Tc,Tb> m_orbb; //!< Beta orbital pair
 
     bool m_one_body = false;
     bool m_two_body = false;
-
-    // Occupied core
-    arma::uvec m_corea;
-    arma::uvec m_coreb;
-
-    /* Information about this pair */
-public:
-    size_t m_nza; //!< Number of alpha zero-overlap orbitals
-    size_t m_nzb; //!< Number of beta zero-overlap orbitals
 
 public:
     /** \brief Constructor for the object
@@ -62,30 +44,13 @@ public:
         \param Vc Constant term in the corresponding operator
      **/
     wick_uscf(
-        wick_orbitals<Tc,Tb> &orba, wick_orbitals<Tc,Tb> &orbb,
-        const arma::Mat<Tb> &metric, double Vc=0) :
-        wick_base<Tc,Tf,Tb>(
-            orba.m_nbsf, orba.m_nmo, orba.m_nact, 
-            orba, orbb),
-        m_nalpha(orba.m_nelec), m_nbeta(orbb.m_nelec),
-        m_metric(metric), m_Vc(Vc),
-        m_orb_a(orba), m_orb_b(orbb)
+        wick_orbitals<Tc,Tb> &orba, wick_orbitals<Tc,Tb> &orbb, double Vc=0) :
+    wick_base<Tc,Tf,Tb>(orba.m_nbsf, orba.m_nmo, orba.m_nact, orba, orbb),
+    m_Vc(Vc), m_orba(orba), m_orbb(orbb)
     { 
         assert(orba.m_nbsf == orbb.m_nbsf);
         assert(orba.m_nmo  == orbb.m_nmo);
         assert(orba.m_nact == orbb.m_nact);
-
-        // Set the reference bit strings
-        size_t act_el_a = orba.m_nelec - orba.m_ncore; // Active alpha electrons
-        size_t act_el_b = orbb.m_nelec - orbb.m_ncore; // Active beta  electrons 
-        std::vector<bool> refa(orba.m_nact-act_el_a, 0); refa.resize(orba.m_nact, 1);
-        std::vector<bool> refb(orbb.m_nact-act_el_b, 0); refb.resize(orbb.m_nact, 1);
-        m_bref_a = bitset(refa);
-        m_bref_b = bitset(refb);  
-        m_corea.resize(orba.m_ncore);
-        m_coreb.resize(orbb.m_ncore);
-        for(size_t i=0; i<orba.m_ncore; i++) m_corea(i) = i;
-        for(size_t i=0; i<orbb.m_ncore; i++) m_coreb(i) = i;
     }
         
     /** \brief Destructor **/

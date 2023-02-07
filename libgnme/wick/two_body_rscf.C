@@ -10,7 +10,8 @@ void two_body_rscf<Tc,Tf,Tb>::initialise(
     arma::Mat<Tb> &V)
 {
     size_t nbsf = orb.m_nbsf;
-    size_t nact = orb.m_nact;
+    size_t nactx = orb.m_refx.m_nact, nactw = orb.m_refw.m_nact;
+    size_t nact = nactx + nactw;
 
     // Check input
     assert(V.n_rows == nbsf * nbsf);
@@ -83,11 +84,11 @@ void two_body_rscf<Tc,Tf,Tb>::initialise(
     for(size_t l=0; l<d; l++)
     {
         // Initialise the memory
-        m_IIss(2*i+j, 2*k+l).resize(4*nact*nact, 4*nact*nact); 
-        m_IIst(2*i+j, 2*k+l).resize(4*nact*nact, 4*nact*nact); 
+        m_IIss(2*i+j, 2*k+l).resize(nact*nact, nact*nact); 
+        m_IIst(2*i+j, 2*k+l).resize(nact*nact, nact*nact); 
         // Construct two-electron integrals
         eri_ao2mo_split(orb.m_CX(i), orb.m_XC(j), orb.m_CX(k), orb.m_XC(l), 
-                        V, m_IIst(2*i+j, 2*k+l), m_IIss(2*i+j, 2*k+l), 2*nact, true); 
+                        V, m_IIst(2*i+j, 2*k+l), m_IIss(2*i+j, 2*k+l), true); 
         m_IIss(2*i+j, 2*k+l) += m_IIst(2*i+j, 2*k+l);
     }
 }

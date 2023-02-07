@@ -34,10 +34,10 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
     // Get excitation indices
     arma::umat xahp, xbhp, wahp, wbhp; 
     int pxa, pxb, pwa, pwb;
-    m_bref.excitation(bxa, xahp, pxa);
-    m_bref.excitation(bxb, xbhp, pxb);
-    m_bref.excitation(bwa, wahp, pwa);
-    m_bref.excitation(bwb, wbhp, pwb);
+    m_orb.m_refx.m_bs.excitation(bxa, xahp, pxa);
+    m_orb.m_refx.m_bs.excitation(bxb, xbhp, pxb);
+    m_orb.m_refw.m_bs.excitation(bwa, wahp, pwa);
+    m_orb.m_refw.m_bs.excitation(bwb, wbhp, pwb);
 
     // Call original functionality
     evaluate(xahp, xbhp, wahp, wbhp, S, V);
@@ -60,10 +60,10 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
     // Get excitation indices
     arma::umat xahp, xbhp, wahp, wbhp; 
     int pxa, pxb, pwa, pwb;
-    m_bref.excitation(bxa, xahp, pxa);
-    m_bref.excitation(bxb, xbhp, pxb);
-    m_bref.excitation(bwa, wahp, pwa);
-    m_bref.excitation(bwb, wbhp, pwb);
+    m_orb.m_refx.m_bs.excitation(bxa, xahp, pxa);
+    m_orb.m_refx.m_bs.excitation(bxb, xbhp, pxb);
+    m_orb.m_refw.m_bs.excitation(bwa, wahp, pwa);
+    m_orb.m_refw.m_bs.excitation(bwb, wbhp, pwb);
 
     // Get parity 
     int parity = pxa * pxb * pwa * pwb;
@@ -75,10 +75,10 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm1(
     S = m_orb.m_redS * m_orb.m_redS * sa * sb * ((Tc) parity);
 
     // Get occupied orbitals to simplify density matrix computation
-    arma::uvec occ_xa = arma::join_cols(m_core,bxa.occ()+m_orb.m_ncore);
-    arma::uvec occ_xb = arma::join_cols(m_core,bxb.occ()+m_orb.m_ncore);
-    arma::uvec occ_wa = arma::join_cols(m_core,bwa.occ()+m_orb.m_ncore);
-    arma::uvec occ_wb = arma::join_cols(m_core,bwb.occ()+m_orb.m_ncore);
+    arma::uvec occ_xa = arma::join_cols(m_orb.m_refx.m_core, bxa.occ()+m_orb.m_ncore);
+    arma::uvec occ_xb = arma::join_cols(m_orb.m_refx.m_core, bxb.occ()+m_orb.m_ncore);
+    arma::uvec occ_wa = arma::join_cols(m_orb.m_refw.m_core, bwa.occ()+m_orb.m_ncore);
+    arma::uvec occ_wb = arma::join_cols(m_orb.m_refw.m_core, bwb.occ()+m_orb.m_ncore);
 
     // Treat each spin sector separately
     arma::Mat<Tc> Pa(m_nmo, m_nmo, arma::fill::zeros);
@@ -98,13 +98,13 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm12(
     Tc &S, 
     arma::Mat<Tc> &P1, arma::Mat<Tc> &P2) 
 {
-    // Get excitation indices
+    // Get excitation indices and parity
     arma::umat xahp, xbhp, wahp, wbhp; 
     int pxa, pxb, pwa, pwb;
-    m_bref.excitation(bxa, xahp, pxa);
-    m_bref.excitation(bxb, xbhp, pxb);
-    m_bref.excitation(bwa, wahp, pwa);
-    m_bref.excitation(bwb, wbhp, pwb);
+    m_orb.m_refx.m_bs.excitation(bxa, xahp, pxa);
+    m_orb.m_refx.m_bs.excitation(bxb, xbhp, pxb);
+    m_orb.m_refw.m_bs.excitation(bwa, wahp, pwa);
+    m_orb.m_refw.m_bs.excitation(bwb, wbhp, pwb);
 
     // Get parity 
     int parity = pxa * pxb * pwa * pwb;
@@ -116,10 +116,10 @@ void wick_rscf<Tc,Tf,Tb>::evaluate_rdm12(
     S = m_orb.m_redS * m_orb.m_redS * sa * sb * ((Tc) parity);
 
     // Get occupied orbitals to simplify density matrix computation
-    arma::uvec occ_xa = arma::join_cols(m_core,bxa.occ()+m_orb.m_ncore);
-    arma::uvec occ_xb = arma::join_cols(m_core,bxb.occ()+m_orb.m_ncore);
-    arma::uvec occ_wa = arma::join_cols(m_core,bwa.occ()+m_orb.m_ncore);
-    arma::uvec occ_wb = arma::join_cols(m_core,bwb.occ()+m_orb.m_ncore);
+    arma::uvec occ_xa = arma::join_cols(m_orb.m_refx.m_core, bxa.occ()+m_orb.m_ncore);
+    arma::uvec occ_xb = arma::join_cols(m_orb.m_refx.m_core, bxb.occ()+m_orb.m_ncore);
+    arma::uvec occ_wa = arma::join_cols(m_orb.m_refw.m_core, bwa.occ()+m_orb.m_ncore);
+    arma::uvec occ_wb = arma::join_cols(m_orb.m_refw.m_core, bwb.occ()+m_orb.m_ncore);
 
     // Treat each spin sector separately
     arma::Mat<Tc> Pa(m_nmo, m_nmo, arma::fill::zeros);

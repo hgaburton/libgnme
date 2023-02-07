@@ -14,8 +14,11 @@ void two_body_uscf<Tc,Tf,Tb>::initialise(
     assert(orba.m_nbsf == orbb.m_nbsf);
     assert(V.n_rows == orba.m_nbsf * orba.m_nbsf);
     assert(V.n_cols == orba.m_nbsf * orba.m_nbsf);
-    size_t nbsf = orba.m_nbsf;
-    size_t nact = orba.m_nact;
+    size_t nbsf  = orba.m_nbsf;
+    size_t nactxa = orba.m_refx.m_nact, nactwa = orba.m_refw.m_nact;
+    size_t nactxb = orbb.m_refx.m_nact, nactwb = orba.m_refw.m_nact;
+    size_t nacta  = nactxa + nactwa;
+    size_t nactb  = nactxb + nactwb;
 
     // Get dimensions of contractions
     size_t da = (orba.m_nz > 0) ? 2 : 1;
@@ -124,10 +127,10 @@ void two_body_uscf<Tc,Tf,Tb>::initialise(
     for(size_t l=0; l<da; l++)
     {
         // Initialise the memory
-        m_IIaa(2*i+j, 2*k+l).resize(4*nact*nact, 4*nact*nact); 
+        m_IIaa(2*i+j, 2*k+l).resize(nacta*nacta, nacta*nacta); 
         // Construct two-electron integrals
         eri_ao2mo(orba.m_CX(i), orba.m_XC(j), orba.m_CX(k), orba.m_XC(l), 
-                  IIao, m_IIaa(2*i+j, 2*k+l), 2*nact, true); 
+                  IIao, m_IIaa(2*i+j, 2*k+l), true); 
     }
     for(size_t i=0; i<db; i++)
     for(size_t j=0; j<db; j++)
@@ -135,10 +138,10 @@ void two_body_uscf<Tc,Tf,Tb>::initialise(
     for(size_t l=0; l<db; l++)
     {
         // Initialise the memory
-        m_IIbb(2*i+j, 2*k+l).resize(4*nact*nact, 4*nact*nact); 
+        m_IIbb(2*i+j, 2*k+l).resize(nactb*nactb, nactb*nactb); 
         // Construct two-electron integrals
         eri_ao2mo(orbb.m_CX(i), orbb.m_XC(j), orbb.m_CX(k), orbb.m_XC(l), 
-                  IIao, m_IIbb(2*i+j, 2*k+l), 2*nact, true); 
+                  IIao, m_IIbb(2*i+j, 2*k+l), true); 
     }
     for(size_t i=0; i<da; i++)
     for(size_t j=0; j<da; j++)
@@ -146,10 +149,10 @@ void two_body_uscf<Tc,Tf,Tb>::initialise(
     for(size_t l=0; l<db; l++)
     {
         // Initialise the memory
-        m_IIab(2*i+j, 2*k+l).resize(4*nact*nact, 4*nact*nact); m_IIab(2*i+j, 2*k+l).zeros();
+        m_IIab(2*i+j, 2*k+l).resize(nacta*nacta, nactb*nactb); m_IIab(2*i+j, 2*k+l).zeros();
         // Construct two-electron integrals
         eri_ao2mo(orba.m_CX(i), orba.m_XC(j), orbb.m_CX(k), orbb.m_XC(l), 
-                  IIao, m_IIab(2*i+j, 2*k+l), 2*nact, false); 
+                  IIao, m_IIab(2*i+j, 2*k+l), false); 
         // Also store the transpose for IIab as it will make access quicker later
         m_IIba(2*k+l, 2*i+j) = m_IIab(2*i+j, 2*k+l).st();
     }

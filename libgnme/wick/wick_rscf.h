@@ -26,11 +26,6 @@ protected:
     using wick_base<Tc,Tf,Tb>::m_two_body_int;
 
 private:
-    /* Useful constants */
-    const size_t m_nelec; //!< Number of electrons
-    //size_t m_nact; //!< Number of active orbitals
-    const arma::Mat<Tb> &m_metric; //!< Basis overlap metric
-
     double m_Vc; //!< constant component
 
     wick_orbitals<Tc,Tb> m_orb; //!< Orbital pair
@@ -38,17 +33,6 @@ private:
     // One-body MO matrices
     bool m_one_body = false;
     bool m_two_body = false;
-
-    // Occupied core
-    arma::uvec m_core;
-
-    /* Information about this pair */
-public:
-    size_t m_nz; //!< Number of zero-overlap orbitals
-
-private:
-    // Reference bitset
-    bitset m_bref; //!< Reference bitset for closed-shell determinant
 
 public:
     /** \brief Constructor for the object
@@ -60,21 +44,10 @@ public:
         \param Vc Constant term in the corresponding operator
      **/
     wick_rscf(
-        wick_orbitals<Tc,Tb> &orb,
-        const arma::Mat<Tb> &metric, double Vc=0) :
-        wick_base<Tc,Tf,Tb>(
-             orb.m_nbsf, orb.m_nmo, orb.m_nact, 
-             orb, orb),
-        m_nelec(orb.m_nelec), m_metric(metric), m_Vc(Vc),
-        m_orb(orb)
-    { 
-        // Set the reference bit strings
-        size_t act_el = orb.m_nelec - orb.m_ncore; // Active alpha electrons
-        std::vector<bool> ref(orb.m_nact-act_el, 0); ref.resize(orb.m_nact, 1);
-        m_bref = bitset(ref);
-        m_core.resize(orb.m_ncore);
-        for(size_t i=0; i<orb.m_ncore; i++) m_core(i) = i;
-    } 
+        wick_orbitals<Tc,Tb> &orb, double Vc=0):
+    wick_base<Tc,Tf,Tb>(orb.m_nbsf, orb.m_nmo, orb.m_nact, orb, orb),
+    m_Vc(Vc), m_orb(orb)
+    { } 
 
     /** \brief Destructor **/
     virtual ~wick_rscf() { }

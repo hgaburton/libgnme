@@ -31,7 +31,6 @@ public:
 
     arma::field<arma::Mat<Tc> > m_M;  //! Co-density matrices (2 * nbsf * nbsf)
     arma::field<arma::Mat<Tc> > m_fX; //! X fundamental contractions (2 * nbsf * nbsf)
-    arma::field<arma::Mat<Tc> > m_fY; //! Y fundamental contractions (2 * nbsf * nbsf)
     arma::field<arma::Mat<Tc> > m_X;  //! X fundamental contractions (2 * nbsf * nbsf)
     arma::field<arma::Mat<Tc> > m_Y;  //! Y fundamental contractions (2 * nbsf * nbsf)
     arma::field<arma::Mat<Tc> > m_CX; //! CX transformed coefficients (2 * nbsf * nmo)
@@ -44,11 +43,6 @@ public:
 
     reference_state<Tc> m_refx; 
     reference_state<Tc> m_refw;
-
-private:
-    // Store the reference coefficients (nbsf * nmo)
-    arma::Mat<Tc> m_Cx; // Bra coefficients
-    arma::Mat<Tc> m_Cw; // Ket coefficients
 
 public:
     wick_orbitals(
@@ -64,7 +58,7 @@ public:
         assert(refx.m_nelec == refw.m_nelec);
         assert(refx.m_nact  == refw.m_nact);
 
-        init(refx.m_C, refw.m_C);
+        init();
     }
 
     /** \brief Constructor for the wick_orbitals object
@@ -83,7 +77,7 @@ public:
         m_metric(metric), m_nact(nmo), m_ncore(0), 
         m_refx(nbsf, nmo, nelec, Cx), m_refw(nbsf, nmo, nelec, Cw) 
     { 
-        init(Cx, Cw);
+        init();
     }
 
     /** \brief Constructor for wick_orbitals defined with an active space
@@ -103,17 +97,18 @@ public:
         const size_t nact, const size_t ncore) :
         m_nbsf(nbsf), m_nmo(nmo), m_nelec(nelec),
         m_metric(metric), m_nact(nact), m_ncore(ncore),
-        m_refx(nbsf, nmo, nelec, nact, ncore, Cx), m_refw(nbsf, nmo, nelec, nact, ncore, Cw) 
+        m_refx(nbsf, nmo, nelec, nact, ncore, Cx), 
+        m_refw(nbsf, nmo, nelec, nact, ncore, Cw) 
     { 
         assert(ncore + nact <= nmo);
-        init(Cx, Cw);
+        init();
     }
 
     /** \brief Destructor **/
     virtual ~wick_orbitals() { }
 
     /** \brief Initialise all variables **/
-    virtual void init(arma::Mat<Tc> Cx, arma::Mat<Tc> Cw);
+    virtual void init();
 };
 
 } // namespace libgnme
