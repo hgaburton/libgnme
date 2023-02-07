@@ -1,6 +1,7 @@
 #include <iostream>
 #include <armadillo>
 #include <cassert>
+#include <libgnme/wick/reference_state.h>
 #include <libgnme/wick/wick_orbitals.h>
 #include "testing.h"
 
@@ -49,6 +50,8 @@ int test_real_uhf(const char *testcase, unsigned thresh)
     arma::mat Cw(C.colptr(nmo), nbsf, nmo, false, true);
 
     // Construct the wick_orbitals object
+    reference_state<double> refx(nbsf, nmo, nocca, Cx);
+    reference_state<double> refw(nbsf, nmo, nocca, Cw);
     wick_orbitals<double,double> orbs(nbsf, nmo, nocca, Cx, Cw, S);
 
     // Test transformed coefficients

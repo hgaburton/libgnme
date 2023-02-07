@@ -7,6 +7,11 @@ namespace libgnme {
 template<typename Tc, typename Tb>
 void wick_orbitals<Tc,Tb>::init()
 {
+    // Check our input is meaningful
+    assert(m_refx.m_nbsf  == m_refw.m_nbsf);
+    assert(m_refx.m_nmo   == m_refw.m_nmo);
+    assert(m_refx.m_nelec == m_refw.m_nelec);
+
     // Get number of core/active orbitals for two reference states
     size_t ncorex = m_refx.m_ncore, nactx = m_refx.m_nact;
     size_t ncorew = m_refw.m_ncore, nactw = m_refw.m_nact;

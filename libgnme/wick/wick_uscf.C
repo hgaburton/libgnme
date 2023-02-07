@@ -84,10 +84,10 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_rdm1(
     S = ((Tc) parity) * m_orba.m_redS * m_orbb.m_redS * sa * sb;
 
     // Get occupied orbitals to simplify density matrix computation
-    arma::uvec occ_xa = arma::join_cols(m_orba.m_refx.m_core, bxa.occ()+m_orba.m_ncore);
-    arma::uvec occ_xb = arma::join_cols(m_orbb.m_refx.m_core, bxb.occ()+m_orbb.m_ncore);
-    arma::uvec occ_wa = arma::join_cols(m_orba.m_refw.m_core, bwa.occ()+m_orba.m_ncore);
-    arma::uvec occ_wb = arma::join_cols(m_orbb.m_refw.m_core, bwb.occ()+m_orbb.m_ncore);
+    arma::uvec occ_xa = arma::join_cols(m_orba.m_refx.m_core, bxa.occ()+m_orba.m_refx.m_ncore);
+    arma::uvec occ_xb = arma::join_cols(m_orbb.m_refx.m_core, bxb.occ()+m_orbb.m_refx.m_ncore);
+    arma::uvec occ_wa = arma::join_cols(m_orba.m_refw.m_core, bwa.occ()+m_orba.m_refw.m_ncore);
+    arma::uvec occ_wb = arma::join_cols(m_orbb.m_refw.m_core, bwb.occ()+m_orbb.m_refw.m_ncore);
 
     // Treat each spin sector separately
     this->spin_rdm1(xahp, wahp, occ_xa, occ_wa, Pa, true);
@@ -126,10 +126,10 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_rdm12(
     S = m_orba.m_redS * m_orbb.m_redS * sa * sb * ((Tc) parity);
 
     // Get occupied orbitals to simplify density matrix computation
-    arma::uvec occ_xa = arma::join_cols(m_orba.m_refx.m_core, bxa.occ()+m_orba.m_ncore);
-    arma::uvec occ_xb = arma::join_cols(m_orbb.m_refx.m_core, bxb.occ()+m_orbb.m_ncore);
-    arma::uvec occ_wa = arma::join_cols(m_orba.m_refw.m_core, bwa.occ()+m_orba.m_ncore);
-    arma::uvec occ_wb = arma::join_cols(m_orbb.m_refw.m_core, bwb.occ()+m_orbb.m_ncore);
+    arma::uvec occ_xa = arma::join_cols(m_orba.m_refx.m_core, bxa.occ()+m_orba.m_refx.m_ncore);
+    arma::uvec occ_xb = arma::join_cols(m_orbb.m_refx.m_core, bxb.occ()+m_orbb.m_refx.m_ncore);
+    arma::uvec occ_wa = arma::join_cols(m_orba.m_refw.m_core, bwa.occ()+m_orba.m_refw.m_ncore);
+    arma::uvec occ_wb = arma::join_cols(m_orbb.m_refw.m_core, bwb.occ()+m_orbb.m_refw.m_ncore);
 
     // Treat each spin sector separately
     this->spin_rdm1(xahp, wahp, occ_xa, occ_wa, P1a, true);

@@ -29,7 +29,8 @@ void wick_base<Tc,Tf,Tb>::spin_rdm1(
 
     // Shift w indices
     // TODO: Do we want to keep this?
-    whp += m_nact;
+    const size_t wshift = alpha ? m_orba.m_refx.m_nact : m_orbb.m_refx.m_nact;
+    whp += wshift;
    
     // Get reference to relevant contractions
     const arma::field<arma::Mat<Tc> > &X = alpha ? m_orba.m_X : m_orbb.m_X;
@@ -112,7 +113,7 @@ void wick_base<Tc,Tf,Tb>::spin_rdm1(
         } while(std::prev_permutation(m.begin(), m.end()));
     }
 
-    whp -= m_nact;
+    whp -= wshift;
 }
 
 
@@ -146,7 +147,8 @@ void wick_base<Tc,Tf,Tb>::same_spin_rdm2(
 
     // Shift w indices
     // TODO: Do we want to keep this?
-    whp += m_nact;
+    const size_t wshift = alpha ? m_orba.m_refx.m_nact : m_orbb.m_refx.m_nact;
+    whp += wshift;
 
     // Get particle-hole indices
     arma::uvec rows, cols;
@@ -358,7 +360,7 @@ void wick_base<Tc,Tf,Tb>::same_spin_rdm2(
         P(r*m_nmo+s, p*m_nmo+q) =   P(p*m_nmo+q, r*m_nmo+s);
     }
         
-    whp -= m_nact;
+    whp -= wshift;
 }
 
 

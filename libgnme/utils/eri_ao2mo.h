@@ -18,8 +18,7 @@ namespace libgnme {
 template<typename Tc, typename Tb>
 void eri_ao2mo(
     arma::Mat<Tc> &C1, arma::Mat<Tc> &C2, arma::Mat<Tc> &C3, arma::Mat<Tc> &C4, 
-    arma::Mat<Tb> &IIao, arma::Mat<Tc> &IImo, 
-    size_t nmo, bool antisym);
+    arma::Mat<Tb> &IIao, arma::Mat<Tc> &IImo, bool antisym);
 
 /** \brief Perform two-electron integral transform from AO to MO basis using chemists
            indexing (C1 C2 | C3 C4)
@@ -35,8 +34,7 @@ void eri_ao2mo(
 template<typename Tc, typename Tb>
 void eri_ao2mo_split(
     arma::Mat<Tc> &C1, arma::Mat<Tc> &C2, arma::Mat<Tc> &C3, arma::Mat<Tc> &C4, 
-    arma::Mat<Tb> &IIao, arma::Mat<Tc> &II_J, arma::Mat<Tc> &II_K,
-    size_t nmo, bool antisym);
+    arma::Mat<Tb> &IIao, arma::Mat<Tc> &II_J, arma::Mat<Tc> &II_K, bool antisym);
 
 } // namespace libgnme
 

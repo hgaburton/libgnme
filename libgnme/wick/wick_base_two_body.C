@@ -43,7 +43,10 @@ void wick_base<Tc,Tf,Tb>::same_spin_two_body(
                                             : m_two_body_int->IIbb;
 
     // TODO Correct indexing for new code
-    whp += m_nact;
+    const size_t nactx = alpha ? m_orba.m_refx.m_nact : m_orbb.m_refx.m_nact;
+    const size_t nactw = alpha ? m_orba.m_refw.m_nact : m_orbb.m_refw.m_nact;
+    const size_t nact = nactx + nactw;
+    whp += nactx;
 
     // Get particle-hole indices
     arma::uvec rows, cols;
@@ -135,8 +138,7 @@ void wick_base<Tc,Tf,Tb>::same_spin_two_body(
                 for(size_t x=0; x < d; x++)
                 {
                     arma::Mat<Tc> vIItmp(
-                        II(2*m[2]+x, 2*m[0]+m[1]).colptr(2*m_nact*rows(i)+cols(j)), 
-                        2*m_nact, 2*m_nact, false, true);
+                        II(2*m[2]+x, 2*m[0]+m[1]).colptr(nact*rows(i)+cols(j)), nact, nact, false, true);
                     IItmp(x) = vIItmp.submat(cols,rows).st();
                     IItmp(x).shed_row(i); 
                     IItmp(x).shed_col(j);
@@ -173,7 +175,7 @@ void wick_base<Tc,Tf,Tb>::same_spin_two_body(
     }
 
     // TODO Correct indexing for old code
-    whp -= m_nact;
+    whp -= nactx;
 }
 
 
@@ -214,8 +216,14 @@ void wick_base<Tc,Tf,Tb>::diff_spin_two_body(
     if(nza > nwa+nxa+1 || nzb > nwb+nxb+1) return;
 
     // TODO Correct indexing for new code
-    wahp += m_nact;
-    wbhp += m_nact;
+    const size_t nactxa = m_orba.m_refx.m_nact;
+    const size_t nactxb = m_orba.m_refx.m_nact;
+    const size_t nactwa = m_orbb.m_refw.m_nact;
+    const size_t nactwb = m_orbb.m_refw.m_nact;
+    const size_t nacta = nactxa + nactwa;
+    const size_t nactb = nactxb + nactwb;
+    wahp += nactxa;
+    wbhp += nactxb;
 
     // Get alpha particle-hole indices
     arma::uvec rowa, cola;
@@ -348,8 +356,7 @@ void wick_base<Tc,Tf,Tb>::diff_spin_two_body(
             for(size_t x=0; x<db; x++)
             {
                 arma::Mat<Tc> vIItmp(
-                   IIba(2*mb[0]+x, 2*ma[0]+ma[1]).colptr(2*m_nact*rowa(i)+cola(j)), 
-                    2*m_nact, 2*m_nact, false, true);
+                   IIba(2*mb[0]+x, 2*ma[0]+ma[1]).colptr(nacta*rowa(i)+cola(j)), nactb, nactb, false, true);
                 IItmp(x) = vIItmp.submat(colb,rowb).st();
             }
 
@@ -384,8 +391,7 @@ void wick_base<Tc,Tf,Tb>::diff_spin_two_body(
             for(size_t x=0; x<da; x++)
             {
                 arma::Mat<Tc> vIItmp(
-                    IIab(2*ma[0]+x, 2*mb[0]+mb[1]).colptr(2*m_nact*rowb(i)+colb(j)), 
-                    2*m_nact, 2*m_nact, false, true);
+                    IIab(2*ma[0]+x, 2*mb[0]+mb[1]).colptr(nactb*rowb(i)+colb(j)), nacta, nacta, false, true);
                 IItmp(x) = vIItmp.submat(cola,rowa).st();
             }
 
@@ -416,8 +422,8 @@ void wick_base<Tc,Tf,Tb>::diff_spin_two_body(
     } while(std::prev_permutation(mb.begin(), mb.end()));
     
     // TODO Correct indexing for old code
-    wahp -= m_nact;
-    wbhp -= m_nact;
+    wahp -= nactxa;
+    wbhp -= nactxb;
 }
 
 } // namespace libgnme

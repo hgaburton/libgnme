@@ -36,7 +36,8 @@ void wick_base<Tc,Tf,Tb>::spin_one_body(
 
     // Shift w indices
     // TODO: Do we want to keep this?
-    whp += m_nact;
+    const size_t &wshift = alpha ? m_orba.m_refx.m_nact : m_orbb.m_refx.m_nact;
+    whp += wshift;
 
     // Get particle-hole indices
     arma::uvec rows, cols;
@@ -114,7 +115,7 @@ void wick_base<Tc,Tf,Tb>::spin_one_body(
 
     // Shift w indices
     // TODO: Do we want to keep this?
-    whp -= m_nact;
+    whp -= wshift;
 
     return;
 }

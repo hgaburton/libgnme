@@ -20,12 +20,10 @@ class wick_base
 {
 protected:
     /* Useful constants */
-    const size_t m_nbsf; //!< Number of basis functions
     const size_t m_nmo;  //!< Number of (linearly independent) MOs
-    const size_t m_nact; //!< Number of active orbitals
 
-    wick_orbitals<Tc,Tb> &m_orba; //!< Orbital pair
-    wick_orbitals<Tc,Tb> &m_orbb; //!< Orbital pair
+    wick_orbitals<Tc,Tb> &m_orba; //!< High-spin orbital pair
+    wick_orbitals<Tc,Tb> &m_orbb; //!< Low-spin orbital pair
 
     one_body<Tc,Tf,Tb> *m_one_body_int; //!< Intermediates for one-body integrals
     two_body<Tc,Tf,Tb> *m_two_body_int; //!< Intermediates for two-body integrals
@@ -39,10 +37,13 @@ public:
         \param metric Overlap matrix of the basis functions
         \param Vc Constant term in the corresponding operator
      **/
-    wick_base(size_t nbsf, size_t nmo, size_t nact, 
-              wick_orbitals<Tc,Tb> &orba, wick_orbitals<Tc,Tb> &orbb
-    ) : m_nbsf(nbsf), m_nmo(nmo), m_nact(nact), m_orba(orba), m_orbb(orbb)
-    { }
+    wick_base(wick_orbitals<Tc,Tb> &orba, wick_orbitals<Tc,Tb> &orbb) :
+        m_nmo(orba.m_nmo), m_orba(orba), m_orbb(orbb)
+    { 
+        // Check for consistency
+        assert(orba.m_nbsf == m_orbb.m_nbsf);
+        assert(orba.m_nmo  == m_orbb.m_nmo);
+    }
 
     /** \brief Destructor **/
     virtual ~wick_base() { }
@@ -77,12 +78,6 @@ protected:
         arma::umat xa_hp, arma::umat xb_hp, 
         arma::umat wa_hp, arma::umat wb_hp, 
         Tc &V);
-
-private:
-    /* Getters */
-    //virtual const arma::field<arma::Mat<Tc> >& get_XVX(bool a, bool b) = 0;
-    //virtual arma::field<arma::Mat<Tc> >& get_II(bool a, bool b) = 0;
-    //virtual const arma::Mat<Tc>& get_V0(bool a, bool b) = 0;
 };
 
 template class wick_base<double, double, double>;

@@ -19,16 +19,14 @@ template<typename Tc, typename Tf, typename Tb>
 class wick_rscf : public wick_base<Tc,Tf,Tb>
 {
 protected:
-    using wick_base<Tc,Tf,Tb>::m_nbsf; 
-    using wick_base<Tc,Tf,Tb>::m_nmo; 
-    using wick_base<Tc,Tf,Tb>::m_nact; 
+    using wick_base<Tc,Tf,Tb>::m_nmo;
     using wick_base<Tc,Tf,Tb>::m_one_body_int;
     using wick_base<Tc,Tf,Tb>::m_two_body_int;
+    using wick_base<Tc,Tf,Tb>::m_orba;
+    using wick_base<Tc,Tf,Tb>::m_orbb;
 
 private:
     double m_Vc; //!< constant component
-
-    wick_orbitals<Tc,Tb> m_orb; //!< Orbital pair
 
     // One-body MO matrices
     bool m_one_body = false;
@@ -43,14 +41,16 @@ public:
         \param metric Overlap matrix of the basis functions
         \param Vc Constant term in the corresponding operator
      **/
-    wick_rscf(
-        wick_orbitals<Tc,Tb> &orb, double Vc=0):
-    wick_base<Tc,Tf,Tb>(orb.m_nbsf, orb.m_nmo, orb.m_nact, orb, orb),
-    m_Vc(Vc), m_orb(orb)
+    wick_rscf(wick_orbitals<Tc,Tb> &orb, double Vc=0):
+        wick_base<Tc,Tf,Tb>(orb, orb), m_Vc(Vc)
     { } 
 
     /** \brief Destructor **/
-    virtual ~wick_rscf() { }
+    virtual ~wick_rscf() 
+    { 
+        if(m_one_body) delete m_one_body_int;
+        if(m_two_body) delete m_two_body_int;
+    }
 
     /** \name Routines to add one- or two-body operators to the object **/
     ///@{

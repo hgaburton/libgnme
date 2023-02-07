@@ -71,7 +71,7 @@ int test_ref_ref(const char *testcase, unsigned thresh)
 
     // Setup matrix builder
     slater_uscf<double,double,double> slat(nbsf, nmo, nocca, noccb, S);
-    wick_uscf<double,double,double> mb(orbs_a, orbs_b, S);
+    wick_uscf<double,double,double> mb(orbs_a, orbs_b);
     slat.add_one_body(hcore);
     mb.add_one_body(hcore);
 
@@ -181,7 +181,7 @@ int test_ref_single(const char *testcase, unsigned thresh)
 
     // Setup matrix builder
     slater_uscf<double,double,double> slat(nbsf, nmo, nocca, noccb, S);
-    wick_uscf<double,double,double> mb(orbs_a, orbs_b, S);
+    wick_uscf<double,double,double> mb(orbs_a, orbs_b);
     slat.add_one_body(hcore);
     mb.add_one_body(hcore);
 
@@ -379,7 +379,7 @@ int test_single_single(const char *testcase, unsigned thresh)
 
     // Setup matrix builder
     slater_uscf<double,double,double> slat(nbsf, nmo, nocca, noccb, S);
-    wick_uscf<double,double,double> mb(orbs_a, orbs_b, S);
+    wick_uscf<double,double,double> mb(orbs_a, orbs_b);
     slat.add_one_body(hcore);
     mb.add_one_body(hcore);
 
@@ -604,7 +604,7 @@ int test_single_double(const char *testcase, unsigned thresh)
 
     // Setup matrix builder
     slater_uscf<double,double,double> slat(nbsf, nmo, nocca, noccb, S);
-    wick_uscf<double,double,double> mb(orbs_a, orbs_b, S);
+    wick_uscf<double,double,double> mb(orbs_a, orbs_b);
     slat.add_one_body(hcore);
     mb.add_one_body(hcore);
 

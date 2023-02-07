@@ -19,18 +19,14 @@ template<typename Tc, typename Tf, typename Tb>
 class wick_uscf : public wick_base<Tc,Tf,Tb>
 {
 protected:
-    using wick_base<Tc,Tf,Tb>::m_nbsf; 
-    using wick_base<Tc,Tf,Tb>::m_nmo; 
-    using wick_base<Tc,Tf,Tb>::m_nact; 
+    using wick_base<Tc,Tf,Tb>::m_nmo;
     using wick_base<Tc,Tf,Tb>::m_one_body_int;
     using wick_base<Tc,Tf,Tb>::m_two_body_int;
+    using wick_base<Tc,Tf,Tb>::m_orba;
+    using wick_base<Tc,Tf,Tb>::m_orbb;
 
 private:
     double m_Vc; //!< constant component
-
-    wick_orbitals<Tc,Tb> m_orba; //!< Alpha orbital pair
-    wick_orbitals<Tc,Tb> m_orbb; //!< Beta orbital pair
-
     bool m_one_body = false;
     bool m_two_body = false;
 
@@ -43,18 +39,16 @@ public:
         \param metric Overlap matrix of the basis functions
         \param Vc Constant term in the corresponding operator
      **/
-    wick_uscf(
-        wick_orbitals<Tc,Tb> &orba, wick_orbitals<Tc,Tb> &orbb, double Vc=0) :
-    wick_base<Tc,Tf,Tb>(orba.m_nbsf, orba.m_nmo, orba.m_nact, orba, orbb),
-    m_Vc(Vc), m_orba(orba), m_orbb(orbb)
-    { 
-        assert(orba.m_nbsf == orbb.m_nbsf);
-        assert(orba.m_nmo  == orbb.m_nmo);
-        assert(orba.m_nact == orbb.m_nact);
-    }
+    wick_uscf(wick_orbitals<Tc,Tb> &orba, wick_orbitals<Tc,Tb> &orbb, double Vc=0) :
+        wick_base<Tc,Tf,Tb>(orba, orbb), m_Vc(Vc)
+    { } 
         
     /** \brief Destructor **/
-    virtual ~wick_uscf() { }
+    virtual ~wick_uscf() 
+    { 
+        if(m_one_body) delete m_one_body_int;
+        if(m_two_body) delete m_two_body_int;
+    }
 
     /** \name Routines to add one- or two-body operators to the object **/
     ///@{
