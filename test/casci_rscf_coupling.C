@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #define ARMA_ALLOW_FAKE_GCC
 #include <armadillo>
 #include <cassert>
@@ -7,10 +8,12 @@
 #include <libgnme/utils/bitset_tools.h>
 #include <libgnme/utils/linalg.h>
 #include <libgnme/utils/eri_ao2mo.h>
+#include "testing.h"
 
 using namespace libgnme;
 
-int main () {
+int test(const char *testcase, unsigned thresh)
+{
 
     std::cout << " -------------------------------------------------" << std::endl;
     std::cout << "    LibGNME example: CAS-CI coupling terms        " << std::endl;
@@ -163,7 +166,15 @@ int main () {
         Ov(w,x)   = Ov(x,w);
         RDM1(w,x) = RDM1(x,w).t();
 
-        std::cout << enuc * Ov(x,w) + arma::dot(h1e,RDM1(x,w)) + 0.5 * arma::dot(IImo, RDM2(x,w)) << " " << H(x,w) << std::endl;
+        // Test RDM versus direct evaluation
+        double Hrdm = enuc * Ov(x,w) + arma::dot(h1e,RDM1(x,w)) + 0.5 * arma::dot(IImo, RDM2(x,w));
+        if(std::abs(Hrdm - H(w,x)) > std::pow(0.1, thresh))
+        {
+            std::cout << "RDM and direct evaluation of Hamiltonian term inconsistent." << std::endl;
+            std::cout << "   H_rdm = " << std::setprecision(10) << std::setw(16) << std::fixed << Hrdm << std::endl;
+            std::cout << "   H_dir = " << std::setprecision(10) << std::setw(16) << std::fixed << H(x,w) << std::endl;
+            return 1;
+        }
     }
 
     // Print out the 1-RDM matrices
@@ -178,6 +189,19 @@ int main () {
     H.print("\n Hamiltonian");
     Ov.print("\n Overlap:");
 
+    // Test against reference values
+    arma::mat Href;
+    if(!Href.load(testcase + std::string("/refH.txt"), arma::raw_ascii)) return 1;
+    arma::vec vH = arma::vectorise(H);
+    arma::vec vHref = arma::vectorise(Href);
+    if(array_test(vH, vHref, thresh)) return 1;
+
+    arma::mat OVref;
+    if(!OVref.load(testcase + std::string("/refOv.txt"), arma::raw_ascii)) return 1;
+    arma::vec vOV = arma::vectorise(Ov);
+    arma::vec vOVref = arma::vectorise(OVref);
+    if(array_test(vOV, vOVref, thresh)) return 1;
+
     // Solve a generalised nonorthogonal CI
     arma::mat X, eigvec;
     arma::vec eigval;
@@ -189,4 +213,10 @@ int main () {
     std::cout << " -------------------------------------------------" << std::endl;
     std::cout << std::endl;
     return 0;
+}
+
+int main () {
+    return 
+    test("h6_sto-3g_4_4",8) | 
+    0;
 }

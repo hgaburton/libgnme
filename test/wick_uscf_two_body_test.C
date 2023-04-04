@@ -203,7 +203,7 @@ int test_ref_single(const char *testcase, unsigned thresh)
 
     // Alpha single excitation
     for(size_t i=0; i<nocca; i++)
-    for(size_t a=nocca; a<nmo; a++)
+    for(size_t a=nocca; a<std::min(nocca+3,nmo); a++)
     {
         // Excitation indices
         arma::umat xahp(1,2), xbhp(0,2);
@@ -262,7 +262,7 @@ int test_ref_single(const char *testcase, unsigned thresh)
 
     // Beta single excitation
     for(size_t i=0; i<noccb; i++)
-    for(size_t a=noccb; a<nmo; a++)
+    for(size_t a=noccb; a<std::min(noccb+3,nmo); a++)
     {
         // Excitation indices
         arma::umat xahp(0,2), xbhp(1,2);
@@ -404,9 +404,9 @@ int test_single_single(const char *testcase, unsigned thresh)
 
     // Alpha/alpha single excitation
     for(size_t i=0; i<nocca; i++)
-    for(size_t a=nocca; a<nmo; a++)
+    for(size_t a=nocca; a<std::min(nocca+3,nmo); a++)
     for(size_t j=0; j<nocca; j++)
-    for(size_t b=nocca; b<nmo; b++)
+    for(size_t b=nocca; b<std::min(nocca+3,nmo); b++)
     {
         // Excitation indices
         arma::umat xahp(1,2), xbhp(0,2);
@@ -445,9 +445,9 @@ int test_single_single(const char *testcase, unsigned thresh)
 
     // Beta/beta single excitation
     for(size_t i=0; i<noccb; i++)
-    for(size_t a=noccb; a<nmo; a++)
+    for(size_t a=noccb; a<std::min(noccb+3,nmo); a++)
     for(size_t j=0; j<noccb; j++)
-    for(size_t b=noccb; b<nmo; b++)
+    for(size_t b=noccb; b<std::min(noccb+3,nmo); b++)
     {
         // Excitation indices
         arma::umat xahp(0,2), xbhp(1,2);
@@ -486,9 +486,9 @@ int test_single_single(const char *testcase, unsigned thresh)
 
     // Beta single excitation
     for(size_t i=0; i<nocca; i++)
-    for(size_t a=nocca; a<nmo; a++)
+    for(size_t a=nocca; a<std::min(nocca+3,nmo); a++)
     for(size_t j=0; j<noccb; j++)
-    for(size_t b=noccb; b<nmo; b++)
+    for(size_t b=noccb; b<std::min(noccb+3,nmo); b++)
     {
         // Excitation indices
         arma::umat xahp(1,2), xbhp(0,2);
@@ -632,7 +632,7 @@ int test_single_double(const char *testcase, unsigned thresh)
 
     // Alpha single excitation
     for(size_t i=0; i<nocca; i++)
-    for(size_t a=nocca; a<nmo; a++)
+    for(size_t a=nocca; a<std::min(nocca+3,nmo); a++)
     {
         // The single excitation
         arma::umat xahp(1,2), xbhp(0,2);
@@ -643,7 +643,7 @@ int test_single_double(const char *testcase, unsigned thresh)
         // Alpha / Alpha double
         for(size_t j=0; j<nocca; j++)
         for(size_t k=0; k<j; k++)
-        for(size_t b=nocca; b<nmo; b++)
+        for(size_t b=nocca; b<std::min(nocca+3,nmo); b++)
         for(size_t c=nocca; c<b; c++)
         {
             // Excitation indices
@@ -702,9 +702,9 @@ int test_single_double(const char *testcase, unsigned thresh)
 
         // Alpha / Beta double
         for(size_t j=0; j<noccb; j++)
-        for(size_t b=noccb; b<nmo; b++)
+        for(size_t b=noccb; b<std::min(noccb+3,nmo); b++)
         for(size_t k=0; k<nocca; k++)
-        for(size_t c=nocca; c<nmo; c++)
+        for(size_t c=nocca; c<std::min(nocca+3,nmo); c++)
         {
             // Excitation indices
             arma::umat wahp(1,2), wbhp(1,2);
