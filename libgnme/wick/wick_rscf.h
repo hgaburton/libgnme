@@ -139,11 +139,6 @@ public:
         Tc &S, Tc &V);
 };
 
-template class wick_rscf<double, double, double>;
-template class wick_rscf<std::complex<double>, double, double>;
-template class wick_rscf<std::complex<double>, std::complex<double>, double>;
-template class wick_rscf<std::complex<double>, std::complex<double>, std::complex<double> >;
-
 } // namespace libgnme
 
 #endif // LIBGNME_WICK_RSCF_H

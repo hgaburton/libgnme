@@ -233,4 +233,9 @@ void wick_uscf<Tc,Tf,Tb>::evaluate(
     }
 }
 
+template class wick_uscf<double, double, double>;
+template class wick_uscf<std::complex<double>, double, double>;
+template class wick_uscf<std::complex<double>, std::complex<double>, double>;
+template class wick_uscf<std::complex<double>, std::complex<double>, std::complex<double> >;
+
 } // namespace libgnme

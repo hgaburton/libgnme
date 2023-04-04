@@ -155,11 +155,6 @@ public:
         Tc &S, Tc &V, bool alpha);
 };
 
-template class wick_uscf<double, double, double>;
-template class wick_uscf<std::complex<double>, double, double>;
-template class wick_uscf<std::complex<double>, std::complex<double>, double>;
-template class wick_uscf<std::complex<double>, std::complex<double>, std::complex<double> >;
-
 } // namespace libgnme
 
 #endif // LIBGNME_WICK_USCF_H
