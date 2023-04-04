@@ -21,15 +21,15 @@ private:
     arma::Col<Tc> m_Vbb; //!< Zeroth-order beta/beta   term [nzb]
     arma::Mat<Tc> m_Vab; //!< Zeroth-order alpha/beta  term [nza,nzb]
 
-    arma::field<arma::Mat<Tc> > m_XVaXa //!< First-order coupling (alpha/alpha) [nza,nza][2*nmo,2*nmo] ;
-    arma::field<arma::Mat<Tc> > m_XVbXb //!< First-order coupling (beta/beta)   [nzb,nzb][2*nmo,2*nmo] ;
-    arma::field<arma::Mat<Tc> > m_XVaXb //!< First-order coupling (alpha/beta)  [nza,nzb][2*nmo,2*nmo] ;
-    arma::field<arma::Mat<Tc> > m_XVbXa //!< First-order coupling (beta/alpha)  [nzb,nza][2*nmo,2*nmo] ;
+    arma::field<arma::Mat<Tc> > m_XVaXa; //!< First-order coupling (alpha/alpha) [nza,nza][2*nmo,2*nmo]
+    arma::field<arma::Mat<Tc> > m_XVbXb; //!< First-order coupling (beta/beta)   [nzb,nzb][2*nmo,2*nmo]
+    arma::field<arma::Mat<Tc> > m_XVaXb; //!< First-order coupling (alpha/beta)  [nza,nzb][2*nmo,2*nmo]
+    arma::field<arma::Mat<Tc> > m_XVbXa; //!< First-order coupling (beta/alpha)  [nzb,nza][2*nmo,2*nmo]
 
-    arma::field<arma::Mat<Tc> > m_IIaa //!< Two-electron integrals (alpha/alpha) [nza,nza][4*nmo^2,4*nmo^2];
-    arma::field<arma::Mat<Tc> > m_IIbb //!< Two-electron integrals (beta/beta)   [nzb,nzb][4*nmo^2,4*nmo^2];
-    arma::field<arma::Mat<Tc> > m_IIab //!< Two-electron integrals (alpha/beta)  [nza,nzb][4*nmo^2,4*nmo^2];
-    arma::field<arma::Mat<Tc> > m_IIba //!< Two-electron integrals (beta/alpha)  [nzb,nza][4*nmo^2,4*nmo^2];
+    arma::field<arma::Mat<Tc> > m_IIaa; //!< Two-electron integrals (alpha/alpha) [nza,nza][4*nmo^2,4*nmo^2]
+    arma::field<arma::Mat<Tc> > m_IIbb; //!< Two-electron integrals (beta/beta)   [nzb,nzb][4*nmo^2,4*nmo^2]
+    arma::field<arma::Mat<Tc> > m_IIab; //!< Two-electron integrals (alpha/beta)  [nza,nzb][4*nmo^2,4*nmo^2]
+    arma::field<arma::Mat<Tc> > m_IIba; //!< Two-electron integrals (beta/alpha)  [nzb,nza][4*nmo^2,4*nmo^2]
 
 public:
     /** \brief Constructor from unrestricted orbital pairs
