@@ -31,7 +31,6 @@ void gen_eig_sym(
     const size_t dim, arma::Mat<T> &M, arma::Mat<T> &S, arma::Mat<T> &X, 
     arma::Col<double> &eigval, arma::Mat<T> &eigvec, double thresh=1e-8);
 
-
 /** \brief Compute the adjoint of a matrix
     \param M Input matrix of interest
     \param A Adjoint matrix of M
@@ -39,8 +38,6 @@ void gen_eig_sym(
  **/
 template<typename T>
 void adjoint_matrix(arma::Mat<T> &M, arma::Mat<T> &A, T &det, size_t &nzero, double thresh=1e-16);
-
-
 
 } // namespace libgnme
 

@@ -6,23 +6,33 @@
 
 namespace libgnme {
 
+/** \brief Store electronic configuration as a bitset 
+    \ingroup gnme_utils
+ **/
 class bitset 
 {
 private:
-    std::vector<bool> m_v;
-    size_t m_size;
+    std::vector<bool> m_v; //!< Vector of bool values representing the bitset
+    size_t m_size; //!< Integer for the size of the bitset (total num. of orbitals)
 
 public:
-    // Default constructor
+    /** \brief Default constructor **/
     bitset() : m_size(0) { };
 
-    // Copy constructor
+    /** \brief Copy constructor 
+        \param other Bitset to be copied
+     **/
     bitset(const bitset &other) : m_v(other.m_v), m_size(other.m_size) { };
 
-    // Construct from bool vector
+    /** \brief Constructor from bool vector
+        \param bs Vector of bools representing target bitset
+     **/
     bitset(std::vector<bool> bs) : m_v(bs), m_size(bs.size()) { };
 
-    // Construct from integer value
+    /** \brief Constructor from integer value in binary representation
+        \param n Target value
+        \param m Total number of bits
+     **/
     bitset(int n, int m) : m_size(m), m_v(m,0)
     {
         // Find highest power of two
@@ -40,20 +50,19 @@ public:
         }
     }
 
-    // Access element of the bitset
-    //const bool& operator()(size_t index) const;
-    //bool& operator()(size_t index);
-    
-
+    /** \brief Flip bit between true/false
+        \param i Index of bit to be flipped (0 is the far right)
+     **/
     void flip(size_t i) { m_v[m_size-1-i] = not m_v[m_size-1-i]; };
 
+    /** \brief Print the bitset representation **/
     void print()
     {
         for(size_t i=0; i<m_size; i++)  std::cout << m_v[i];
         std::cout << std::endl;
     };
     
-    
+    /** \brief Count number of set bits **/
     size_t count(size_t min=0, size_t max=0) 
     {
         if(min==0 and max==0)
@@ -63,6 +72,7 @@ public:
         return sum;
     }; 
 
+    /** \brief Get integer representation of bitset **/
     int get_int()
     {
         int n = 0, dummy = 1; 
@@ -74,7 +84,7 @@ public:
         return n;
     };
 
-
+    /** \brief Bitwise AND operation **/
     bitset operator& (const bitset& other) 
     {
         bitset tmp(0,m_size);
@@ -82,12 +92,15 @@ public:
         return tmp;
     };
 
+    /** \brief Bitwise OR operation **/
     bitset operator| (const bitset& other) 
     {
         bitset tmp(0,m_size);
         for(size_t i=0; i<m_size; i++) tmp.m_v[i] = m_v[i] | other.m_v[i];
         return tmp;
     };
+
+    /** \brief Bitwise XOR operation **/
     bitset operator^ (const bitset& other) 
     {
         bitset tmp(0,m_size);
@@ -95,6 +108,11 @@ public:
         return tmp;
     };
 
+    /** \brief Identify excitation indices between a pair of bitsets 
+        \param other  Bitset representing excitation from current object
+        \param hp     Output particle-hole indices
+        \param parity Parity of the excitation
+     **/
     void excitation(bitset &other, arma::umat &hp, int &parity)
     {
         arma::ivec diff(m_size, arma::fill::zeros);
@@ -115,6 +133,7 @@ public:
         }
     };
 
+    /** \brief Get vector of occupied orbitals **/
     arma::uvec occ()
     {
         size_t n = count(), it=0;
@@ -127,6 +146,7 @@ public:
         return v_occ;
     }
 
+    /** \brief Iterate this bitset to the next FCI configuration **/
     bool next_fci() { return std::next_permutation(m_v.begin(), m_v.end()); }
 };
 
