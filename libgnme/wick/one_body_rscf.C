@@ -30,7 +30,6 @@ void one_body_rscf<Tc,Tf,Tb>::initialise(
         m_XFX(i,j) = orb.m_CX(i).t() * F * orb.m_XC(j);
 }
 
-
 template class one_body_rscf<double, double, double>;
 template class one_body_rscf<std::complex<double>, double, double>;
 template class one_body_rscf<std::complex<double>, std::complex<double>, double>;

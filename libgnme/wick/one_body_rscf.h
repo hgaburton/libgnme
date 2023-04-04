@@ -6,17 +6,24 @@
 
 namespace libgnme {
 
+/** \brief Container for storing one-body intermediate integrals with restricted orbitals
+    \tparam Tc Type defining orbital coefficient
+    \tparam Tf Type defining one-body matrix elements
+    \tparam Tb Type defining basis functions
+    \ingroup gnme_wick
+ **/
 template<typename Tc, typename Tf, typename Tb>
 class one_body_rscf : public one_body<Tc,Tf,Tb>
 {
 private:
-    // Store the 'F0' term
-    arma::Col<Tc> m_F0;
-    // Store the '(X/Y)F(X/Y)' super matrices (4 * nmo * nmo)
-    arma::field<arma::Mat<Tc> > m_XFX;
+    arma::Col<Tc> m_F0; //!< Store the zeroth-order Fock term [nz]
+    arma::field<arma::Mat<Tc> > m_XFX; //!< Store the first-order Fock terms [nz,nz][2*nmo,2*nmo]
 
 public:
-    // Constructor
+    /** \brief Default constructor
+        \param orb Container for the paired set of orbitals
+        \param F Matrix containing one-body integrals in AO basis
+     **/
     one_body_rscf(
         wick_orbitals<Tc,Tb> &orb, 
         arma::Mat<Tf> &F) : one_body<Tc,Tf,Tb>(m_F0, m_F0, m_XFX, m_XFX)
@@ -24,10 +31,14 @@ public:
         initialise(orb, F);
     }
         
-    // Default destructor
+    /** Default destructor **/
     virtual ~one_body_rscf() { }
 
-    // Initialise 
+private:
+    /** \brief Initialise intermediates with a given set of orbitals 
+        \param orb Container for the paired set of orbitals
+        \param F Matrix containing one-body integrals in AO basis
+     **/
     void initialise(wick_orbitals<Tc,Tb> &orb, arma::Mat<Tf> &F);
 };
 

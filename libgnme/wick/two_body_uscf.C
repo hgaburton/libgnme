@@ -14,6 +14,8 @@ void two_body_uscf<Tc,Tf,Tb>::initialise(
     assert(orba.m_nbsf == orbb.m_nbsf);
     assert(V.n_rows == orba.m_nbsf * orba.m_nbsf);
     assert(V.n_cols == orba.m_nbsf * orba.m_nbsf);
+
+    // Get temporary variables for easy code
     size_t nbsf  = orba.m_nbsf;
     size_t nactxa = orba.m_refx.m_nact, nactwa = orba.m_refw.m_nact;
     size_t nactxb = orbb.m_refx.m_nact, nactwb = orba.m_refw.m_nact;

@@ -7,24 +7,30 @@
 
 namespace libgnme {
 
+/** \brief Container for storing two-body intermediate integrals for restricted orbitals
+    \tparam Tc Type defining orbital coefficient
+    \tparam Tf Type defining one-body matrix elements
+    \tparam Tb Type defining basis functions
+    \ingroup gnme_wick
+ **/
 template<typename Tc, typename Tf, typename Tb>
 class two_body_rscf : public two_body<Tc,Tf,Tb>
 {
 private:
-    // Reference to the 'V0' terms
-    arma::Col<Tc> m_Vss; //!< Same spin
-    arma::Mat<Tc> m_Vst; //!< Different spin
+    arma::Col<Tc> m_Vss; //!< Zeroth-order coupling for same-spin electrons [nz]
+    arma::Mat<Tc> m_Vst; //!< Zeroth-order coupling for different-spin electrons [nz,nz]
 
-    // Reference to the '[X/Y](J-K)[X/Y]' super matrices (8 * nmo^2)
-    arma::field<arma::Mat<Tc> > m_XVsXs; //!< Same spin
-    arma::field<arma::Mat<Tc> > m_XVsXt; //!< Different spin
+    arma::field<arma::Mat<Tc> > m_XVsXs; //!< First-order coupling for same-spin electrons [nz,nz][2*nmo,2*nmo]
+    arma::field<arma::Mat<Tc> > m_XVsXt; //!< First-order coupling for different-spin electrons [nz,nz][2*nmo,2*nmo]
 
-    // Reference to the two-electron repulsion integrals (16 * nmo^4)
-    arma::field<arma::Mat<Tc> > m_IIss; //!< Same spin
-    arma::field<arma::Mat<Tc> > m_IIst; //!< Different spin
+    arma::field<arma::Mat<Tc> > m_IIss; //!< Same-spin two-electron ERIs [nz,nz][4*nmo^2,4*nmo^2]
+    arma::field<arma::Mat<Tc> > m_IIst; //!< Different-spin two-electron ERIs [nz,nz][4*nmo^2,4*nmo^2]
 
 public:
-    // Constructor
+    /** \brief Constructor from a single set of Lowdin-paired orbitals
+        \param orb Container for Lowdin-paired orbitals
+        \param V Two-electron integrals in AO basis (pq|rs) = V(p*nmo+q,r*nmo+s)
+     **/
     two_body_rscf(
         wick_orbitals<Tc,Tb> &orb, 
         arma::Mat<Tb> &V) :
@@ -35,11 +41,14 @@ public:
         initialise(orb, V);
     }
 
-    // Default destructor
+    /** \brief Default destructor **/
     virtual ~two_body_rscf() { }
 
 private:
-    // Initialise 
+    /** \brief Initialise intermediate terms from restricted orbital pair
+        \param orb Container for Lowdin-paired orbitals
+        \param V Two-electron integrals (pq|rs) = V(p*nmo+q,r*nmo+s)
+     **/
     void initialise(wick_orbitals<Tc,Tb> &orb, arma::Mat<Tb> &V);
 };
 

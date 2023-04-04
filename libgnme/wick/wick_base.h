@@ -29,7 +29,7 @@ protected:
     two_body<Tc,Tf,Tb> *m_two_body_int; //!< Intermediates for two-body integrals
 
 public:
-    /** \brief Constructor for the object
+    /** \brief Constructor using orbital pairs
         \param nbsf Number of basis functions
         \param nmo Number of linearly independent molecular orbitals
         \param nalpha Number of high-spin electrons
@@ -49,18 +49,55 @@ public:
     virtual ~wick_base() { }
 
 protected:
+    /** \brief Compute the overlap for a given spin sector
+        \param xhp Particle-hole indices for bra state
+        \param whp Particle-hole indices for ket state
+        \param S Output overlap value
+        \param alpha True for alpha; false for beta
+     **/
     void spin_overlap(
         arma::umat xhp, arma::umat whp, 
         Tc &S, bool alpha);
 
+    /** \brief Compute 1RDM for given spin sector
+        \param xhp Particle-hole indices for bra state
+        \param whp Particle-hole indices for ket state
+        \param xocc Vector of occupied indices in bra state
+        \param wocc Vector of occupied indices in ket state
+        \param P Output 1RDM 
+        \param alpha True for alpha; false for beta
+     **/
     virtual void spin_rdm1(
         arma::umat xhp, arma::umat whp, 
         arma::uvec xocc, arma::uvec wocc, 
         arma::Mat<Tc> &P, bool alpha);
+
+    /** \brief Compute same-spin 2RDM for given spin sector
+        \param xhp Particle-hole indices for bra state
+        \param whp Particle-hole indices for ket state
+        \param xocc Vector of occupied indices in bra state
+        \param wocc Vector of occupied indices in ket state
+        \param P Output 2RDM in (pq,rs) format 
+        \param alpha True for alpha; false for beta
+     **/
     virtual void same_spin_rdm2(
         arma::umat xhp, arma::umat whp, 
         arma::uvec xocc, arma::uvec wocc, 
         arma::Mat<Tc> &P, bool alpha);
+
+    /** \brief Compute different-spin 2RDM
+        \param xahp Alpha particle-hole indices for bra state
+        \param xbhp Beta  particle-hole indices for bra state
+        \param wahp Alpha particle-hole indices for ket state
+        \param wbhp Beta  particle-hole indices for ket state
+        \param xocc Vector of alpha occupied indices in bra state
+        \param xocc Vector of beta  occupied indices in bra state
+        \param wocc Vector of alpha occupied indices in ket state
+        \param wocc Vector of beta  occupied indices in ket state
+        \param P1a Output 1RDM for alpha sector
+        \param P1b Output 1RDM for beta sector
+        \param P2ab Output different-spin 2RDM in (pq,rs) format 
+     **/
     virtual void  diff_spin_rdm2(
         arma::umat xahp, arma::umat xbhp, 
         arma::umat wahp, arma::umat wbhp, 
@@ -69,11 +106,31 @@ protected:
         arma::Mat<Tc> &P1a, arma::Mat<Tc> &P1b, 
         arma::Mat<Tc> &P2ab);
 
+    /** \brief One-body coupling for a given spin sector
+        \param xhp Particle-hole indices for bra state
+        \param whp Particle-hole indices for ket state
+        \param F Output one-body coupling 
+        \param alpha True for alpha; false for beta
+     **/
     virtual void spin_one_body(
         arma::umat xhp, arma::umat whp, Tc &F, bool alpha);
 
+    /** \brief Same-spin two-body coupling 
+        \param xhp Particle-hole indices for bra state
+        \param whp Particle-hole indices for ket state
+        \param V Output two-body coupling 
+        \param alpha True for alpha; false for beta
+     **/
     virtual void same_spin_two_body(
         arma::umat xhp, arma::umat whp, Tc &V, bool alpha);
+
+    /** \brief Different-spin two-body coupling 
+        \param xahp Alpha particle-hole indices for bra state
+        \param xbhp Beta  particle-hole indices for bra state
+        \param wahp Alpha particle-hole indices for ket state
+        \param wbhp Beta  particle-hole indices for ket state
+        \param V Output two-body coupling 
+     **/
     virtual void diff_spin_two_body(
         arma::umat xa_hp, arma::umat xb_hp, 
         arma::umat wa_hp, arma::umat wb_hp, 

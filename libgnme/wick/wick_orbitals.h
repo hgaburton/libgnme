@@ -6,7 +6,7 @@
 
 namespace libgnme {
 
-/** \brief Compute and store orbital pairs for Non-Orthogonal Wicks Theorem
+/** \brief Container to compute and store Lowdin-paired orbitals for two reference states
     \tparam Tc Type defining orbital coefficients
     \tparam Tb Type defining basis functions
     \ingroup gnme_wick
@@ -24,26 +24,30 @@ public:
     /* Information about this pair */
     size_t m_nz; //!< Number of zero-overlap orbitals
 
-    // Reference reduced overlaps
     Tc m_redS; //!< Reduced overlap
 
-    arma::field<arma::Mat<Tc> > m_M;  //! Co-density matrices (2 * nbsf * nbsf)
-    arma::field<arma::Mat<Tc> > m_fX; //! X fundamental contractions (2 * nbsf * nbsf)
-    arma::field<arma::Mat<Tc> > m_X;  //! X fundamental contractions (2 * nbsf * nbsf)
-    arma::field<arma::Mat<Tc> > m_Y;  //! Y fundamental contractions (2 * nbsf * nbsf)
-    arma::field<arma::Mat<Tc> > m_CX; //! CX transformed coefficients (2 * nbsf * nmo)
-    arma::field<arma::Mat<Tc> > m_XC; //! XC transformed coefficients (2 * nbsf * nmo)
+    arma::field<arma::Mat<Tc> > m_M;  //!< Co-density matrices [nz][nbsf,nbsf]
+    arma::field<arma::Mat<Tc> > m_fX; //!< X fundamental contractions [nz][nbsf,nbsf]
+    arma::field<arma::Mat<Tc> > m_X;  //!< X fundamental contractions [nz][nbsf,nbsf]
+    arma::field<arma::Mat<Tc> > m_Y;  //!< Y fundamental contractions [nz][nbsf,nbsf]
+    arma::field<arma::Mat<Tc> > m_CX; //!< CX transformed coefficients [nz][nbsf,nbsf]
+    arma::field<arma::Mat<Tc> > m_XC; //!< XC transformed coefficients [nz][nbsf,nbsf]
 
-    // 1RDM variables
-    arma::field<arma::Mat<Tc> > m_wxP; //! Reference density
+    /* 1RDM variables */
+    arma::field<arma::Mat<Tc> > m_wxP; //! Reference density [nz][nbsf,nbsf]
     arma::field<arma::Mat<Tc> > m_R;  //! (xxY_ap,...,wxX_lp)
     arma::field<arma::Mat<Tc> > m_Q;  //! (wxX_qi,...,wwY_qd)
 
-    // Reference configurations for bra and ket states
-    reference_state<Tc> m_refx; 
-    reference_state<Tc> m_refw;
+    /* Reference configurations for bra and ket states */
+    reference_state<Tc> m_refx; //!< Reference configuration for bra state 
+    reference_state<Tc> m_refw; //!< Reference configuration for ket state
 
 public:
+    /** \brief Constructor for pair of wick orbitals from two reference state objects
+        \param refx Reference configuration for bra state
+        \param refw Reference configuration for ket state
+        \param metric Overlap matrix in AO basis
+     **/
     wick_orbitals(
         reference_state<Tc> &refx, 
         reference_state<Tc> &refw,
@@ -54,7 +58,7 @@ public:
         init();
     }
 
-    /** \brief Constructor for the wick_orbitals object
+    /** \brief Constructor for the wick orbitals from MO coefficients
         \param nbsf Number of basis functions
         \param nmo Number of linearly independent molecular orbitals
         \param nelec Number of electrons
@@ -80,6 +84,7 @@ public:
     /** \brief Destructor **/
     virtual ~wick_orbitals() { }
 
+private:
     /** \brief Initialise all variables **/
     virtual void init();
 };

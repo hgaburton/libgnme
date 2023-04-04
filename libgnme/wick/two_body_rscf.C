@@ -9,6 +9,7 @@ void two_body_rscf<Tc,Tf,Tb>::initialise(
     wick_orbitals<Tc,Tb> &orb, 
     arma::Mat<Tb> &V)
 {
+    // Get temporary numbers for easy code
     size_t nbsf = orb.m_nbsf;
     size_t nactx = orb.m_refx.m_nact, nactw = orb.m_refw.m_nact;
     size_t nact = nactx + nactw;

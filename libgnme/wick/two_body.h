@@ -5,29 +5,44 @@
 
 namespace libgnme {
 
+/** \brief Container for storing two-body intermediate integrals
+    \tparam Tc Type defining orbital coefficient
+    \tparam Tf Type defining one-body matrix elements
+    \tparam Tb Type defining basis functions
+    \ingroup gnme_wick
+ **/
 template<typename Tc, typename Tf, typename Tb>
 class two_body
 {
 public:
-    // Reference to the 'V0' terms
-    const arma::Col<Tc> &Vaa;
-    const arma::Col<Tc> &Vbb;
-    const arma::Mat<Tc> &Vab;
+    const arma::Col<Tc> &Vaa; //!< Reference to zeroth-order alpha/alpha term [nza]
+    const arma::Col<Tc> &Vbb; //!< Reference to zeroth-order beta/beta   term [nzb]
+    const arma::Mat<Tc> &Vab; //!< Reference to zeroth-order alpha/beta  term [nza,nzb]
 
-    // Reference to the '[X/Y](J-K)[X/Y]' super matrices (8 * nmo^2)
-    const arma::field<arma::Mat<Tc> > &XVaXa;
-    const arma::field<arma::Mat<Tc> > &XVbXb;
-    const arma::field<arma::Mat<Tc> > &XVaXb;
-    const arma::field<arma::Mat<Tc> > &XVbXa;
+    const arma::field<arma::Mat<Tc> > &XVaXa; //!< Reference to first-order coupling (alpha/alpha) [nza,nza][2*nmo,2*nmo] 
+    const arma::field<arma::Mat<Tc> > &XVbXb; //!< Reference to first-order coupling (beta/beta)   [nzb,nzb][2*nmo,2*nmo]
+    const arma::field<arma::Mat<Tc> > &XVaXb; //!< Reference to first-order coupling (alpha/beta)  [nza,nzb][2*nmo,2*nmo]
+    const arma::field<arma::Mat<Tc> > &XVbXa; //!< Reference to first-order coupling (beta/alpha)  [nzb,nza][2*nmo,2*nmo]
 
-    // Reference to the two-electron repulsion integrals (16 * nmo^4)
-    arma::field<arma::Mat<Tc> > &IIaa;
-    arma::field<arma::Mat<Tc> > &IIbb;
-    arma::field<arma::Mat<Tc> > &IIab;
-    arma::field<arma::Mat<Tc> > &IIba;
+    arma::field<arma::Mat<Tc> > &IIaa; //!< Reference to two-electron integrals (alpha/alpha) [nza,nza][4*nmo^2,4*nmo^2]
+    arma::field<arma::Mat<Tc> > &IIbb; //!< Reference to two-electron integrals (beta/beta)   [nzb,nzb][4*nmo^2,4*nmo^2]
+    arma::field<arma::Mat<Tc> > &IIab; //!< Reference to two-electron integrals (alpha/beta)  [nza,nzb][4*nmo^2,4*nmo^2]
+    arma::field<arma::Mat<Tc> > &IIba; //!< Reference to two-electron integrals (beta/alpha)  [nzb,nza][4*nmo^2,4*nmo^2]
 
 public:
-    // Default constructor
+    /** \brief Standard constructor 
+        \param _Vaa Zeroth-order coupling (alpha/alpha)
+        \param _Vbb Zeroth-order coupling (beta/beta)
+        \param _Vab Zeroth-order coupling (alpha/beta)
+        \param _XVaXa First-order coupling terms in alpha/alpha molecular orbital basis
+        \param _XVaXb First-order coupling terms in alpha/beta molecular orbital basis
+        \param _XVbXa First-order coupling terms in beta/alpha molecular orbital basis
+        \param _XVbXb First-order coupling terms in beta/beta molecular orbital basis
+        \param _IIaa ERI in alpha/alpha molecular orbital basis
+        \param _IIab ERI in alpha/beta molecular orbital basis
+        \param _IIba ERI in beta/alpha molecular orbital basis
+        \param _IIbb ERI in beta/beta molecular orbital basis
+     **/
     two_body(
         const arma::Col<Tc> &_Vaa, const arma::Col<Tc> &_Vbb, const arma::Mat<Tc> &_Vab,
         const arma::field<arma::Mat<Tc> > &_XVaXa, const arma::field<arma::Mat<Tc> > &_XVaXb,
@@ -39,7 +54,7 @@ public:
       IIaa(_IIaa), IIab(_IIab), IIba(_IIba), IIbb(_IIbb)
     { }
 
-    // Default destructor
+    /** \brief Default destructor **/
     virtual ~two_body() { }
 };
 
