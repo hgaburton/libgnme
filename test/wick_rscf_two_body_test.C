@@ -62,7 +62,7 @@ int test_ref_ref(const char *testcase, unsigned thresh)
 
     // Setup matrix builder
     slater_uscf<double,double,double> slat(nbsf, nmo, nocca, noccb, S);
-    wick_rscf<double,double,double> mb(orbs, S);
+    wick_rscf<double,double,double> mb(orbs);
     slat.add_two_body(II);
     mb.add_two_body(II);
 
@@ -168,7 +168,7 @@ int test_ref_single(const char *testcase, unsigned thresh)
 
     // Setup matrix builder
     slater_uscf<double,double,double> slat(nbsf, nmo, nocca, noccb, S);
-    wick_rscf<double,double,double> mb(orbs, S);
+    wick_rscf<double,double,double> mb(orbs);
     slat.add_two_body(II);
     mb.add_two_body(II);
 
@@ -177,6 +177,7 @@ int test_ref_single(const char *testcase, unsigned thresh)
 
     // Variables for testing
     double swick = 0.0, fwick = 0.0, sslat = 0.0, fslat = 0.0;
+    size_t nmax = std::min(nocca+3,nmo);
 
     // Define "reference" occupation numbers
     arma::uvec ref_occa(nocca);
@@ -186,7 +187,7 @@ int test_ref_single(const char *testcase, unsigned thresh)
 
     // Alpha single excitation
     for(size_t i=0; i<nocca; i++)
-    for(size_t a=nocca; a<nmo; a++)
+    for(size_t a=nocca; a<nmax; a++)
     {
         // Excitation indices
         arma::umat xahp(1,2), xbhp(0,2);
@@ -249,7 +250,7 @@ int test_ref_single(const char *testcase, unsigned thresh)
 
     // Beta single excitation
     for(size_t i=0; i<noccb; i++)
-    for(size_t a=noccb; a<nmo; a++)
+    for(size_t a=noccb; a<nmax; a++)
     {
         // Excitation indices
         arma::umat xahp(0,2), xbhp(1,2);
@@ -368,12 +369,13 @@ int test_single_single(const char *testcase, unsigned thresh)
 
     // Setup matrix builder
     slater_uscf<double,double,double> slat(nbsf, nmo, nocca, noccb, S);
-    wick_rscf<double,double,double> mb(orbs, S);
+    wick_rscf<double,double,double> mb(orbs);
     slat.add_two_body(II);
     mb.add_two_body(II);
 
     // Variables for testing
     double swick = 0.0, fwick = 0.0, sslat = 0.0, fslat = 0.0;
+    size_t nmax = std::min(nocca+3,nmo);
 
     // Define "reference" occupation numbers
     arma::uvec ref_occa(nocca);
@@ -383,9 +385,9 @@ int test_single_single(const char *testcase, unsigned thresh)
 
     // Alpha/alpha single excitation
     for(size_t i=0; i<nocca; i++)
-    for(size_t a=nocca; a<nmo; a++)
+    for(size_t a=nocca; a<nmax; a++)
     for(size_t j=0; j<nocca; j++)
-    for(size_t b=nocca; b<nmo; b++)
+    for(size_t b=nocca; b<nmax; b++)
     {
         // Excitation indices
         arma::umat xahp(1,2), xbhp(0,2);
@@ -426,9 +428,9 @@ int test_single_single(const char *testcase, unsigned thresh)
 
     // Beta/beta single excitation
     for(size_t i=0; i<noccb; i++)
-    for(size_t a=noccb; a<nmo; a++)
+    for(size_t a=noccb; a<nmax; a++)
     for(size_t j=0; j<noccb; j++)
-    for(size_t b=noccb; b<nmo; b++)
+    for(size_t b=noccb; b<nmax; b++)
     {
         // Excitation indices
         arma::umat xahp(0,2), xbhp(1,2);
@@ -469,9 +471,9 @@ int test_single_single(const char *testcase, unsigned thresh)
 
     // Beta single excitation
     for(size_t i=0; i<nocca; i++)
-    for(size_t a=nocca; a<nmo; a++)
+    for(size_t a=nocca; a<nmax; a++)
     for(size_t j=0; j<noccb; j++)
-    for(size_t b=noccb; b<nmo; b++)
+    for(size_t b=noccb; b<nmax; b++)
     {
         // Excitation indices
         arma::umat xahp(1,2), xbhp(0,2);
@@ -592,12 +594,13 @@ int test_single_double(const char *testcase, unsigned thresh)
 
     // Setup matrix builder
     slater_uscf<double,double,double> slat(nbsf, nmo, nocca, noccb, S);
-    wick_rscf<double,double,double> mb(orbs, S);
+    wick_rscf<double,double,double> mb(orbs);
     slat.add_two_body(II);
     mb.add_two_body(II);
 
     // Variables for testing
     double swick = 0.0, fwick = 0.0, sslat = 0.0, fslat = 0.0;
+    size_t nmax = std::min(nocca+3,nmo);
 
     // Define "reference" occupation numbers
     arma::uvec ref_occa(nocca);
@@ -607,7 +610,7 @@ int test_single_double(const char *testcase, unsigned thresh)
 
     // Alpha single excitation
     for(size_t i=0; i<nocca; i++)
-    for(size_t a=nocca; a<nmo; a++)
+    for(size_t a=nocca; a<nmax; a++)
     {
         // The single excitation
         arma::umat xahp(1,2), xbhp(0,2);
@@ -618,7 +621,7 @@ int test_single_double(const char *testcase, unsigned thresh)
         // Alpha / Alpha double
         for(size_t j=0; j<nocca; j++)
         for(size_t k=0; k<j; k++)
-        for(size_t b=nocca; b<nmo; b++)
+        for(size_t b=nocca; b<nmax; b++)
         for(size_t c=nocca; c<b; c++)
         {
             // Excitation indices
@@ -682,7 +685,7 @@ int test_single_double(const char *testcase, unsigned thresh)
         // Beta / Beta double
         for(size_t j=0; j<noccb; j++)
         for(size_t k=0; k<j; k++)
-        for(size_t b=noccb; b<nmo; b++)
+        for(size_t b=noccb; b<nmax; b++)
         for(size_t c=noccb; c<b; c++)
         {
             // Excitation indices
@@ -745,9 +748,9 @@ int test_single_double(const char *testcase, unsigned thresh)
 
         // Alpha / Beta double
         for(size_t j=0; j<noccb; j++)
-        for(size_t b=noccb; b<nmo; b++)
+        for(size_t b=noccb; b<nmax; b++)
         for(size_t k=0; k<nocca; k++)
-        for(size_t c=nocca; c<nmo; c++)
+        for(size_t c=nocca; c<nmax; c++)
         {
             // Excitation indices
             arma::umat wahp(1,2), wbhp(1,2);

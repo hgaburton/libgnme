@@ -3,91 +3,48 @@
 
 #include <armadillo>
 #include <libgnme/utils/bitset.h>
+#include "wick_base.h"
 #include "wick_orbitals.h"
 
 namespace libgnme {
 
-/** \brief Implementation of the Extended Non-Orthogonal Wick's Theorem 
-           for restricted orbitals
+/** \brief Implementation of the Extended Non-Orthogonal Wick's Theorem for restricted orbitals
     \tparam Tc Type defining orbital coefficients
     \tparam Tf Type defining one-body matrix elements
     \tparam Tb Type defining basis functions
     \ingroup gnme_wick
  **/
 template<typename Tc, typename Tf, typename Tb>
-class wick_rscf
+class wick_rscf : public wick_base<Tc,Tf,Tb>
 {
-private:
-    /* Useful constants */
-    const size_t m_nbsf; //!< Number of basis functions
-    const size_t m_nmo; //!< Number of (linearly independent) MOs
-    const size_t m_nelec; //!< Number of electrons
-    size_t m_nact; //!< Number of active orbitals
-    const arma::Mat<Tb> &m_metric; //!< Basis overlap metric
-
-    double m_Vc; //!< constant component
-
-    wick_orbitals<Tc,Tb> m_orb; //!< Orbital pair
-
-    // One-body MO matrices
-    bool m_one_body = false;
-    bool m_two_body = false;
-
-    // Occupied core
-    arma::uvec m_core;
-
-    /* Information about this pair */
-public:
-    size_t m_nz; //!< Number of zero-overlap orbitals
+protected:
+    using wick_base<Tc,Tf,Tb>::m_nmo;
+    using wick_base<Tc,Tf,Tb>::m_one_body_int;
+    using wick_base<Tc,Tf,Tb>::m_two_body_int;
+    using wick_base<Tc,Tf,Tb>::m_orba;
+    using wick_base<Tc,Tf,Tb>::m_orbb;
 
 private:
-    // Store the 'F0' terms (2)
-    arma::Col<Tc> m_F0;
+    double m_Vc; //!< Constant component
 
-    // Store the '(X/Y)F(X/Y)' super matrices (4 * nmo * nmo)
-    arma::field<arma::Mat<Tc> > m_XFX;
-
-    // Store the 'V0' terms (3)
-    arma::Col<Tc> m_Vsame;
-    arma::Col<Tc> m_Vdiff;
-
-    // Store the '[X/Y](J-K)[X/Y]' super matrices (8 * nmo^2)
-    arma::field<arma::Mat<Tc> > m_XJX;
-    arma::field<arma::Mat<Tc> > m_XKX;
-
-    // Store two-electron repulsion integrals (16 * nmo^4)
-    arma::field<arma::Mat<Tc> > m_IIsame;
-    arma::field<arma::Mat<Tc> > m_IIdiff;
-
-    // Reference bitset
-    bitset m_bref; //!< Reference bitset for closed-shell determinant
+    bool m_one_body = false; //!< Control variable if one-body elements are required
+    bool m_two_body = false; //!< Control variable if two-body elements are required
 
 public:
-    /** \brief Constructor for the object
-        \param nbsf Number of basis functions
-        \param nmo Number of linearly independent molecular orbitals
-        \param nalpha Number of high-spin electrons
-        \param nbeta Number of low-spin electrons
-        \param metric Overlap matrix of the basis functions
-        \param Vc Constant term in the corresponding operator
+    /** \brief Constructor for the object from set of orbital pairs
+        \param orb wick_orbitals containing Lowdin-paired set of orbitals
+        \param Vc Constant contribution [default=0]
      **/
-    wick_rscf(
-        wick_orbitals<Tc,Tb> &orb,
-        const arma::Mat<Tb> &metric, double Vc=0) :
-        m_nbsf(orb.m_nbsf), m_nmo(orb.m_nmo), m_nelec(orb.m_nelec), 
-        m_nact(orb.m_nact), m_metric(metric), m_Vc(Vc),
-        m_orb(orb)
-    { 
-        // Set the reference bit strings
-        size_t act_el = orb.m_nelec - orb.m_ncore; // Active alpha electrons
-        std::vector<bool> ref(orb.m_nact-act_el, 0); ref.resize(orb.m_nact, 1);
-        m_bref = bitset(ref);
-        m_core.resize(orb.m_ncore);
-        for(size_t i=0; i<orb.m_ncore; i++) m_core(i) = i;
-    } 
+    wick_rscf(wick_orbitals<Tc,Tb> &orb, double Vc=0):
+        wick_base<Tc,Tf,Tb>(orb, orb), m_Vc(Vc)
+    { } 
 
     /** \brief Destructor **/
-    virtual ~wick_rscf() { }
+    virtual ~wick_rscf() 
+    { 
+        if(m_one_body) delete m_one_body_int;
+        if(m_two_body) delete m_two_body_int;
+    }
 
     /** \name Routines to add one- or two-body operators to the object **/
     ///@{
@@ -95,55 +52,97 @@ public:
     /** \brief Add a one-body operator with spin-restricted integrals 
         \param F One-body integrals in AO basis
      **/
-    virtual void add_one_body(arma::Mat<Tf> &F);
+    void add_one_body(arma::Mat<Tf> &F);
 
     /** \brief Add a two-body operator with spin-restricted integrals
         \param V Two-body integrals in AO basis. These are represented as matrices in chemists
                   notation, e.g. (ij|kl) = V(i*nbsf+j,k*nbsf+l)
      **/
-    virtual void add_two_body(arma::Mat<Tb> &V);
+    void add_two_body(arma::Mat<Tb> &V);
     ///@}
     //
     
-    virtual void evaluate(
+    /** \brief Evaluate integral using bitset representation
+        \param bxa Bitset for bra alpha excitation
+        \param bxb Bitset for bra beta  excitation
+        \param bwa Bitset for ket alpha excitation
+        \param bwb Bitset for ket beta  excitation
+        \param S   Output overlap matrix element
+        \param V   Output integral value
+     **/
+    void evaluate(
         bitset &bxa, bitset &bxb, 
         bitset &bwa, bitset &bwb,
         Tc &S, Tc &V);
-    
-    virtual void evaluate_overlap(
-        arma::umat &xa_hp, arma::umat &xb_hp,
-        arma::umat &wa_hp, arma::umat &wb_hp,
-        Tc &S);
-    virtual void evaluate_one_body_spin(
-        arma::umat &xhp, arma::umat &whp,
-        Tc &S, Tc &V);
-    virtual void evaluate(
+
+    /** \brief Compute 1RDM using bitset representation
+        \param bxa Bitset for bra alpha excitation
+        \param bxb Bitset for bra beta  excitation
+        \param bwa Bitset for ket alpha excitation
+        \param bwb Bitset for ket beta  excitation
+        \param S   Output overlap matrix element
+        \param P1  Output 1RDM
+     **/
+    void evaluate_rdm1(
+        bitset &bxa, bitset &bxb, 
+        bitset &bwa, bitset &bwb,
+        Tc &S, arma::Mat<Tc> &P1);
+
+    /** \brief Compute 1RDM and 2RDM using bitset representation
+        \param bxa Bitset for bra alpha excitation
+        \param bxb Bitset for bra beta  excitation
+        \param bwa Bitset for ket alpha excitation
+        \param bwb Bitset for ket beta  excitation
+        \param S   Output overlap matrix element
+        \param P1  Output 1RDM
+        \param P2  Output 2RDM
+     **/
+    void evaluate_rdm12(
+        bitset &bxa, bitset &bxb, 
+        bitset &bwa, bitset &bwb,
+        Tc &S, 
+        arma::Mat<Tc> &P1, arma::Mat<Tc> &P2);
+
+    /** \brief Evaluate matrix element using particle-hole representation
+        \param xa_hp Particle-hole indices for bra alpha excitation
+        \param xb_hp Particle-hole indices for bra beta  excitation
+        \param wa_hp Particle-hole indices for ket alpha excitation
+        \param wb_hp Particle-hole indices for ket beta  excitation
+        \param S   Output overlap matrix element
+        \param V   Output one-body matrix element
+     **/
+    void evaluate(
         arma::umat &xa_hp, arma::umat &xb_hp,
         arma::umat &wa_hp, arma::umat &wb_hp,
         Tc &S, Tc &M);
+    
+    /** \brief Evaluate overlap value using particle-hole representation
+        \param xa_hp Particle-hole indices for bra alpha excitation
+        \param xb_hp Particle-hole indices for bra beta  excitation
+        \param wa_hp Particle-hole indices for ket alpha excitation
+        \param wb_hp Particle-hole indices for ket beta  excitation
+        \param S   Output overlap matrix element
+     **/
+    void evaluate_overlap(
+        arma::umat &xa_hp, arma::umat &xb_hp,
+        arma::umat &wa_hp, arma::umat &wb_hp,
+        Tc &S);
 
-    virtual void evaluate_rdm1(
-        bitset &bxa, bitset &bxb, 
-        bitset &bwa, bitset &bwb,
-        Tc &S,
-        arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb);
-
-private:
-    virtual void spin_rdm1(
-        arma::umat xhp, arma::umat whp, 
-        arma::uvec xocc, arma::uvec wocc, 
-        arma::Mat<Tc> &P);
-    virtual void spin_overlap(
-        arma::umat xhp, arma::umat whp, Tc &S);
-    virtual void spin_one_body(
-        arma::umat xhp, arma::umat whp, Tc &F);
-    virtual void same_spin_two_body(
-        arma::umat xhp, arma::umat whp, Tc &V);
-    virtual void diff_spin_two_body(
-        arma::umat xa_hp, arma::umat xb_hp, 
-        arma::umat wa_hp, arma::umat wb_hp, 
-        Tc &V);
+    /** \brief Evaluate one-body element for given spin sector using particle-hole representation
+        \param xhp Particle-hole indices for bra excitation
+        \param whp Particle-hole indices for ket excitation
+        \param S   Output overlap matrix element
+        \param V   Output one-body matrix element
+     **/
+    void evaluate_one_body_spin(
+        arma::umat &xhp, arma::umat &whp,
+        Tc &S, Tc &V);
 };
+
+template class wick_rscf<double, double, double>;
+template class wick_rscf<std::complex<double>, double, double>;
+template class wick_rscf<std::complex<double>, std::complex<double>, double>;
+template class wick_rscf<std::complex<double>, std::complex<double>, std::complex<double> >;
 
 } // namespace libgnme
 

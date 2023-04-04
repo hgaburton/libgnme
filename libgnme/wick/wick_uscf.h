@@ -3,115 +3,51 @@
 
 #include <armadillo>
 #include <libgnme/utils/bitset.h>
+#include "wick_base.h"
 #include "wick_orbitals.h"
 
 namespace libgnme {
 
-/** \brief Implementation of the Extended Non-Orthogonal Wick's Theorem 
-           for spin unrestricted orbitals
+/** \brief Implementation of the Extended Non-Orthogonal Wick's Theorem for spin unrestricted orbitals
     \tparam Tc Type defining orbital coefficients
     \tparam Tf Type defining one-body matrix elements
     \tparam Tb Type defining basis functions
     \ingroup gnme_wick
  **/
 template<typename Tc, typename Tf, typename Tb>
-class wick_uscf
+class wick_uscf : public wick_base<Tc,Tf,Tb>
 {
-private:
-    /* Useful constants */
-    const size_t m_nbsf; //!< Number of basis functions
-    const size_t m_nmo; //!< Number of (linearly independent) MOs
-    const size_t m_nalpha; //!< Number of alpha electrons
-    const size_t m_nbeta; //!< Number of beta electrons
-    const size_t m_nact; //!< Number of active orbitals
-    const arma::Mat<Tb> &m_metric; //!< Basis overlap metric
-
-    double m_Vc; //!< constant component
-
-    wick_orbitals<Tc,Tb> m_orb_a; //!< Alpha orbital pair
-    wick_orbitals<Tc,Tb> m_orb_b; //!< Beta orbital pair
-
-    // Reference bitsets
-    bitset m_bref_a; //!< Reference alpha bitset
-    bitset m_bref_b; //!< Reference beta bitset
-
-    // One-body MO matrices
-    bool m_one_body = false;
-    bool m_two_body = false;
-
-    // Occupied core
-    arma::uvec m_corea;
-    arma::uvec m_coreb;
-
-    /* Information about this pair */
-public:
-    size_t m_nza; //!< Number of alpha zero-overlap orbitals
-    size_t m_nzb; //!< Number of beta zero-overlap orbitals
+protected:
+    using wick_base<Tc,Tf,Tb>::m_nmo;
+    using wick_base<Tc,Tf,Tb>::m_one_body_int;
+    using wick_base<Tc,Tf,Tb>::m_two_body_int;
+    using wick_base<Tc,Tf,Tb>::m_orba;
+    using wick_base<Tc,Tf,Tb>::m_orbb;
 
 private:
-    // Store the 'F0' terms (2)
-    arma::Col<Tc> m_F0a;
-    arma::Col<Tc> m_F0b;
-
-    // Store the '(X/Y)F(X/Y)' super matrices (4 * nmo * nmo)
-    arma::field<arma::Mat<Tc> > m_XFXa;
-    arma::field<arma::Mat<Tc> > m_XFXb;
-
-    // Store the 'V0' terms (3)
-    arma::Col<Tc> m_Vaa;
-    arma::Col<Tc> m_Vbb;
-    arma::Mat<Tc> m_Vab;
-
-    // Store the '[X/Y](J-K)[X/Y]' super matrices (8 * nmo^2)
-    arma::field<arma::Mat<Tc> > m_XVaXa;
-    arma::field<arma::Mat<Tc> > m_XVbXb;
-    arma::field<arma::Mat<Tc> > m_XVaXb;
-    arma::field<arma::Mat<Tc> > m_XVbXa;
-
-    // Store two-electron repulsion integrals (16 * nmo^4)
-    arma::field<arma::Mat<Tc> > m_IIaa;
-    arma::field<arma::Mat<Tc> > m_IIbb;
-    arma::field<arma::Mat<Tc> > m_IIab;
-    arma::field<arma::Mat<Tc> > m_IIba;
+    double m_Vc; //!< Constant component
+    bool m_one_body = false; //!< Control variable if one-body elements are required
+    bool m_two_body = false; //!< Control variable if two-body elements are required
 
 public:
-    /** \brief Constructor for the object
-        \param nbsf Number of basis functions
-        \param nmo Number of linearly independent molecular orbitals
-        \param nalpha Number of high-spin electrons
-        \param nbeta Number of low-spin electrons
-        \param metric Overlap matrix of the basis functions
-        \param Vc Constant term in the corresponding operator
+    /** \brief Constructor for the object from set of orbital pairs
+        \param orba wick_orbitals containing Lowdin-paired set of alpha orbitals
+        \param orbb wick_orbitals containing Lowdin-paired set of beta  orbitals
+        \param Vc Constant contribution [default=0]
      **/
     wick_uscf(
-        wick_orbitals<Tc,Tb> &orba, wick_orbitals<Tc,Tb> &orbb,
-        const arma::Mat<Tb> &metric, double Vc=0) :
-
-        m_nbsf(orba.m_nbsf), m_nmo(orba.m_nmo), 
-        m_nalpha(orba.m_nelec), m_nbeta(orbb.m_nelec),
-        m_nact(orba.m_nact),
-        m_metric(metric), m_Vc(Vc),
-        m_orb_a(orba), m_orb_b(orbb)
-    { 
-        assert(orba.m_nbsf == orbb.m_nbsf);
-        assert(orba.m_nmo  == orbb.m_nmo);
-        assert(orba.m_nact == orbb.m_nact);
-
-        // Set the reference bit strings
-        size_t act_el_a = orba.m_nelec - orba.m_ncore; // Active alpha electrons
-        size_t act_el_b = orbb.m_nelec - orbb.m_ncore; // Active beta  electrons 
-        std::vector<bool> refa(orba.m_nact-act_el_a, 0); refa.resize(orba.m_nact, 1);
-        std::vector<bool> refb(orbb.m_nact-act_el_b, 0); refb.resize(orbb.m_nact, 1);
-        m_bref_a = bitset(refa);
-        m_bref_b = bitset(refb);  
-        m_corea.resize(orba.m_ncore);
-        m_coreb.resize(orbb.m_ncore);
-        for(size_t i=0; i<orba.m_ncore; i++) m_corea(i) = i;
-        for(size_t i=0; i<orbb.m_ncore; i++) m_coreb(i) = i;
-    }
+        wick_orbitals<Tc,Tb> &orba, 
+        wick_orbitals<Tc,Tb> &orbb, 
+        double Vc=0) :
+        wick_base<Tc,Tf,Tb>(orba, orbb), m_Vc(Vc)
+    { } 
         
     /** \brief Destructor **/
-    virtual ~wick_uscf() { }
+    virtual ~wick_uscf() 
+    { 
+        if(m_one_body) delete m_one_body_int;
+        if(m_two_body) delete m_two_body_int;
+    }
 
     /** \name Routines to add one- or two-body operators to the object **/
     ///@{
@@ -134,50 +70,95 @@ public:
     virtual void add_two_body(arma::Mat<Tb> &V);
     ///@}
     
+    /** \brief Evaluate integral using bitset representation
+        \param bxa Bitset for bra alpha excitation
+        \param bxb Bitset for bra beta  excitation
+        \param bwa Bitset for ket alpha excitation
+        \param bwb Bitset for ket beta  excitation
+        \param S   Output overlap matrix element
+        \param V   Output integral value
+     **/
     virtual void evaluate(
         bitset &bxa, bitset &bxb, 
         bitset &bwa, bitset &bwb,
         Tc &S, Tc &V);
-    
 
-    virtual void evaluate_overlap(
-        arma::umat &xa_hp, arma::umat &xb_hp,
-        arma::umat &wa_hp, arma::umat &wb_hp,
-        Tc &S);
-    virtual void evaluate_one_body_spin(
-        arma::umat &xhp, arma::umat &whp,
-        Tc &S, Tc &V, bool alpha);
-    virtual void evaluate(
-        arma::umat &xa_hp, arma::umat &xb_hp,
-        arma::umat &wa_hp, arma::umat &wb_hp,
-        Tc &S, Tc &M);
-
+    /** \brief Compute 1RDM using bitset representation
+        \param bxa Bitset for bra alpha excitation
+        \param bxb Bitset for bra beta  excitation
+        \param bwa Bitset for ket alpha excitation
+        \param bwb Bitset for ket beta  excitation
+        \param S   Output overlap matrix element
+        \param Pa  Output high-spin 1RDM
+        \param Pb  Output low-spin 1RDM
+     **/
     virtual void evaluate_rdm1(
         bitset &bxa, bitset &bxb, 
         bitset &bwa, bitset &bwb,
         Tc &S,
         arma::Mat<Tc> &Pa, arma::Mat<Tc> &Pb);
 
+    /** \brief Compute 1RDM and 2RDM using bitset representation
+        \param bxa  Bitset for bra alpha excitation
+        \param bxb  Bitset for bra beta  excitation
+        \param bwa  Bitset for ket alpha excitation
+        \param bwb  Bitset for ket beta  excitation
+        \param S    Output overlap matrix element
+        \param P1a  Output high-spin   1RDM
+        \param P1b  Output low-spin    1RDM
+        \param P2aa Output alpha/alpha 2RDM
+        \param P2bb Output beta/beta   2RDM
+        \param P2ab Output alpha/beta  2RDM
+     **/
+    virtual void evaluate_rdm12(
+        bitset &bxa, bitset &bxb, 
+        bitset &bwa, bitset &bwb,
+        Tc &S, 
+        arma::Mat<Tc> &P1a, arma::Mat<Tc> &P1b,
+        arma::Mat<Tc> &P2aa, arma::Mat<Tc> &P2bb,
+        arma::Mat<Tc> &P2ab);
 
-private:
-    virtual void spin_rdm1(
-        arma::umat xhp, arma::umat whp, 
-        arma::uvec xocc, arma::uvec wocc, 
-        arma::Mat<Tc> &P, bool alpha);
-    virtual void spin_overlap(
-        arma::umat xhp, arma::umat whp,
-        Tc &S, bool alpha);
-    virtual void spin_one_body(
-        arma::umat xhp, arma::umat whp,
-        Tc &F, bool alpha);
-    virtual void same_spin_two_body(
-        arma::umat xhp, arma::umat whp,
-        Tc &V, bool alpha);
-    virtual void diff_spin_two_body(
-        arma::umat xa_hp, arma::umat xb_hp, 
-        arma::umat wa_hp, arma::umat wb_hp, 
-        Tc &V);
+    /** \brief Evaluate matrix element using particle-hole representation
+        \param xa_hp Particle-hole indices for bra alpha excitation
+        \param xb_hp Particle-hole indices for bra beta  excitation
+        \param wa_hp Particle-hole indices for ket alpha excitation
+        \param wb_hp Particle-hole indices for ket beta  excitation
+        \param S   Output overlap matrix element
+        \param V   Output one-body matrix element
+     **/
+    virtual void evaluate(
+        arma::umat &xa_hp, arma::umat &xb_hp,
+        arma::umat &wa_hp, arma::umat &wb_hp,
+        Tc &S, Tc &M);
+
+    /** \brief Evaluate overlap value using particle-hole representation
+        \param xa_hp Particle-hole indices for bra alpha excitation
+        \param xb_hp Particle-hole indices for bra beta  excitation
+        \param wa_hp Particle-hole indices for ket alpha excitation
+        \param wb_hp Particle-hole indices for ket beta  excitation
+        \param S   Output overlap matrix element
+     **/
+    virtual void evaluate_overlap(
+        arma::umat &xa_hp, arma::umat &xb_hp,
+        arma::umat &wa_hp, arma::umat &wb_hp,
+        Tc &S);
+
+    /** \brief Evaluate one-body element for given spin sector using particle-hole representation
+        \param xhp Particle-hole indices for bra excitation
+        \param whp Particle-hole indices for ket excitation
+        \param S   Output overlap matrix element
+        \param V   Output one-body matrix element
+        \param alpha True for high-spin; False for low-spin
+     **/
+    virtual void evaluate_one_body_spin(
+        arma::umat &xhp, arma::umat &whp,
+        Tc &S, Tc &V, bool alpha);
 };
+
+template class wick_uscf<double, double, double>;
+template class wick_uscf<std::complex<double>, double, double>;
+template class wick_uscf<std::complex<double>, std::complex<double>, double>;
+template class wick_uscf<std::complex<double>, std::complex<double>, std::complex<double> >;
 
 } // namespace libgnme
 

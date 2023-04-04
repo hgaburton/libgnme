@@ -1,13 +1,13 @@
 #include <cassert>
 #include <algorithm>
 #include <libgnme/utils/lowdin_pair.h>
-#include "wick_uscf.h"
+#include "wick_base.h"
 
 namespace libgnme {
 
 
 template<typename Tc, typename Tf, typename Tb>
-void wick_uscf<Tc,Tf,Tb>::spin_overlap(
+void wick_base<Tc,Tf,Tb>::spin_overlap(
     arma::umat xhp, arma::umat whp,
     Tc &S, bool alpha)
 {
@@ -19,18 +19,19 @@ void wick_uscf<Tc,Tf,Tb>::spin_overlap(
     size_t nw = whp.n_rows; // Ket excitations
 
     // Get reference to number of zeros for this spin
-    const size_t &nz = alpha ? m_orb_a.m_nz : m_orb_b.m_nz; 
+    const size_t &nz = alpha ? m_orba.m_nz : m_orbb.m_nz; 
+
+    // Get reference to relevant X/Y matrices for this spin
+    const arma::field<arma::Mat<Tc> > &X = alpha ? m_orba.m_X : m_orbb.m_X;
+    const arma::field<arma::Mat<Tc> > &Y = alpha ? m_orba.m_Y : m_orbb.m_Y;
 
     // Check we don't have a non-zero element
     if(nz > nw + nx) return;
 
-    // Get reference to relevant X/Y matrices for this spin
-    const arma::field<arma::Mat<Tc> > &X = alpha ? m_orb_a.m_X : m_orb_b.m_X;
-    const arma::field<arma::Mat<Tc> > &Y = alpha ? m_orb_a.m_Y : m_orb_b.m_Y;
-
     // Shift w indices
     // TODO: Do we want to keep this?
-    whp += m_nact;
+    const size_t &wshift = alpha ? m_orba.m_refx.m_nact : m_orbb.m_refx.m_nact;
+    whp += wshift;
 
     // Get particle-hole indices
     arma::uvec rows, cols;
@@ -75,14 +76,9 @@ void wick_uscf<Tc,Tf,Tb>::spin_overlap(
 
     // Shift w indices
     // TODO: Do we want to keep this?
-    whp -= m_nact;
+    whp -= wshift;
 
     return;
 }
-
-template class wick_uscf<double, double, double>;
-template class wick_uscf<std::complex<double>, double, double>;
-template class wick_uscf<std::complex<double>, std::complex<double>, double>;
-template class wick_uscf<std::complex<double>, std::complex<double>, std::complex<double> >;
 
 } // namespace libgnme
