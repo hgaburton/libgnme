@@ -18,7 +18,7 @@ public:
     const size_t m_nelec; //!< Number of electrons
     const size_t m_nact;  //!< Number of active orbitals
     const size_t m_ncore; //!< Number of core orbitals
-    const arma::Mat<Tc> m_C; //!< Orbital coefficients
+    arma::Mat<Tc> m_C; //!< Orbital coefficients
 
     bitset m_bs; //!< Reference bitset
     arma::uvec m_core; //!< Inactive occupied orbital indices
@@ -32,7 +32,7 @@ public:
      **/
     reference_state(
         const size_t nbsf, const size_t nmo, const size_t nelec,
-        arma::Mat<Tc> &C) : 
+        arma::Mat<Tc> C) : 
     m_nbsf(nbsf), m_nmo(nmo), m_nelec(nelec), m_C(C), m_nact(nmo), m_ncore(0)
     { 
         init();
@@ -48,7 +48,7 @@ public:
      **/
     reference_state(
         const size_t nbsf, const size_t nmo, const size_t nelec, 
-        const size_t nact, const size_t ncore, arma::Mat<Tc> &C) : 
+        const size_t nact, const size_t ncore, arma::Mat<Tc> C) : 
     m_nbsf(nbsf), m_nmo(nmo), m_nelec(nelec), m_C(C), m_nact(nact), m_ncore(ncore)
     { 
         assert(ncore + nact <= nmo);

@@ -37,7 +37,6 @@ public:
     {
         // Find highest power of two
         int dummy = 1, dmax = 1;
-        bool divisible = (n / 1 > 0);
         while(n / dummy > 0) { dummy *= 2; dmax  += 1; }
         assert(dmax - 2 < int(m_size));
         
@@ -65,7 +64,7 @@ public:
     /** \brief Count number of set bits **/
     size_t count(size_t min=0, size_t max=0) 
     {
-        if(min==0 and max==0)
+        if((min==0) and (max==0))
             return std::accumulate(m_v.begin(), m_v.end(), 0);
         int sum = 0;
         for(size_t i=min; i<max; i++) sum += m_v[m_size-1-i];

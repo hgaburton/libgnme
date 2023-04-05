@@ -71,7 +71,8 @@ public:
         arma::Mat<Tc> Cx, arma::Mat<Tc> Cw, const arma::Mat<Tb> &metric
     ) : m_nbsf(nbsf), m_nmo(nmo), m_nelec(nelec),
         m_metric(metric),
-        m_refx(nbsf, nmo, nelec, Cx), m_refw(nbsf, nmo, nelec, Cw) 
+        m_refx(nbsf, nmo, nelec, Cx), 
+        m_refw(nbsf, nmo, nelec, Cw) 
     { 
         assert(Cx.n_rows == nbsf);
         assert(Cx.n_cols == nmo);

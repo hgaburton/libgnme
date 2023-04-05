@@ -20,8 +20,8 @@ void wick_orbitals<Tc,Tb>::init()
     // Get access to coefficients
     const arma::Mat<Tc> &Cx = m_refx.m_C;
     const arma::Mat<Tc> &Cw = m_refw.m_C;
-    const arma::Mat<Tc> &Cx_act = m_refx.m_C.cols(ncorex,ncorex+nactx-1);
-    const arma::Mat<Tc> &Cw_act = m_refw.m_C.cols(ncorew,ncorew+nactw-1);
+    const arma::Mat<Tc> &Cx_act = (nactx > 0) ? m_refx.m_C.cols(ncorex,ncorex+nactx-1) : arma::Mat<Tc>();
+    const arma::Mat<Tc> &Cw_act = (nactw > 0) ? m_refw.m_C.cols(ncorew,ncorew+nactw-1) : arma::Mat<Tc>();
 
     // Make copy of orbitals for Lowdin pairing
     arma::Mat<Tc> Cx_tmp = Cx.cols(0,m_nelec-1);
@@ -60,7 +60,6 @@ void wick_orbitals<Tc,Tb>::init()
         m_fX(i).submat(m_nmo,m_nmo, 2*m_nmo-1,2*m_nmo-1) = Cw.t() * m_metric * m_M(i) * m_metric * Cw; // ww
     }
 
- 
     // Initialise X/Y contractions in active orbital spaces
     m_X.set_size(2);
     m_Y.set_size(2);
@@ -70,21 +69,32 @@ void wick_orbitals<Tc,Tb>::init()
         m_X(i).set_size(nact, nact); m_X(i).zeros();
         m_Y(i).set_size(nact, nact); m_Y(i).zeros();
 
-        // Compute X
-        m_X(i).submat(0,0, nactx-1,nactx-1)       = Cx_act.t() * m_metric * m_M(i) * m_metric * Cx_act; // xx
-        m_X(i).submat(0,nactx, nactx-1,nact-1)    = Cx_act.t() * m_metric * m_M(i) * m_metric * Cw_act; // xw
-        m_X(i).submat(nactx,0, nact-1,nactx-1)    = Cw_act.t() * m_metric * m_M(i) * m_metric * Cx_act; // wx
-        m_X(i).submat(nactx,nactx, nact-1,nact-1) = Cw_act.t() * m_metric * m_M(i) * m_metric * Cw_act; // ww 
-
-        // Compute Y
-        m_Y(i).submat(0,0, nactx-1,nactx-1)  
-            = Cx_act.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * Cx_act; // xx
-        m_Y(i).submat(0,nactx, nactx-1,nact-1)       
-            = Cx_act.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * Cw_act; // xw
-        m_Y(i).submat(nactx,0, nact-1,nactx-1)       
-            = Cw_act.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * Cx_act; // wx
-        m_Y(i).submat(nactx,nactx, nact-1,nact-1) 
-            = Cw_act.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * Cw_act; // ww
+        // Compute X and Y
+        if(nactx>0)
+        {   // xx
+            m_X(i).submat(0,0, nactx-1,nactx-1) 
+                = Cx_act.t() * m_metric * m_M(i) * m_metric * Cx_act; 
+            m_Y(i).submat(0,0, nactx-1,nactx-1)  
+                = Cx_act.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * Cx_act;
+        }
+        if((nactx>0) and (nactw>0))
+        {   // xw
+            m_X(i).submat(0,nactx, nactx-1,nact-1)    
+                = Cx_act.t() * m_metric * m_M(i) * m_metric * Cw_act;
+            m_Y(i).submat(0,nactx, nactx-1,nact-1)       
+                = Cx_act.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * Cw_act;
+            // wx
+            m_X(i).submat(nactx,0, nact-1,nactx-1)    
+                = Cw_act.t() * m_metric * m_M(i) * m_metric * Cx_act;
+            m_Y(i).submat(nactx,0, nact-1,nactx-1)       
+                = Cw_act.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * Cx_act;
+        }
+        if(nactw>0)
+        {   // ww
+            m_X(i).submat(nactx,nactx, nact-1,nact-1) = Cw_act.t() * m_metric * m_M(i) * m_metric * Cw_act; // ww 
+            m_Y(i).submat(nactx,nactx, nact-1,nact-1) 
+                = Cw_act.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * Cw_act; // ww
+        }
     }
 
     // Construct transformed coefficients for computing integral intermediates
@@ -93,12 +103,17 @@ void wick_orbitals<Tc,Tb>::init()
     for(size_t i=0; i<2; i++)
     {
         m_CX(i).resize(m_nbsf,nact); m_CX(i).zeros();
-        m_CX(i).cols(0,nactx-1)    = m_M(i).t() * m_metric * Cx_act - (1-i) * Cx_act; // x[CY]
-        m_CX(i).cols(nactx,nact-1) = m_M(i).t() * m_metric * Cw_act;                // w[CX]
-
         m_XC(i).resize(m_nbsf,nact); m_XC(i).zeros();
-        m_XC(i).cols(0,nactx-1)    = m_M(i) * m_metric * Cx_act;                    // x[XC]
-        m_XC(i).cols(nactx,nact-1) = m_M(i) * m_metric * Cw_act - (1-i) * Cw_act;     // w[YC]
+        if(nactx>0)
+        {
+            m_CX(i).cols(0,nactx-1)    = m_M(i).t() * m_metric * Cx_act - (1-i) * Cx_act; // x[CY]
+            m_XC(i).cols(0,nactx-1)    = m_M(i) * m_metric * Cx_act;                      // x[XC]
+        }
+        if(nactw>0)
+        {
+            m_CX(i).cols(nactx,nact-1) = m_M(i).t() * m_metric * Cw_act;                  // w[CX]
+            m_XC(i).cols(nactx,nact-1) = m_M(i) * m_metric * Cw_act - (1-i) * Cw_act;     // w[YC]
+        }
     }
 
 
@@ -107,19 +122,21 @@ void wick_orbitals<Tc,Tb>::init()
     for(size_t i=0; i<2; i++) 
         m_wxP(i) = Cw.t() * m_metric * m_M(i) * m_metric * Cx; // wx
 
-    m_R.set_size(2);
+    m_R.set_size(2); m_Q.set_size(2);
     for(size_t i=0; i<2; i++)
     {
         m_R(i).resize(nact, m_nmo);
-        m_R(i).rows(0,nactx-1)    = Cx_act.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * Cx; // x 
-        m_R(i).rows(nactx,nact-1) = Cw_act.t() * m_metric * m_M(i) * m_metric * Cx; // w
-    }
-    m_Q.set_size(2);
-    for(size_t i=0; i<2; i++)
-    {
         m_Q(i).resize(m_nmo, nact);
-        m_Q(i).cols(0,nactx-1)    = Cw.t() * m_metric * m_M(i) * m_metric * Cx_act;
-        m_Q(i).cols(nactx,nact-1) = Cw.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * Cw_act; 
+        if(nactx>0)
+        {
+            m_R(i).rows(0,nactx-1)    = Cx_act.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * Cx;
+            m_Q(i).cols(0,nactx-1)    = Cw.t() * m_metric * m_M(i) * m_metric * Cx_act;
+        }
+        if(nactw>0)
+        {
+            m_R(i).rows(nactx,nact-1) = Cw_act.t() * m_metric * m_M(i) * m_metric * Cx;
+            m_Q(i).cols(nactx,nact-1) = Cw.t() * (m_metric * m_M(i) * m_metric - double(1-i) * m_metric) * Cw_act; 
+        }
     }
 }
 
