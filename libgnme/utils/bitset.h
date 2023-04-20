@@ -107,12 +107,37 @@ public:
         return tmp;
     };
 
+    /** \brief Ger parity relative to another bitset
+        \param other  Bitset representing excitation from current object
+        \param parity Parity of the excitation
+     **/
+    int parity(bitset &other)
+    {
+        arma::ivec diff(m_size, arma::fill::zeros);
+        for(size_t i=0; i<m_size; i++) 
+            diff(m_size-1-i) = other.m_v[i] - m_v[i];
+
+        // Define hole-particle array
+        arma::umat hp = arma::join_rows(arma::find(diff==-1), arma::reverse(arma::find(diff==1)));
+
+        // Get parity relative to reference
+        int par = 1;
+        bitset tmp(*this); // Temporary bitset copy
+        for(size_t i=0; i<hp.n_rows; i++)
+        {
+            size_t h = hp(i,0), p = hp(i,1);
+            tmp.flip(h); tmp.flip(p);
+            par *= std::pow(-1, ((bitset) (*this) & tmp).count(h,p));
+        }
+        return par;
+    };
+
     /** \brief Identify excitation indices between a pair of bitsets 
         \param other  Bitset representing excitation from current object
         \param hp     Output particle-hole indices
         \param parity Parity of the excitation
      **/
-    void excitation(bitset &other, arma::umat &hp, int &parity)
+    void excitation(bitset &other, arma::umat &hp, int &par)
     {
         arma::ivec diff(m_size, arma::fill::zeros);
         for(size_t i=0; i<m_size; i++) 
@@ -122,13 +147,13 @@ public:
         hp = arma::join_rows(arma::find(diff==-1), arma::reverse(arma::find(diff==1)));
 
         // Get parity relative to reference
-        parity = 1;
+        par = 1;
         bitset tmp(*this); // Temporary bitset copy
         for(size_t i=0; i<hp.n_rows; i++)
         {
             size_t h = hp(i,0), p = hp(i,1);
             tmp.flip(h); tmp.flip(p);
-            parity *= std::pow(-1, ((bitset) (*this) & tmp).count(h,p));
+            par *= std::pow(-1, ((bitset) (*this) & tmp).count(h,p));
         }
     };
 
