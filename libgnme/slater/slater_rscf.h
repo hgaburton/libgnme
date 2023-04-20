@@ -20,7 +20,7 @@ private:
     const size_t m_nbsf; //!< Number of basis functions
     const size_t m_nmo; //!< Number of (linearly independent) MOs
     const size_t m_nelec; //!< Number of alpha/beta electrons
-    const arma::Mat<Tb> &m_metric; //!< Basis overlap metric
+    const arma::Mat<Tb> m_metric; //!< Basis overlap metric
 
     // Integral constants in AO basis
     double m_Vc; //!< constant component
@@ -41,7 +41,7 @@ public:
      **/
     slater_rscf(
         const size_t nbsf, const size_t nmo, const size_t nelec,
-        const arma::Mat<Tb> &metric, double Vc=0) :
+        const arma::Mat<Tb> metric, double Vc=0) :
         m_nbsf(nbsf), m_nmo(nmo), m_nelec(nelec), m_metric(metric), m_Vc(Vc)
     { }
 

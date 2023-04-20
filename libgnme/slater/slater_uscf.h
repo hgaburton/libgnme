@@ -21,7 +21,7 @@ private:
     const size_t m_nmo; //!< Number of (linearly independent) MOs
     const size_t m_nalpha; //!< Number of alpha electrons
     const size_t m_nbeta; //!< Number of beta electrons
-    const arma::Mat<Tb> &m_metric; //!< Basis overlap metric
+    const arma::Mat<Tb> m_metric; //!< Basis overlap metric
 
     // Integral constants in AO basis
     double m_Vc; //!< constant component
@@ -45,7 +45,7 @@ public:
     slater_uscf(
         const size_t nbsf, const size_t nmo, 
         const size_t nalpha, const size_t nbeta, 
-        const arma::Mat<Tb> &metric, double Vc=0) :
+        const arma::Mat<Tb> metric, double Vc=0) :
         m_nbsf(nbsf), m_nmo(nmo), m_nalpha(nalpha), m_nbeta(nbeta), m_metric(metric), m_Vc(Vc)
     { }
 
