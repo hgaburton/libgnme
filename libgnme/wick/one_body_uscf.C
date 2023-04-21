@@ -37,7 +37,7 @@ void one_body_uscf<Tc,Tf,Tb>::initialise(
     for(size_t j=0; j<da; j++)
         m_XFXa(i,j) = orba.m_CX(i).t() * Fa * orba.m_XC(j);
 
-    m_XFXb.set_size(da,da);
+    m_XFXb.set_size(db,db);
     for(size_t i=0; i<db; i++)
     for(size_t j=0; j<db; j++)
         m_XFXb(i,j) = orbb.m_CX(i).t() * Fb * orbb.m_XC(j);
