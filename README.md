@@ -71,7 +71,7 @@ Compute matrix elements using the generalised nonorthogonal Wick's theorem.
 
 Here, the computation is divided into three objects:
 1. <tt>reference_state</tt>: Container to store the definition of reference orbitals and active space for bra or ket.
-1. <tt>wick_orbitals</tt>: Constructs a biorthogonalised set of orbitals from two <tt>reference_states</tt>, and compute corresponding contractions.
+1. <tt>wick_orbitals</tt>: Constructs a biorthogonalised set of orbitals from two <tt>reference_state</tt> objects, and compute corresponding contractions.
 2. <tt>wick_rscf</tt> and <tt>wick_uscf</tt>: Objects that build one- or two-electron matrix elements using <tt>wick_orbitals</tt> and atomic orbital integrals.
 
 Once these objects have been defined, a given matrix element can be requested by defining the bra and ket excitation using either a bitset representation or a list of single particle excitations. 
