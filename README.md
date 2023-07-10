@@ -11,6 +11,8 @@ If you incorporate this code in your work, please consider citing the following 
 <li>"Generalized nonorthogonal matrix elements: Unifying Wick’s theorem and the Slater–Condon rules"; <a href="https://doi.org/10.1063/5.0045442"><i>J. Chem. Phys.</i> <b>154</b>, 144109 (2021)</a>
 </ol>
 
+A wrapper for using libGNME in Python is available at <a href="https://github.com/BoothGroup/pygnme">github.com/BoothGroup/pygnme</a>.
+
 ## Installation
 ### Prerequisites
 The libGNME package requires a set of standard libraries:
