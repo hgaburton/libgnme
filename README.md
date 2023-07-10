@@ -69,15 +69,18 @@ b.print();
 ### 2. gnme_wick
 Compute matrix elements using the generalised nonorthogonal Wick's theorem. 
 
-Here, the computation is divided into two types of objects:
-1. <tt>wick_orbitals</tt>: Construct a biorthogonalised set of reference orbitals, and compute corresponding contractions.
+Here, the computation is divided into three objects:
+1. <tt>reference_state</tt>: Container to store the definition of reference orbitals and active space for bra or ket.
+1. <tt>wick_orbitals</tt>: Constructs a biorthogonalised set of orbitals from two <tt>reference_states</tt>, and compute corresponding contractions.
 2. <tt>wick_rscf</tt> and <tt>wick_uscf</tt>: Objects that build one- or two-electron matrix elements using <tt>wick_orbitals</tt> and atomic orbital integrals.
 
 Once these objects have been defined, a given matrix element can be requested by defining the bra and ket excitation using either a bitset representation or a list of single particle excitations. 
 
-For example, consider the coupling term between two excitations from reference states with coefficients <tt>Cx</tt> and <tt>Cw</tt>, with <tt>ne</tt> electrons, <tt>nbsf</tt> basis functions, and <tt>nmo</tt> molecular orbitals. Here, <tt>S</tt> and <tt>h1e</tt> are Armadillo matrices containing the AO overlap and one-electron integrals, respectively, and <tt>II</tt> is an Armadillo matrix containing the two-electron integrals with the indexing <tt>II(i\*nbsf+j,k\*nbsf+l) = (ij|kl)</tt>. The Hamiltonian coupling is computed as:
+For example, consider the coupling term between two excitations from reference states with coefficients <tt>Cx</tt> and <tt>Cw</tt>, with <tt>ne</tt> electrons, <tt>nbsf</tt> basis functions, and <tt>nmo</tt> molecular orbitals. Note that the two reference states <tt>refx</tt> and <tt>refw</tt> are not required to have the same active space definition. Here, <tt>S</tt> and <tt>h1e</tt> are Armadillo matrices containing the AO overlap and one-electron integrals, respectively, and <tt>II</tt> is an Armadillo matrix containing the two-electron integrals with the indexing <tt>II(i\*nbsf+j,k\*nbsf+l) = (ij|kl)</tt>. The Hamiltonian coupling is computed as:
 ```
 // Setup the biorthogonalized orbital pair
+libgnme::reference_state<double> refx(nbsf, nmo, nocca, nact, ncore, Cx);
+libgnme::reference_state<double> refw(nbsf, nmo, nocca, nact, ncore, Cw);
 libgnme::wick_orbitals<double,double> orbs(nbsf, nmo, neleca, Cx, Cw, S);
 
 // Setup the matrix builder object
@@ -96,9 +99,14 @@ libgnme::bitset bwb(std::vector<bool>({0,1,1,0,0,1});
 
 // Intialise temporary variables
 double Hwx = 0.0, Swx = 0.0;
+arma::mat RDM1(nmo, nmo, arma::fill::zeros);
+arma::mat RDM2(nmo*nmo, nmo*nmo, arma::fill::zeros);
 
 // Evaluate matrix element
 mb.evaluate(bxa, bxb, bwa, bwb, Swx, Hwx);
+
+// Evaluate 1- and 2-RDM
+mb.evaluate(bxa, bxb, bwa, bwb, Swx, RDM1, RDM2);
 ```
 The <tt>wick_uscf</tt> object differs only in that it can compute matrix elements for unrestricted reference states with different molecular orbitals for different spins. This object is initialised using two <tt>wick_orbtals</tt> objects for the high- and low-spin orbitals as e.g. ```libgnme::wick_uscf<double,double,double> mb(orba, orbb, S, enuc);```
 
