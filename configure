@@ -110,7 +110,13 @@ if [ -e CMakeCache.txt ]; then
     rm CMakeCache.txt
 fi
 
-CC="$CC" CXX="$CXX0" cmake3 -G "$GENERATOR" \
+if [ -x "$(cmake3 -v &> /dev/null)"  ]; then 
+    CMAKE_COMMAND=$(which cmake3)
+else
+    CMAKE_COMMAND=$(which cmake)
+fi
+
+CC="$CC" CXX="$CXX0" $CMAKE_COMMAND -G "$GENERATOR" \
 -D CMAKE_C_COMPILER="$CC0" -D CMAKE_C_FLAGS="$CFLAGS" \
 -D CMAKE_CXX_COMPILER="$CXX0" -D CMAKE_CXX_FLAGS="$CXXFLAGS" \
 -D CMAKE_INSTALL_PREFIX="$INSTALL_PREFIX" \
