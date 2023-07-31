@@ -14,6 +14,7 @@ set(SRC
 
 add_library(gnme_wick ${SRC})
 target_include_directories(gnme_wick PUBLIC "${$LIBGNME_SOURCE_DIR}")
-target_link_libraries(gnme_wick gnme_utils)
+target_link_libraries(gnme_wick gnme_utils "${BLAS_LIBRARIES}" )
+include_directories("${CBLAS_LIBRARIES}")
 
 install(TARGETS gnme_wick DESTINATION lib)
