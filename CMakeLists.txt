@@ -24,6 +24,7 @@ endif(WITH_OPENMP)
 
 # Look for linear algebra libraries
 find_package(BLAS)
+find_package(CBLAS)
 find_package(LAPACK)
 
 # Setup Armadillo paths
