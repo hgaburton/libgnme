@@ -109,6 +109,11 @@ public:
         arma::Mat<Tc> Cxa, arma::Mat<Tc> Cxb,
         arma::Mat<Tc> Cwa, arma::Mat<Tc> Cwb,
         Tc &Ov, Tc &H);
+    virtual void evaluate_s2(
+        arma::Mat<Tc> Cxa, arma::Mat<Tc> Cxb,
+        arma::Mat<Tc> Cwa, arma::Mat<Tc> Cwb,
+        Tc &S2);
+        
 };
 
 } // namespace libgnme

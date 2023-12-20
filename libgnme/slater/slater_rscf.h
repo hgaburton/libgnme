@@ -89,6 +89,9 @@ public:
         arma::Mat<Tc> Cx, arma::Mat<Tc> Cw, Tc &S);
     virtual void evaluate(
         arma::Mat<Tc> Cx, arma::Mat<Tc> Cw, Tc &Ov, Tc &H);
+    virtual void evaluate_s2(
+        arma::Mat<Tc> Cx, arma::Mat<Tc> Cw, Tc &S2)
+    {S2 = 0;};
 };
 
 } // namespace libgnme
