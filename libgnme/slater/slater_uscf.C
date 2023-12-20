@@ -170,6 +170,104 @@ void slater_uscf<Tc,Tf,Tb>::evaluate(
     H *= redOv_a * redOv_b;
 }
 
+template<typename Tc, typename Tf, typename Tb>
+void slater_uscf<Tc,Tf,Tb>::evaluate_s2(
+    arma::Mat<Tc> Cxa, arma::Mat<Tc> Cxb,
+    arma::Mat<Tc> Cwa, arma::Mat<Tc> Cwb,
+    Tc &S2)
+{
+    // Check the input
+    assert(Cxa.n_rows == m_nbsf); assert(Cxa.n_cols == m_nalpha);
+    assert(Cxb.n_rows == m_nbsf); assert(Cxb.n_cols == m_nbeta);
+    assert(Cwa.n_rows == m_nbsf); assert(Cwa.n_cols == m_nalpha);
+    assert(Cxb.n_rows == m_nbsf); assert(Cxb.n_cols == m_nbeta);
+
+    // Zero the output
+    Tc Ov = 0.0;
+    S2 = 0.0; 
+
+    // Lowdin Pair
+    arma::Col<Tc> Sxx_a(m_nalpha); Sxx_a.zeros();
+    arma::Col<Tc> Sxx_b(m_nbeta); Sxx_b.zeros();
+    arma::Col<Tc> inv_Sxx_a(m_nalpha, arma::fill::zeros);
+    arma::Col<Tc> inv_Sxx_b(m_nbeta, arma::fill::zeros);
+    size_t nZeros_a = 0, nZeros_b = 0;
+    arma::uvec zeros_a(Sxx_a.n_elem), zeros_b(Sxx_b.n_elem);
+    libgnme::lowdin_pair(Cxa, Cwa, Sxx_a, m_metric);
+    libgnme::lowdin_pair(Cxb, Cwb, Sxx_b, m_metric);
+
+    // Compute reduced overlap
+    Tc redOv_a = 1.0, redOv_b = 1.0;
+    libgnme::reduced_overlap(Sxx_a, inv_Sxx_a, redOv_a, nZeros_a, zeros_a);
+    libgnme::reduced_overlap(Sxx_b, inv_Sxx_b, redOv_b, nZeros_b, zeros_b);
+
+    // Overlap
+    Ov = ((nZeros_a + nZeros_b) == 0) ? redOv_a * redOv_b : 0.0;
+
+    // One-body term
+    Tc s_sq = (Tc) (m_nalpha - m_nbeta);
+    s_sq = 0.25 * (s_sq * s_sq + 2.0 * s_sq) + (Tc) m_nbeta;
+
+    // Compute the required elements
+    if((nZeros_a + nZeros_b) == 0)
+    {   
+        // Save non-zero overlap
+        Ov = redOv_a * redOv_b;
+
+        // Construct co-density matrices
+        arma::Mat<Tc> xwWa = Cwa * arma::diagmat(inv_Sxx_a) * Cxa.t();
+        arma::Mat<Tc> xwWb = Cwb * arma::diagmat(inv_Sxx_b) * Cxb.t();
+
+        // Contract with overlap matrix
+        arma::Mat<Tc> S_Wa = m_metric * xwWa;
+        arma::Mat<Tc> S_Wb = m_metric * xwWb;
+
+        // Evaluate S2
+        S2 = (s_sq - arma::dot(S_Wa, arma::strans(S_Wb)));
+    }
+    else if((nZeros_a + nZeros_b) == 1)
+    {   
+        // Construct co-density matrices
+        arma::Mat<Tc> xwP(m_nbsf,m_nbsf,arma::fill::zeros);
+        arma::Mat<Tc> xwWs(m_nbsf,m_nbsf,arma::fill::zeros); // Same spin as P
+        arma::Mat<Tc> xwWd(m_nbsf,m_nbsf,arma::fill::zeros); // Diff spin to P
+        if(nZeros_a == 1)
+        {
+            xwP  = Cwa.col(zeros_a(0)) * Cxa.col(zeros_a(0)).t();
+            xwWd = Cwb * arma::diagmat(inv_Sxx_b) * Cxb.t();
+        }
+        else
+        {
+            xwP  = Cwb.col(zeros_b(0)) * Cxb.col(zeros_b(0)).t();
+            xwWd = Cwa * arma::diagmat(inv_Sxx_a) * Cxa.t();
+        }
+
+        // Contract with overlap matrix
+        arma::Mat<Tc> S_P = m_metric * xwP;
+        arma::Mat<Tc> S_Wdiff = m_metric * xwWd;
+
+        // Evaluate S2
+        S2 = - arma::dot(S_P, arma::strans(S_Wdiff));
+    }
+    // Only consider these elements if we have two-body term
+    else if((nZeros_a ==1) and (nZeros_b == 1))
+    {   
+        // Construct co-density matrices
+        arma::Mat<Tc> xwP1 = Cwa.col(zeros_a(0)) * Cxa.col(zeros_a(0)).t();
+        arma::Mat<Tc> xwP2 = Cwb.col(zeros_b(0)) * Cxb.col(zeros_b(0)).t();
+
+        // Contract with overlap matrix
+        arma::Mat<Tc> S_P1 = m_metric * xwP1;
+        arma::Mat<Tc> S_P2 = m_metric * xwP2;
+
+        // Evaluate S2
+        S2 = - arma::dot(S_P1, arma::strans(S_P2));
+    }
+
+    // Account for reduced overlap 
+    S2 *= redOv_a * redOv_b;
+}
+
 template class slater_uscf<double, double, double>;
 template class slater_uscf<std::complex<double>, double, double>;
 template class slater_uscf<std::complex<double>, std::complex<double>, double>;
