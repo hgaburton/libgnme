@@ -51,7 +51,7 @@ public:
         arma::field<arma::Mat<Tc> > &_IIba, arma::field<arma::Mat<Tc> > &_IIbb) :
       Vaa(_Vaa), Vbb(_Vbb), Vab(_Vab), 
       XVaXa(_XVaXa), XVbXb(_XVbXb), XVaXb(_XVaXb), XVbXa(_XVbXa),
-      IIaa(_IIaa), IIab(_IIab), IIba(_IIba), IIbb(_IIbb)
+      IIaa(_IIaa), IIbb(_IIbb), IIab(_IIab), IIba(_IIba)
     { }
 
     /** \brief Default destructor **/

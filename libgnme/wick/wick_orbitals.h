@@ -52,8 +52,8 @@ public:
         reference_state<Tc> &refx, 
         reference_state<Tc> &refw,
         const arma::Mat<Tb> &metric) :
-    m_refx(refx), m_refw(refw), m_metric(metric),
-    m_nbsf(refx.m_nbsf), m_nmo(refx.m_nmo), m_nelec(refx.m_nelec)
+    m_nbsf(refx.m_nbsf), m_nmo(refx.m_nmo), m_nelec(refx.m_nelec),
+    m_metric(metric), m_refx(refx), m_refw(refw)
     {
         init();
     }

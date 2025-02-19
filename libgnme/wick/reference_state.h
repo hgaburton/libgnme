@@ -33,7 +33,7 @@ public:
     reference_state(
         const size_t nbsf, const size_t nmo, const size_t nelec,
         arma::Mat<Tc> C) : 
-    m_nbsf(nbsf), m_nmo(nmo), m_nelec(nelec), m_C(C), m_nact(nmo), m_ncore(0)
+    m_nbsf(nbsf), m_nmo(nmo), m_nelec(nelec), m_nact(nmo), m_ncore(0), m_C(C)
     { 
         init();
     }
@@ -49,7 +49,7 @@ public:
     reference_state(
         const size_t nbsf, const size_t nmo, const size_t nelec, 
         const size_t nact, const size_t ncore, arma::Mat<Tc> C) : 
-    m_nbsf(nbsf), m_nmo(nmo), m_nelec(nelec), m_C(C), m_nact(nact), m_ncore(ncore)
+    m_nbsf(nbsf), m_nmo(nmo), m_nelec(nelec), m_nact(nact), m_ncore(ncore), m_C(C)
     { 
         assert(ncore + nact <= nmo);
         init();
@@ -62,7 +62,7 @@ private:
     void init()
     {
         // Setup reference orbital bitset
-        std::vector<bool> ref(m_nact-m_nelec+m_ncore, 0); ref.resize(m_nact, 1);
+        std::vector<uint8_t> ref(m_nact-m_nelec+m_ncore, 0); ref.resize(m_nact, 1);
         m_bs = bitset(ref);
         // Setup inactive occupied orbital indices
         m_core.resize(m_ncore);

@@ -42,7 +42,7 @@ void gen_eig_sym(
     assert(S.n_rows == dim && S.n_cols == dim); 
 
     // Solve the generalised eigenvalue problem
-    size_t n_span = orthogonalisation_matrix(dim, S, thresh, X);
+    orthogonalisation_matrix(dim, S, thresh, X);
     arma::Mat<T> ortho_M = X.t() * M * X;
     arma::eig_sym(eigval, eigvec, ortho_M, "dc");
 

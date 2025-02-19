@@ -12,7 +12,7 @@ namespace libgnme {
 class bitset 
 {
 private:
-    std::vector<bool> m_v; //!< Vector of bool values representing the bitset
+    std::vector<uint8_t> m_v; //!< Vector of bool values representing the bitset
     size_t m_size; //!< Integer for the size of the bitset (total num. of orbitals)
 
 public:
@@ -27,18 +27,24 @@ public:
     /** \brief Constructor from bool vector
         \param bs Vector of bools representing target bitset
      **/
-    bitset(std::vector<bool> bs) : m_v(bs), m_size(bs.size()) { };
+    bitset(std::vector<uint8_t> bs) : m_v(bs), m_size(bs.size()) { };
 
     /** \brief Constructor from integer value in binary representation
         \param n Target value
         \param m Total number of bits
      **/
-    bitset(int n, int m) : m_size(m), m_v(m,0)
+    bitset(int n, int m) : m_v(m,0), m_size(m)
     {
         // Find highest power of two
-        int dummy = 1, dmax = 1;
-        while(n / dummy > 0) { dummy *= 2; dmax  += 1; }
-        assert(dmax - 2 < int(m_size));
+        int dummy = 1;
+        int dmax = 1;
+        while(n / dummy > 0) 
+        { 
+            dummy *= 2; 
+            dmax  += 1; 
+        }
+        if(dmax - 2 > int(m_size))
+            throw std::runtime_error("bitset: Integer value exceeds bitset size");
         
         // Convert integer to a bit string representation
         dummy = 1;
