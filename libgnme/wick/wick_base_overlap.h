@@ -81,9 +81,4 @@ void wick_base<Tc,Tf,Tb>::spin_overlap(
     return;
 }
 
-template class wick_base<double, double, double>;
-template class wick_base<std::complex<double>, double, double>;
-template class wick_base<std::complex<double>, std::complex<double>, double>;
-template class wick_base<std::complex<double>, std::complex<double>, std::complex<double> >;
-
 } // namespace libgnme

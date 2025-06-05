@@ -94,4 +94,9 @@ void two_body_rscf<Tc,Tf,Tb>::initialise(
     }
 }
 
+template class two_body_rscf<double, double, double>;
+template class two_body_rscf<std::complex<double>, double, double>;
+template class two_body_rscf<std::complex<double>, std::complex<double>, double>;
+template class two_body_rscf<std::complex<double>, std::complex<double>, std::complex<double> >;
+
 } // namespace libgnme

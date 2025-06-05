@@ -42,6 +42,11 @@ private:
     void initialise(wick_orbitals<Tc,Tb> &orb, arma::Mat<Tf> &F);
 };
 
+extern template class one_body_rscf<double, double, double>;
+extern template class one_body_rscf<std::complex<double>, double, double>;
+extern template class one_body_rscf<std::complex<double>, std::complex<double>, double>;
+extern template class one_body_rscf<std::complex<double>, std::complex<double>, std::complex<double> >;
+
 } // namespace libgnme
 
 #endif // LIBGNME_ONE_BODY_RSCF_H

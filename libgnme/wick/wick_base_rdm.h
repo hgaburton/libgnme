@@ -395,9 +395,4 @@ void wick_base<Tc,Tf,Tb>::diff_spin_rdm2(
     }
 }
 
-template class wick_base<double, double, double>;
-template class wick_base<std::complex<double>, double, double>;
-template class wick_base<std::complex<double>, std::complex<double>, double>;
-template class wick_base<std::complex<double>, std::complex<double>, std::complex<double> >;
-
 } // namespace libgnme

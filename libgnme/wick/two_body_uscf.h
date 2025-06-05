@@ -64,6 +64,11 @@ private:
         arma::Mat<Tb> &V);
 };
 
+extern template class two_body_uscf<double, double, double>;
+extern template class two_body_uscf<std::complex<double>, double, double>;
+extern template class two_body_uscf<std::complex<double>, std::complex<double>, double>;
+extern template class two_body_uscf<std::complex<double>, std::complex<double>, std::complex<double> >;
+
 } // namespace libgnme
 
 #endif // LIBGNME_WICK_TWO_BODY_USCF_H

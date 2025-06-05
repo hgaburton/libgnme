@@ -69,6 +69,11 @@ private:
         arma::Mat<Tf> &Fb);
 };
 
+extern template class one_body_uscf<double, double, double>;
+extern template class one_body_uscf<std::complex<double>, double, double>;
+extern template class one_body_uscf<std::complex<double>, std::complex<double>, double>;
+extern template class one_body_uscf<std::complex<double>, std::complex<double>, std::complex<double> >;
+
 } // namespace libgnme
 
 #endif // LIBGNME_ONE_BODY_USCF_H

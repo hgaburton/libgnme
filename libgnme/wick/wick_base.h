@@ -137,6 +137,11 @@ protected:
         Tc &V);
 };
 
+extern template class wick_base<double, double, double>;
+extern template class wick_base<std::complex<double>, double, double>;
+extern template class wick_base<std::complex<double>, std::complex<double>, double>;
+extern template class wick_base<std::complex<double>, std::complex<double>, std::complex<double> >;
+
 } // namespace libgnme
 
 #endif // LIBGNME_WICK_BASE_H
