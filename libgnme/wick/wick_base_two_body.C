@@ -65,7 +65,9 @@ void wick_base<Tc,Tf,Tb>::same_spin_two_body(
     // No excitations, so return simple overlap
     if(nx == 0 and nw == 0)
     {   
-        V = V0(nz);
+        // Zeros are distributed over the 2 operator contractions, 
+        // giving two equivalent distributions for a single zero
+        V = (nz == 1 ? 2.0 : 1.0) * V0(nz);
     }
     // One excitation doesn't require one-body determinant
     else if((nx+nw) == 1)
