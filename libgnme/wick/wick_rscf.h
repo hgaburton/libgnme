@@ -7,6 +7,7 @@
 #include "wick_base.h"
 #include "wick_orbitals.h"
 #include "wick_uscf.h"
+#include "wick_pair.h"
 
 namespace libgnme {
 
@@ -29,11 +30,11 @@ protected:
 private:
     double m_Vc; //!< Constant component
 
-    bool m_one_body = false; //!< Control variable if one-body elements are required
-    bool m_two_body = false; //!< Control variable if two-body elements are required
+    /* Intermediates of the matrix elements, constructed when first required */
+    wick_pair<Tc,Tb> *m_pair = nullptr; //!< Intermediates of the pair of reference states
 
-    /* Combinations of alpha and beta near-zero corners differ between the spins, so the 
-       other combinations are evaluated with spin-unrestricted evaluators */
+    /* Density matrices are evaluated for other near-zero corner combinations separately. 
+       These differ between the spins, so spin-unrestricted evaluators are used. */
     std::vector<wick_orbitals<Tc,Tb> *> m_corner_orbs; //!< Near-zero corner orbitals
     std::vector<wick_uscf<Tc,Tf,Tb> *> m_corners; //!< Other near-zero corner combinations
     std::vector<size_t> m_corner_b; //!< Beta corner of each combination
@@ -52,8 +53,7 @@ public:
     /** \brief Destructor **/
     virtual ~wick_rscf() 
     { 
-        if(m_one_body) delete m_one_body_int;
-        if(m_two_body) delete m_two_body_int;
+        delete m_pair;
         for(size_t k=0; k < m_corners.size(); k++) delete m_corners[k];
         for(size_t k=0; k < m_corner_orbs.size(); k++) delete m_corner_orbs[k];
     }
@@ -155,6 +155,9 @@ private:
                near-zero corners
      **/
     void init_corners();
+
+    /** \brief Construct the intermediates of the pair of reference states **/
+    void init_pair();
 };
 
 } // namespace libgnme

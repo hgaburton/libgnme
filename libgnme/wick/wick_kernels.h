@@ -9,7 +9,7 @@
 namespace libgnme {
 
 /** \brief Kernels for extended nonorthogonal Wick theorem matrix elements between excitations
-           of many reference determinants, used by wick_matrix.
+           of many reference determinants, used by wick_matrix and wick_pair.
 
     The intermediates of every ordered reference pair (x,w) are stored in one slab, with the
     offsets of each pair in a row of pairinfo and its scalars in a row of scal. For a bra
@@ -1307,6 +1307,34 @@ void hamiltonian_corner(DT *hout, DT *sout, const wick_env *env, const int64_t *
     *sout = pref * s;
 }
 
+/* Overlap and one-body matrix element of one spin between two records at one
+ * corner combination, without the overlap of the other spin */
+template<typename DT>
+void spin_one_body_corner(DT *hout, DT *sout, const wick_env *env, const int64_t *info,
+                          const DT *scal, const int *dx, const int *dw, int alpha)
+{
+    const int kmax = env->kmax;
+    const int o = WICK_DHEAD + (alpha ? 0 : 2 * kmax);
+    int rx = dx[alpha ? WICK_DRA : WICK_DRB];
+    int rw = dw[alpha ? WICK_DRA : WICK_DRB];
+    int rows[WICK_MAXREC], cols[WICK_MAXREC];
+    spin_t<DT> sp;
+    spinterms_t<DT> t;
+    DT pref;
+    *hout = 0;
+    *sout = 0;
+    spin_view<DT>(&sp, env, info, scal, alpha);
+    if(sp.m > rx + rw + 1)
+    {
+        return;
+    }
+    labels<DT>(rows, cols, dx + o, dx + o + kmax, rx, dw + o, dw + o + kmax, rw, sp.nocc, sp.nmo);
+    spin_terms<DT>(&t, &sp, rows, cols, rx + rw);
+    pref = (double) (dx[WICK_DSIGN] * dw[WICK_DSIGN]) * spin_pref<DT>(&sp);
+    *hout = pref * t.h1;
+    *sout = pref * t.s;
+}
+
 /* Hamiltonian and overlap between two determinant records */
 template<typename DT>
 void hamiltonian(DT *hout, DT *sout, const wick_env *env, const int *dx, const int *dw)
@@ -1395,6 +1423,8 @@ void hamiltonian_general(DT *hout, DT *sout, const wick_env *env, const int *dx,
                                       const uint64_t *, const int *, const uint64_t *, int); \
     EXT template void hamiltonian_corner<DT>(DT *, DT *, const wick_env *, const int64_t *, \
                                              const DT *, const int *, const int *); \
+    EXT template void spin_one_body_corner<DT>(DT *, DT *, const wick_env *, const int64_t *, \
+                                               const DT *, const int *, const int *, int); \
     EXT template void hamiltonian<DT>(DT *, DT *, const wick_env *, const int *, const int *); \
     EXT template void hamiltonian_general<DT>(DT *, DT *, const wick_env *, const int *, \
                                               const int *);

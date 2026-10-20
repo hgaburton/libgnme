@@ -10,6 +10,7 @@ set(SRC
     wick_orbitals.C
     wick_kernels.C
     wick_matrix.C
+    wick_pair.C
     wick_rscf.C
     wick_uscf.C
 )

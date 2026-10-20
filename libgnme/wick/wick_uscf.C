@@ -2,8 +2,6 @@
 #include <iomanip>
 #include <libgnme/utils/lowdin_pair.h>
 #include "wick_uscf.h"
-#include "one_body_uscf.h"
-#include "two_body_uscf.h"
 
 namespace libgnme {
 
@@ -17,28 +15,24 @@ void wick_uscf<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &F)
 template<typename Tc, typename Tf, typename Tb>
 void wick_uscf<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb) 
 {
-    // Setup control variable to indicate one-body initialised
-    m_one_body = true;
-    // Define new integral object
-    m_one_body_int = new one_body_uscf<Tc,Tf,Tb>(m_orba, m_orbb, Fa, Fb);
-
-    // Add to the other near-zero corners
-    for(size_t k=0; k < m_corners.size(); k++)
-        m_corners[k]->add_one_body(Fa, Fb);
+    if(m_pair == nullptr) init_pair();
+    m_pair->add_one_body(
+        arma::conv_to<arma::Mat<Tc> >::from(Fa), arma::conv_to<arma::Mat<Tc> >::from(Fb));
 }
 
 
 template<typename Tc, typename Tf, typename Tb>
 void wick_uscf<Tc,Tf,Tb>::add_two_body(arma::Mat<Tb> &V)
 {
-    // Setup control variable to indicate two-body initialised 
-    m_two_body = true;
-    // Define new integral object
-    m_two_body_int = new two_body_uscf<Tc,Tf,Tb>(m_orba, m_orbb, V);
+    if(m_pair == nullptr) init_pair();
+    m_pair->add_two_body(V);
+}
 
-    // Add to the other near-zero corners
-    for(size_t k=0; k < m_corners.size(); k++)
-        m_corners[k]->add_two_body(V);
+template<typename Tc, typename Tf, typename Tb>
+void wick_uscf<Tc,Tf,Tb>::init_pair()
+{
+    m_pair = new wick_pair<Tc,Tb>(m_orba.m_metric, m_orba.m_refx, m_orba.m_refw, 
+                                  m_orbb.m_refx, m_orbb.m_refw, m_Vc);
 }
 
 template<typename Tc, typename Tf, typename Tb>
@@ -218,20 +212,8 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_overlap(
     arma::umat &wahp, arma::umat &wbhp,
     Tc &S)
 {
-    // Evaluate overlap terms
-    Tc sa = 0.0, sb = 0.0;
-    this->spin_overlap(xahp, wahp, sa, true);
-    this->spin_overlap(xbhp, wbhp, sb, false);
-    // Save total overlap
-    S = m_orba.m_redS * m_orbb.m_redS * sa * sb;
-
-    // Add the other near-zero corners
-    for(size_t k=0; k < m_corners.size(); k++)
-    {
-        Tc Sk = 0.0;
-        m_corners[k]->evaluate_overlap(xahp, xbhp, wahp, wbhp, Sk);
-        S += Sk;
-    }
+    if(m_pair == nullptr) init_pair();
+    m_pair->evaluate_overlap(xahp, xbhp, wahp, wbhp, S);
 }
 
 template<typename Tc, typename Tf, typename Tb>
@@ -239,31 +221,8 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_one_body_spin(
     arma::umat &xhp, arma::umat &whp, 
     Tc &S, Tc &V, bool alpha)
 {
-    // Collect reduced overlap
-    Tc redS = alpha ? m_orba.m_redS : m_orbb.m_redS;
-
-    // Evaluate overlap terms
-    Tc sspin = 0.0;
-    this->spin_overlap(xhp, whp, sspin, alpha);
-
-    // Save total spin-overlap
-    S = redS * sspin;
-
-    // Evaluate one-body terms
-    Tc Vspin = 0.0;
-    // Evaluate separate spin one-body terms
-    this->spin_one_body(xhp, whp, Vspin, alpha);
-    // Recombine and increment output
-    V = redS * Vspin;
-
-    // Add the other near-zero corners of this spin
-    for(size_t k=0; k < m_corners.size(); k++)
-    {
-        if((alpha ? m_corner_b[k] : m_corner_a[k]) != 0) continue;
-        Tc Sk = 0.0, Vk = 0.0;
-        m_corners[k]->evaluate_one_body_spin(xhp, whp, Sk, Vk, alpha);
-        S += Sk; V += Vk;
-    }
+    if(m_pair == nullptr) init_pair();
+    m_pair->evaluate_one_body_spin(xhp, whp, S, V, alpha);
 }
 
 template<typename Tc, typename Tf, typename Tb>
@@ -272,49 +231,8 @@ void wick_uscf<Tc,Tf,Tb>::evaluate(
     arma::umat &wahp, arma::umat &wbhp,
     Tc &S, Tc &V)
 {
-    // Evaluate overlap terms
-    Tc sa = 0.0, sb = 0.0;
-    this->spin_overlap(xahp, wahp, sa, true);
-    this->spin_overlap(xbhp, wbhp, sb, false);
-    // Save total overlap
-    S = m_orba.m_redS * m_orbb.m_redS * sa * sb;
-
-    // Save any constant term
-    V = S * m_Vc;
-
-    // Evaluate one-body term if present
-    if(m_one_body)
-    {
-        // Temporary variables
-        Tc Va = 0.0, Vb = 0.0;
-        // Evaluate separate spin one-body terms
-        this->spin_one_body(xahp, wahp, Va, true);
-        this->spin_one_body(xbhp, wbhp, Vb, false);
-        // Recombine and increment output
-        V += m_orba.m_redS * m_orbb.m_redS * (Va * sb + Vb * sa);
-    }
-
-    // Evaluate two-body term if present
-    if(m_two_body)
-    {
-        // Temporary variables
-        Tc Vaa = 0.0, Vbb = 0.0, Vab = 0.0;
-        // Same spin terms
-        this->same_spin_two_body(xahp, wahp, Vaa, true);
-        this->same_spin_two_body(xbhp, wbhp, Vbb, false);
-        // Different spin terms
-        this->diff_spin_two_body(xahp, xbhp, wahp, wbhp, Vab);
-        // Recombine
-        V += 0.5 * m_orba.m_redS * m_orbb.m_redS * (Vaa * sb + Vbb * sa + 2.0 * Vab);
-    }
-
-    // Add the other near-zero corners
-    for(size_t k=0; k < m_corners.size(); k++)
-    {
-        Tc Sk = 0.0, Vk = 0.0;
-        m_corners[k]->evaluate(xahp, xbhp, wahp, wbhp, Sk, Vk);
-        S += Sk; V += Vk;
-    }
+    if(m_pair == nullptr) init_pair();
+    m_pair->evaluate(xahp, xbhp, wahp, wbhp, S, V);
 }
 
 template class wick_uscf<double, double, double>;

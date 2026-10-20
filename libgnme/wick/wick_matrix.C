@@ -4,6 +4,7 @@
 #include <libgnme/utils/eri_ao2mo.h>
 #include "wick_matrix.h"
 #include "wick_kernels.h"
+#include "wick_pair.h"
 
 namespace libgnme {
 
@@ -23,19 +24,6 @@ void hs_row(DT *hrow, DT *srow, const wick_kernels::wick_env *env, const int64_t
 
 namespace {
 
-/* Singular values of the occupied orbital overlap up to this value are zero-overlap pairs */
-const double zero_thresh = 1e-8;
-
-/* Nonzero singular values below this value are near-zero. They would introduce large 1/S_k
-   terms that cancel in the matrix elements. Each matrix element is linear in 1/S_k, so it is
-   evaluated from the corners 1/S_k -> 0 and 1/S_k -> 1 as S_k F(1/S_k) = (S_k - 1) F(0) + F(1). */
-const double near_thresh = 1e-1;
-
-/* Symmetry-unique (m1, m2, m3, m4) assignments of the same-spin J intermediate */
-const int jslots[10][4] = {
-    {0,0,0,0}, {0,0,0,1}, {0,0,1,0}, {0,0,1,1}, {0,1,0,1},
-    {0,1,1,0}, {0,1,1,1}, {1,0,1,0}, {1,0,1,1}, {1,1,1,1} };
-
 #if defined(LIBGNME_X86_SIMD)
 /* SIMD levels of the packed kernels */
 const int simd_none = 0, simd_avx2 = 1, simd_avx512 = 2;
@@ -52,171 +40,6 @@ int simd_level()
 
 double conj2(double x) { return x; }
 std::complex<double> conj2(std::complex<double> x) { return std::conj(x); }
-
-/** \brief Lowdin-paired orbitals and fundamental contractions of one spin of a pair of
-           references at one near-zero corner **/
-template<typename Tc>
-struct spin_pairing
-{
-    Tc phase;  //!< Phase of the orbital pairing
-    Tc redS;   //!< Reduced overlap, including the near-zero corner weights
-    size_t m;  //!< Number of zero-overlap orbital pairs
-    arma::Mat<Tc> M[2];  //!< Co-density matrices
-    arma::Mat<Tc> X[2];  //!< X fundamental contractions, rows V_x + O_w, columns O_x + V_w
-    arma::Mat<Tc> Y[2];  //!< Y fundamental contractions
-    arma::Mat<Tc> CX[2]; //!< Row contraction coefficients
-    arma::Mat<Tc> XC[2]; //!< Column contraction coefficients
-};
-
-/** \brief Number of zero-overlap and near-zero occupied orbital pairs **/
-template<typename Tc>
-void count_pairs(
-    const arma::Mat<Tc> &S, const arma::Mat<Tc> &Cx, const arma::Mat<Tc> &Cw, size_t nocc,
-    size_t &nzero, size_t &nnear)
-{
-    nzero = 0; nnear = 0;
-    if(nocc == 0) return;
-    arma::vec s = arma::svd(arma::Mat<Tc>(Cx.head_cols(nocc).t() * S * Cw.head_cols(nocc)));
-    for(size_t k=0; k < nocc; k++)
-    {
-        if(s(k) <= zero_thresh) nzero++;
-        else if(s(k) < near_thresh) nnear++;
-    }
-}
-
-/** \brief Lowdin pairing and fundamental contractions for one near-zero corner
-    \param corner Bit mask of near-zero pairs entering with unit weight in place of 1/S_k
- **/
-template<typename Tc>
-void pair_orbitals(
-    spin_pairing<Tc> &p, const arma::Mat<Tc> &S,
-    const arma::Mat<Tc> &Cx, const arma::Mat<Tc> &Cw, size_t nocc, size_t corner)
-{
-    size_t nbsf = Cx.n_rows, nmo = Cx.n_cols;
-    arma::Mat<Tc> cxo = Cx.head_cols(nocc), cwo = Cw.head_cols(nocc);
-    arma::Mat<Tc> cxv = Cx.tail_cols(nmo-nocc), cwv = Cw.tail_cols(nmo-nocc);
-
-    // Lowdin pair the occupied orbitals
-    arma::Mat<Tc> cxt = cxo, cwt = cwo;
-    arma::vec s(nocc, arma::fill::zeros);
-    p.phase = 1.0;
-    if(nocc > 0)
-    {
-        arma::Mat<Tc> U, V;
-        arma::svd(U, s, V, arma::Mat<Tc>(cxo.t() * S * cwo));
-        p.phase = arma::det(U) * conj2(arma::det(V));
-        cxt = cxo * U;
-        cwt = cwo * V;
-    }
-
-    // M^{(0)} = W + P^{xw} + P^{ww}, M^{(1)} = P^{xw}. Near-zero pairs are removed from W with
-    // weight S_k - 1 in the reduced overlap, or enter W with unit weight.
-    p.redS = 1.0; p.m = 0;
-    p.M[0].zeros(nbsf, nbsf);
-    p.M[1].zeros(nbsf, nbsf);
-    size_t inear = 0;
-    for(size_t k=0; k < nocc; k++)
-    {
-        if(s(k) <= zero_thresh)
-        {
-            p.M[1] += cwt.col(k) * cxt.col(k).t();
-            p.M[0] += cwt.col(k) * cwt.col(k).t();
-            p.m++;
-        }
-        else if(s(k) < near_thresh)
-        {
-            if((corner >> inear) & 1)
-                p.M[0] += cwt.col(k) * cxt.col(k).t();
-            else
-                p.redS *= (s(k) - 1.0);
-            inear++;
-        }
-        else
-        {
-            p.M[0] += cwt.col(k) * cxt.col(k).t() / s(k);
-            p.redS *= s(k);
-        }
-    }
-    p.M[0] += p.M[1];
-
-    // Fundamental contractions with rows V_x + O_w and columns O_x + V_w
-    arma::Mat<Tc> rowc = arma::join_rows(cxv, cwo);
-    arma::Mat<Tc> colc = arma::join_rows(cxo, cwv);
-    for(size_t i=0; i < 2; i++)
-    {
-        arma::Mat<Tc> xao = S * p.M[i] * S;
-        p.X[i] = rowc.t() * xao * colc;
-        p.Y[i] = (i == 0) ? arma::Mat<Tc>(rowc.t() * (xao - S) * colc) : p.X[i];
-
-        // For m_i = 0 the direct orbital contribution is removed
-        double f = (i == 0) ? 1.0 : 0.0;
-        p.CX[i] = arma::join_rows(p.M[i].t() * S * cxv - f * cxv, p.M[i].t() * S * cwo);
-        p.XC[i] = arma::join_rows(p.M[i] * S * cxo, p.M[i] * S * cwv - f * cwv);
-    }
-}
-
-/** \brief Coulomb and exchange matrices J_st = (st|uv) M_uv and K_st = (su|vt) M_uv **/
-template<typename Tc, typename Tb>
-void coulomb_exchange(
-    const arma::Mat<Tb> &V, const arma::Mat<Tc> &M, arma::Mat<Tc> &J, arma::Mat<Tc> &K)
-{
-    size_t n = M.n_rows;
-    J.zeros(n, n);
-    K.zeros(n, n);
-    for(size_t u=0; u < n; u++)
-    for(size_t v=0; v < n; v++)
-    {
-        const Tc muv = M(u,v);
-        for(size_t s=0; s < n; s++)
-        for(size_t t=0; t < n; t++)
-            J(s,t) += V(s*n+t, u*n+v) * muv;
-    }
-    for(size_t v=0; v < n; v++)
-    for(size_t t=0; t < n; t++)
-    for(size_t s=0; s < n; s++)
-    for(size_t u=0; u < n; u++)
-        K(s,t) += V(s*n+u, v*n+t) * M(u,v);
-}
-
-/** \brief Offsets of the intermediates of one pair, adapted to its zero-overlap pairs **/
-size_t pair_layout(int64_t *info, size_t ma, size_t mb, size_t nmo, size_t start)
-{
-    const size_t n2 = nmo * nmo, n4 = n2 * n2;
-    size_t i = start;
-    for(int k=0; k < WICK_PAIRLEN; k++) info[k] = -1;
-    const size_t blk[2] = {WICK_AA, WICK_BB}, m[2] = {ma, mb};
-    for(size_t spin=0; spin < 2; spin++)
-    {
-        // X, Y, F and V
-        for(size_t k=0; k < WICK_FH + 4 + 8; k++) { info[blk[spin]+k] = i; i += n2; }
-        for(size_t slot=0; slot < 10; slot++)
-        {
-            size_t sum = jslots[slot][0] + jslots[slot][1] + jslots[slot][2] + jslots[slot][3];
-            if(sum <= m[spin]) { info[blk[spin]+WICK_J+slot] = i; i += n4; }
-        }
-    }
-    // Different-spin one-column intermediates
-    for(size_t k=0; k < 16; k++) { info[WICK_AB+k] = i; i += n2; }
-    // Precombined one-column intermediates without zero-overlap pairs
-    if(ma == 0 and mb == 0)
-    {
-        info[WICK_AA+WICK_HCOL0] = i; i += n2;
-        info[WICK_BB+WICK_HCOL0] = i; i += n2;
-    }
-    // Different-spin two-column intermediates
-    for(size_t ma0=0; ma0 < 2; ma0++)
-    for(size_t maz=0; maz < 2; maz++)
-    for(size_t mb0=0; mb0 < 2; mb0++)
-    for(size_t mby=0; mby < 2; mby++)
-    {
-        if(ma0 + maz <= ma and mb0 + mby <= mb)
-        {
-            info[WICK_AB+WICK_IIAB+ma0*8+maz*4+mb0*2+mby] = i;
-            i += n4;
-        }
-    }
-    return i;
-}
 
 /** \brief Offsets of the same-reference MO integrals of a diagonal pair **/
 size_t orthogonal_layout(int64_t *info, size_t nmo, size_t start)
@@ -237,126 +60,6 @@ void put_rows(std::vector<Tc> &slab, int64_t off, const arma::Mat<Tc> &A)
 {
     arma::Mat<Tc> At = A.st();
     std::copy(At.memptr(), At.memptr() + At.n_elem, slab.begin() + off);
-}
-
-/** \brief Copy a matrix into the slab in column-major order **/
-template<typename Tc>
-void put_cols(std::vector<Tc> &slab, int64_t off, const arma::Mat<Tc> &A)
-{
-    std::copy(A.memptr(), A.memptr() + A.n_elem, slab.begin() + off);
-}
-
-/** \brief One-body and same-spin two-body intermediates of one spin **/
-template<typename Tc, typename Tb>
-void write_same_spin(
-    std::vector<Tc> &slab, Tc *scal, const int64_t *off, spin_pairing<Tc> &p,
-    const arma::Mat<Tc> &F, arma::Mat<Tb> &V,
-    arma::Mat<Tc> (&fh)[2][2], arma::Mat<Tc> (&v)[2][2][2])
-{
-    const size_t n = p.X[0].n_rows;
-
-    // Zeroth-order and one-column one-body terms
-    for(size_t i=0; i < 2; i++)
-    {
-        scal[WICK_SF0H+i] = arma::accu(p.M[i] % F.st());
-        for(size_t j=0; j < 2; j++)
-            fh[i][j] = p.CX[i].t() * F * p.XC[j];
-    }
-
-    // V_0^{(m1,m2)} is symmetric in (m1,m2) and indexed by m1 + m2. The evaluator visits
-    // (0,1) and (1,0) separately, so the middle entry holds one assignment only.
-    arma::Mat<Tc> JK[2], J, K;
-    for(size_t i=0; i < 2; i++)
-    {
-        coulomb_exchange(V, p.M[i], J, K);
-        JK[i] = J - K;
-    }
-    scal[WICK_SV0+0] = arma::accu(JK[0] % p.M[0].st());
-    scal[WICK_SV0+1] = (p.m >= 1) ? Tc(arma::accu(JK[0] % p.M[1].st())) : Tc(0.0);
-    scal[WICK_SV0+2] = (p.m >= 2) ? Tc(arma::accu(JK[1] % p.M[1].st())) : Tc(0.0);
-
-    // One-column two-body terms v[m1][m3][m2] = CX[m1]^+ (J-K)[m2] XC[m3]
-    for(size_t i=0; i < 2; i++)
-    for(size_t j=0; j < 2; j++)
-    for(size_t k=0; k < 2; k++)
-        v[i][j][k] = p.CX[i].t() * JK[k] * p.XC[j];
-
-    // Store the fundamental contractions and one-column terms
-    for(size_t i=0; i < 2; i++)
-    {
-        put_rows(slab, off[WICK_X+i], p.X[i]);
-        put_rows(slab, off[WICK_Y+i], p.Y[i]);
-        for(size_t j=0; j < 2; j++)
-        {
-            put_cols(slab, off[WICK_FH+i*2+j], fh[i][j]);
-            for(size_t k=0; k < 2; k++)
-                put_cols(slab, off[WICK_V+i*4+j*2+k], v[i][j][k]);
-        }
-    }
-
-    // Two-column terms J_{pq,rs} = (pq|rs) - (pr|qs) stored with the pair (r,s) first. The
-    // row coefficients CX are conjugated and the column coefficients XC are not.
-    for(size_t slot=0; slot < 10; slot++)
-    {
-        if(off[WICK_J+slot] < 0) continue;
-        const int mi = jslots[slot][0], mj = jslots[slot][1];
-        const int mk = jslots[slot][2], ml = jslots[slot][3];
-        arma::Mat<Tc> D, E;
-        arma::Mat<Tc> CXk = arma::conj(p.CX[mk]), XCj = arma::conj(p.XC[mj]);
-        eri_ao2mo(p.CX[mi], p.XC[mj], p.CX[mk], p.XC[ml], V, D, false);
-        eri_ao2mo(p.CX[mi], CXk, XCj, p.XC[ml], V, E, false);
-        const Tc *d = D.memptr(), *e = E.memptr();
-        Tc *t = slab.data() + off[WICK_J+slot];
-        for(size_t r=0; r < n; r++)
-        for(size_t s=0; s < n; s++)
-        for(size_t pp=0; pp < n; pp++)
-        for(size_t q=0; q < n; q++)
-            t[((r*n+s)*n+pp)*n+q] = d[((r*n+s)*n+pp)*n+q] - e[((q*n+s)*n+pp)*n+r];
-    }
-
-    // Scalars
-    scal[WICK_SPHASE] = p.phase;
-    scal[WICK_STSP] = p.redS;
-}
-
-/** \brief Different-spin two-body intermediates **/
-template<typename Tc, typename Tb>
-void write_diff_spin(
-    std::vector<Tc> &slab, Tc *scal, const int64_t *info,
-    spin_pairing<Tc> &pa, spin_pairing<Tc> &pb, arma::Mat<Tb> &V,
-    arma::Mat<Tc> (&vab)[2][2][2], arma::Mat<Tc> (&vba)[2][2][2])
-{
-    const int64_t *off = info + WICK_AB;
-    arma::Mat<Tc> Ja[2], Jb[2], K;
-    for(size_t i=0; i < 2; i++)
-    {
-        coulomb_exchange(V, pa.M[i], Ja[i], K);
-        coulomb_exchange(V, pb.M[i], Jb[i], K);
-    }
-    for(size_t i=0; i < 2; i++)
-    for(size_t j=0; j < 2; j++)
-    {
-        scal[WICK_SVAB0+i*2+j] = arma::accu(Ja[i] % pb.M[j].st());
-        for(size_t k=0; k < 2; k++)
-        {
-            // V^a: ma0*4 + mb0*2 + maz, and V^b: mb0*4 + ma0*2 + mby
-            vab[i][j][k] = pa.CX[i].t() * Jb[j] * pa.XC[k];
-            vba[i][j][k] = pb.CX[i].t() * Ja[j] * pb.XC[k];
-            put_cols(slab, off[WICK_VAB+i*4+j*2+k], vab[i][j][k]);
-            put_cols(slab, off[WICK_VBA+i*4+j*2+k], vba[i][j][k]);
-        }
-    }
-    for(size_t ma0=0; ma0 < 2; ma0++)
-    for(size_t maz=0; maz < 2; maz++)
-    for(size_t mb0=0; mb0 < 2; mb0++)
-    for(size_t mby=0; mby < 2; mby++)
-    {
-        int64_t o = off[WICK_IIAB+ma0*8+maz*4+mb0*2+mby];
-        if(o < 0) continue;
-        arma::Mat<Tc> II;
-        eri_ao2mo(pa.CX[ma0], pa.XC[maz], pb.CX[mb0], pb.XC[mby], V, II, false);
-        put_rows(slab, o, II);
-    }
 }
 
 /** \brief MO integrals of one reference for the same-reference Slater-Condon rules **/
@@ -488,8 +191,6 @@ template<typename Tc, typename Tf, typename Tb>
 void wick_matrix<Tc,Tf,Tb>::build()
 {
     const size_t nref = m_Ca.size();
-    const size_t nmo = m_nmo;
-    const arma::Mat<Tc> S = arma::conv_to<arma::Mat<Tc> >::from(m_metric);
 
     // Operators that were not added are zero
     if(m_Fa.n_elem == 0) { m_Fa.zeros(m_nbsf, m_nbsf); m_Fb.zeros(m_nbsf, m_nbsf); }
@@ -497,90 +198,50 @@ void wick_matrix<Tc,Tf,Tb>::build()
     if(m_V == nullptr) Vzero.zeros(m_nbsf*m_nbsf, m_nbsf*m_nbsf);
     arma::Mat<Tb> &V = (m_V == nullptr) ? Vzero : *m_V;
 
-    // Layout of the primary corner of every ordered pair
-    std::vector<int64_t> info((size_t) nref * nref * WICK_PAIRLEN);
-    std::vector<size_t> nca(nref*nref), ncb(nref*nref);
+    // The primary corner of every ordered pair, followed by the other corner combinations
+    m_pairinfo.assign(nref * nref * WICK_PAIRLEN, -1);
+    m_scal.assign(nref * nref * WICK_NSCAL, Tc(0.0));
+    m_slab.clear();
     size_t end = 0;
     for(size_t x=0; x < nref; x++)
     for(size_t w=0; w < nref; w++)
     {
-        size_t k = x * nref + w;
-        size_t ma, mb, na, nb;
-        count_pairs(S, m_Ca[x], m_Ca[w], m_nalpha, ma, na);
-        count_pairs(S, m_Cb[x], m_Cb[w], m_nbeta, mb, nb);
-        int64_t *row = info.data() + k * WICK_PAIRLEN;
-        end = pair_layout(row, ma, mb, nmo, end);
-        if(x == w) end = orthogonal_layout(row, nmo, end);
-        row[WICK_MA] = ma;
-        row[WICK_MB] = mb;
-        row[WICK_NOCCA] = m_nalpha;
-        row[WICK_NOCCB] = m_nbeta;
-        row[WICK_NMO] = nmo;
-        nca[k] = (size_t) 1 << na;
-        ncb[k] = (size_t) 1 << nb;
-        row[WICK_NCORNER] = nca[k] * ncb[k];
-    }
+        // Lowdin pairing of the two references
+        const size_t k = x * nref + w;
+        reference_state<Tc> xa(m_nbsf, m_nmo, m_nalpha, m_Ca[x]);
+        reference_state<Tc> wa(m_nbsf, m_nmo, m_nalpha, m_Ca[w]);
+        reference_state<Tc> xb(m_nbsf, m_nmo, m_nbeta, m_Cb[x]);
+        reference_state<Tc> wb(m_nbsf, m_nmo, m_nbeta, m_Cb[w]);
+        wick_pair<Tc,Tb> pair(m_metric, xa, wa, xb, wb);
+        pair.add_one_body(m_Fa, m_Fb);
+        pair.add_two_body(V);
 
-    // The other corner combinations follow all primary rows
-    size_t nrow = nref * nref;
-    for(size_t k=0; k < nref*nref; k++)
-    {
-        int64_t ncorner = info[k*WICK_PAIRLEN+WICK_NCORNER];
-        info[k*WICK_PAIRLEN+WICK_CSTART] = nrow;
-        for(int64_t c=1; c < ncorner; c++)
+        // Intermediates of each corner combination, with the offsets moved to the slab
+        const size_t cstart = m_pairinfo.size() / WICK_PAIRLEN;
+        for(size_t c=0; c < pair.ncorner(); c++)
         {
-            std::vector<int64_t> row(WICK_PAIRLEN);
-            end = pair_layout(row.data(), info[k*WICK_PAIRLEN+WICK_MA],
-                              info[k*WICK_PAIRLEN+WICK_MB], nmo, end);
-            for(int i=WICK_MA; i <= WICK_NMO; i++) row[i] = info[k*WICK_PAIRLEN+i];
-            row[WICK_NCORNER] = 1;
-            info.insert(info.end(), row.begin(), row.end());
-            nrow++;
-        }
-    }
-    m_pairinfo.swap(info);
-    m_slab.assign(end, Tc(0.0));
-    m_scal.assign(nrow * WICK_NSCAL, Tc(0.0));
-
-    // Intermediates of each pair and corner combination
-    for(size_t x=0; x < nref; x++)
-    for(size_t w=0; w < nref; w++)
-    {
-        size_t k = x * nref + w;
-        std::vector<spin_pairing<Tc> > pa(nca[k]), pb(ncb[k]);
-        std::vector<arma::Mat<Tc> > hcola(nca[k]), hcolb(ncb[k]);
-        for(size_t ca=0; ca < nca[k]; ca++)
-            pair_orbitals(pa[ca], S, m_Ca[x], m_Ca[w], m_nalpha, ca);
-        for(size_t cb=0; cb < ncb[k]; cb++)
-            pair_orbitals(pb[cb], S, m_Cb[x], m_Cb[w], m_nbeta, cb);
-
-        for(size_t ca=0; ca < nca[k]; ca++)
-        for(size_t cb=0; cb < ncb[k]; cb++)
-        {
-            size_t c = ca * ncb[k] + cb;
-            size_t row = (c == 0) ? k : m_pairinfo[k*WICK_PAIRLEN+WICK_CSTART] + c - 1;
-            const int64_t *off = m_pairinfo.data() + row * WICK_PAIRLEN;
-            Tc *scal = m_scal.data() + row * WICK_NSCAL;
-            assert((size_t) off[WICK_MA] == pa[ca].m and (size_t) off[WICK_MB] == pb[cb].m);
-
-            arma::Mat<Tc> fha[2][2], fhb[2][2], va[2][2][2], vb[2][2][2];
-            arma::Mat<Tc> vab[2][2][2], vba[2][2][2];
-            write_same_spin(m_slab, scal + WICK_SAA, off + WICK_AA, pa[ca], m_Fa, V, fha, va);
-            write_same_spin(m_slab, scal + WICK_SBB, off + WICK_BB, pb[cb], m_Fb, V, fhb, vb);
-            write_diff_spin(m_slab, scal, off, pa[ca], pb[cb], V, vab, vba);
-
-            // Precombined one-column intermediates F + V + V^{ab} without zero-overlap pairs
-            if(off[WICK_AA+WICK_HCOL0] >= 0)
+            const size_t row = (c == 0) ? k : cstart + c - 1;
+            if(c > 0)
             {
-                put_cols(m_slab, off[WICK_AA+WICK_HCOL0],
-                         arma::Mat<Tc>(fha[0][0] + va[0][0][0] + vab[0][0][0]));
-                put_cols(m_slab, off[WICK_BB+WICK_HCOL0],
-                         arma::Mat<Tc>(fhb[0][0] + vb[0][0][0] + vba[0][0][0]));
+                m_pairinfo.resize(m_pairinfo.size() + WICK_PAIRLEN);
+                m_scal.resize(m_scal.size() + WICK_NSCAL);
             }
+            int64_t *info = m_pairinfo.data() + row * WICK_PAIRLEN;
+            std::copy(pair.info(c), pair.info(c) + WICK_PAIRLEN, info);
+            for(int i=WICK_AA; i < WICK_OH_A; i++)
+                if(info[i] >= 0) info[i] += end;
+            std::copy(pair.scal(c), pair.scal(c) + WICK_NSCAL, m_scal.data() + row * WICK_NSCAL);
         }
+        m_pairinfo[k * WICK_PAIRLEN + WICK_CSTART] = cstart;
+        m_slab.insert(m_slab.end(), pair.slab().begin(), pair.slab().end());
+        end = m_slab.size();
         if(x == w)
+        {
+            end = orthogonal_layout(m_pairinfo.data() + k * WICK_PAIRLEN, m_nmo, end);
+            m_slab.resize(end, Tc(0.0));
             write_orthogonal(m_slab, m_pairinfo.data() + k * WICK_PAIRLEN, m_Fa, m_Fb, V,
                              m_Ca[x], m_Cb[x]);
+        }
     }
     m_built = true;
 }
