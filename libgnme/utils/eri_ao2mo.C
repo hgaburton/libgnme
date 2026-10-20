@@ -1,13 +1,6 @@
 #include <cassert>
 #include "eri_ao2mo.h"
 
-namespace {
-
-double conj2(double x) { return x; }
-std::complex<double> conj2(std::complex<double> x) { return std::conj(x); }
-
-} // unnamed namespace
-
 namespace libgnme {
 
 template<typename Tc, typename Tb>
@@ -30,56 +23,58 @@ void eri_ao2mo_split(
     assert(IIao.n_rows == nbsf * nbsf);
     assert(IIao.n_cols == nbsf * nbsf);
 
-    // Create temporary memory for integral transform
-    arma::Mat<Tc> IItmp1;
-    arma::Mat<Tc> IItmp2;
+    // Each index is transformed by a matrix product. IIao(p*nbsf+q, r*nbsf+s) is stored
+    // with q fastest, followed by p, s and r, and the intermediates keep this order.
 
-    // (pq|r4)
-    IItmp1.resize(nbsf*nbsf, nbsf*d4); IItmp1.zeros();
-    #pragma omp parallel for schedule(static) collapse(4)
-    for(size_t p=0; p<nbsf; p++)
-    for(size_t q=0; q<nbsf; q++)
+    // (pq|r4) stored as [qp4, r], transforming s for each r
+    arma::Mat<Tc> IItmp1(nbsf*nbsf*d4, nbsf);
     for(size_t r=0; r<nbsf; r++)
-    for(size_t l=0; l<d4; l++)
-        for(size_t s=0; s<nbsf; s++)
-            IItmp1(p*nbsf+q, r*d4+l) += IIao(p*nbsf+q, r*nbsf+s) * C4(s,l);
+    {
+        arma::Mat<Tc> IIr = arma::conv_to<arma::Mat<Tc> >::from(IIao.cols(r*nbsf, r*nbsf+nbsf-1));
+        arma::Mat<Tc> IItmp(IItmp1.colptr(r), nbsf*nbsf, d4, false, true);
+        IItmp = IIr * C4;
+    }
 
-    // (pq|34)
-    IItmp2.resize(nbsf*nbsf,d3*d4); IItmp2.zeros();
-    #pragma omp parallel for schedule(static) collapse(4)
-    for(size_t p=0; p<nbsf; p++)
-    for(size_t q=0; q<nbsf; q++)
-    for(size_t k=0; k<d3; k++)
-    for(size_t l=0; l<d4; l++)
-        for(size_t r=0; r<nbsf; r++)
-            IItmp2(p*nbsf+q, k*d4+l) += IItmp1(p*nbsf+q, r*d4+l) * conj2(C3(r,k));
-     
-    // (p2|34)
-    IItmp1.resize(nbsf*d2, d3*d4); IItmp1.zeros();
-    #pragma omp parallel for schedule(static) collapse(4)
-    for(size_t p=0; p<nbsf; p++)
-    for(size_t j=0; j<d2; j++)
-    for(size_t k=0; k<d3; k++)
-    for(size_t l=0; l<d4; l++)
-        for(size_t q=0; q<nbsf; q++)
-            IItmp1(p*d2+j, k*d4+l) += IItmp2(p*nbsf+q, k*d4+l) * C2(q,j);
+    // (pq|34) stored as [qp4, 3]
+    arma::Mat<Tc> IItmp2 = IItmp1 * arma::conj(C3);
+    IItmp1.reset();
 
-    // (12|34)
-    II_J.reshape(d1*d2,d3*d4); II_J.zeros();
-    II_K.reshape(d1*d2,d3*d4); II_K.zeros();
-    #pragma omp parallel for schedule(static) collapse(4)
-    for(size_t i=0; i<d1; i++)
-    for(size_t j=0; j<d2; j++)
-    for(size_t k=0; k<d3; k++)
-    for(size_t l=0; l<d4; l++)
-        for(size_t p=0; p<nbsf; p++)
-        {
-            // Save Coulomb integrals
-            II_J(i*d2+j, k*d4+l) += IItmp1(p*d2+j, k*d4+l) * conj2(C1(p,i));
-            // Add exchange integral if same spin
-            if(antisym)
-                II_K(i*d2+j, k*d4+l) -= IItmp1(p*d2+l, k*d4+j) * conj2(C1(p,i)); 
-        }
+    // (p2|34) stored as [2, p43]
+    IItmp2.reshape(nbsf, nbsf*d4*d3);
+    arma::Mat<Tc> IItmp3 = C2.st() * IItmp2;
+    IItmp2.reset();
+
+    // (12|34) stored as [21, 43], which is the order of II_J
+    arma::Mat<Tc> J(d1*d2, d3*d4);
+    arma::Mat<Tc> C1c = arma::conj(C1);
+    for(size_t kl=0; kl<d3*d4; kl++)
+    {
+        arma::Mat<Tc> IItmp(IItmp3.colptr(kl*nbsf), d2, nbsf, false, true);
+        arma::Mat<Tc> Jkl(J.colptr(kl), d2, d1, false, true);
+        Jkl = IItmp * C1c;
+    }
+
+    // Exchange integrals (12|34) -> -(14|32) if same spin
+    arma::Mat<Tc> K(d1*d2, d3*d4, arma::fill::zeros);
+    if(antisym)
+    {
+        for(size_t i=0; i<d1; i++)
+        for(size_t j=0; j<d2; j++)
+        for(size_t k=0; k<d3; k++)
+        for(size_t l=0; l<d4; l++)
+            K(i*d2+j, k*d4+l) = - J(i*d2+l, k*d4+j);
+    }
+
+    // Save Coulomb and exchange integrals, which are combined if II_J and II_K are the same
+    if(&II_J == &II_K)
+    {
+        II_J = J + K;
+    }
+    else
+    {
+        II_J = J;
+        II_K = K;
+    }
 }
 template void eri_ao2mo_split(
     arma::mat &C1, arma::mat &C2, arma::mat &C3, arma::mat &C4, 
