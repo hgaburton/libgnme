@@ -552,8 +552,8 @@ static inline size_t corner_row(const int64_t *info, size_t k, int64_t c)
 
 /* Overlap between two determinant records at one corner combination */
 template<typename DT>
-static DT overlap_corner(const wick_env *env, const int64_t *info, const DT *scal, const int *dx,
-                         const int *dw)
+DT overlap_corner(const wick_env *env, const int64_t *info, const DT *scal, const int *dx,
+                  const int *dw)
 {
     const int kmax = env->kmax;
     int rxa = dx[WICK_DRA], rxb = dx[WICK_DRB];
@@ -1383,6 +1383,23 @@ void hamiltonian_general(DT *hout, DT *sout, const wick_env *env, const int *dx,
 
 #undef PAIRINFO
 #undef PAIRSCAL
+
+/* The entry points are compiled once, in wick_kernels.C, without instruction set flags. A
+   translation unit compiled for AVX2 or AVX-512 would otherwise provide its own instantiation, 
+   which the linker could choose for every caller. */
+#define WICK_ENTRY_POINTS(EXT, DT) \
+    EXT template DT overlap_corner<DT>(const wick_env *, const int64_t *, const DT *, \
+                                       const int *, const int *); \
+    EXT template DT overlap<DT>(const wick_env *, const int *, const int *); \
+    EXT template void hs_orth_row<DT>(DT *, DT *, const wick_env *, const int *, \
+                                      const uint64_t *, const int *, const uint64_t *, int); \
+    EXT template void hamiltonian_corner<DT>(DT *, DT *, const wick_env *, const int64_t *, \
+                                             const DT *, const int *, const int *); \
+    EXT template void hamiltonian<DT>(DT *, DT *, const wick_env *, const int *, const int *); \
+    EXT template void hamiltonian_general<DT>(DT *, DT *, const wick_env *, const int *, \
+                                              const int *);
+WICK_ENTRY_POINTS(extern, double)
+WICK_ENTRY_POINTS(extern, std::complex<double>)
 
 } // namespace wick_kernels
 

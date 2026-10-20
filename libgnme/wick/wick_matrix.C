@@ -7,6 +7,20 @@
 
 namespace libgnme {
 
+#if defined(LIBGNME_X86_SIMD)
+/* Packed kernels of wick_kernels_avx2.C and wick_kernels_avx512.C */
+namespace wick_avx2 {
+template<typename DT>
+void hs_row(DT *hrow, DT *srow, const wick_kernels::wick_env *env, const int64_t *info,
+            const DT *scal, const int *dx, const int *dws, int nw);
+}
+namespace wick_avx512 {
+template<typename DT>
+void hs_row(DT *hrow, DT *srow, const wick_kernels::wick_env *env, const int64_t *info,
+            const DT *scal, const int *dx, const int *dws, int nw);
+}
+#endif
+
 namespace {
 
 /* Singular values of the occupied orbital overlap up to this value are zero-overlap pairs */
@@ -22,6 +36,19 @@ const int jslots[10][4] = {
     {0,0,0,0}, {0,0,0,1}, {0,0,1,0}, {0,0,1,1}, {0,1,0,1},
     {0,1,1,0}, {0,1,1,1}, {1,0,1,0}, {1,0,1,1}, {1,1,1,1} };
 
+#if defined(LIBGNME_X86_SIMD)
+/* SIMD levels of the packed kernels */
+const int simd_none = 0, simd_avx2 = 1, simd_avx512 = 2;
+
+/** \brief Packed kernels supported by the CPU **/
+int simd_level()
+{
+    __builtin_cpu_init();
+    if(__builtin_cpu_supports("avx512f")) return simd_avx512;
+    if(__builtin_cpu_supports("avx2") and __builtin_cpu_supports("fma")) return simd_avx2;
+    return simd_none;
+}
+#endif
 
 double conj2(double x) { return x; }
 std::complex<double> conj2(std::complex<double> x) { return std::conj(x); }
@@ -370,6 +397,31 @@ void hs_segment(
     Tc *h, Tc *s, const wick_kernels::wick_env *env, const int *dx, const uint64_t *sx,
     const int *dws, const uint64_t *sws, int nw, bool orth)
 {
+#if defined(LIBGNME_X86_SIMD)
+    // Packed rows for pairs without zero-overlap orbitals, summed over near-zero corners
+    const size_t k = (size_t) dx[WICK_DPARENT] * env->nref + dws[WICK_DPARENT];
+    const int64_t *info = env->pairinfo + k * WICK_PAIRLEN;
+    if(dx[WICK_DPARENT] != dws[WICK_DPARENT] and env->simd != simd_none 
+       and info[WICK_MA] == 0 and info[WICK_MB] == 0)
+    {
+        std::vector<Tc> buf(info[WICK_NCORNER] > 1 ? 2 * nw : 0);
+        for(int64_t c=0; c < info[WICK_NCORNER]; c++)
+        {
+            size_t kc = (c == 0) ? k : info[WICK_CSTART] + c - 1;
+            const int64_t *infoc = env->pairinfo + kc * WICK_PAIRLEN;
+            const Tc *scal = (const Tc *) env->scal + kc * WICK_NSCAL;
+            Tc *hc = (c == 0) ? h : buf.data();
+            Tc *sc = (c == 0) ? s : buf.data() + nw;
+            if(env->simd == simd_avx512)
+                wick_avx512::hs_row<Tc>(hc, sc, env, infoc, scal, dx, dws, nw);
+            else
+                wick_avx2::hs_row<Tc>(hc, sc, env, infoc, scal, dx, dws, nw);
+            if(c == 0) continue;
+            for(int j=0; j < nw; j++) { h[j] += hc[j]; s[j] += sc[j]; }
+        }
+        return;
+    }
+#endif
     if(dx[WICK_DPARENT] != dws[WICK_DPARENT])
     {
         for(int j=0; j < nw; j++)
@@ -610,7 +662,11 @@ void wick_matrix<Tc,Tf,Tb>::evaluate(
     env.nref = m_Ca.size();
     env.kmax = kmax;
     env.dstride = dstride;
+#if defined(LIBGNME_X86_SIMD)
+    env.simd = simd_level();
+#else
     env.simd = 0;
+#endif
     env.enuc = m_Vc;
     env.pairinfo = m_pairinfo.data();
     env.slab = m_slab.data();
