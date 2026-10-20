@@ -22,8 +22,6 @@ class wick_rscf : public wick_base<Tc,Tf,Tb>
 {
 protected:
     using wick_base<Tc,Tf,Tb>::m_nmo;
-    using wick_base<Tc,Tf,Tb>::m_one_body_int;
-    using wick_base<Tc,Tf,Tb>::m_two_body_int;
     using wick_base<Tc,Tf,Tb>::m_orba;
     using wick_base<Tc,Tf,Tb>::m_orbb;
 
