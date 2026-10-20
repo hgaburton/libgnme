@@ -15,7 +15,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64" AND CMAKE_CXX_COMPILER_ID
     list(APPEND SRC wick_kernels_avx2.C wick_kernels_avx512.C)
     set_source_files_properties(wick_kernels_avx2.C PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
     set_source_files_properties(wick_kernels_avx512.C PROPERTIES COMPILE_OPTIONS "-mavx512f")
-    set_source_files_properties(wick_matrix.C PROPERTIES COMPILE_DEFINITIONS LIBGNME_X86_SIMD)
+    set_source_files_properties(wick_kernels.C PROPERTIES COMPILE_DEFINITIONS LIBGNME_X86_SIMD)
 endif()
 
 add_library(gnme_wick ${SRC})

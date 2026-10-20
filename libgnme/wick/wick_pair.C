@@ -73,7 +73,7 @@ wick_kernels::wick_env environment(
     env.nref = 1;
     env.kmax = kmax;
     env.dstride = WICK_DHEAD + 4 * kmax;
-    env.simd = 0;
+    env.simd = WICK_SIMD_NONE;
     env.enuc = Vc;
     env.pairinfo = info.data();
     env.slab = slab.data();
@@ -244,6 +244,51 @@ void wick_pair<Tc,Tb>::record(
             parts[k] = label(hp(k,1), ket, spin == 0);
         }
     }
+}
+
+template<typename Tc, typename Tb>
+int wick_pair<Tc,Tb>::rank(bitset &b, bool ket, bool alpha) const
+{
+    const size_t s = alpha ? 0 : 1, no = ket ? m_now[s] : m_nox[s];
+    arma::uvec occ = b.occ();
+    assert(occ.n_elem == no);
+    return arma::accu(occ >= no);
+}
+
+template<typename Tc, typename Tb>
+void wick_pair<Tc,Tb>::record(int *d, int kmax, bitset &ba, bitset &bb, bool ket) const
+{
+    d[WICK_DPARENT] = 0;
+    d[WICK_DOSIGN] = 1;
+    int odd = 0;
+    for(size_t spin=0; spin < 2; spin++)
+    {
+        const size_t no = ket ? m_now[spin] : m_nox[spin];
+        arma::uvec occ = (spin == 0) ? ba.occ() : bb.occ();
+        int *holes = d + WICK_DHEAD + 2 * kmax * spin, *parts = holes + kmax;
+
+        // Particles are the occupied orbitals outside the reference, in ascending order
+        std::vector<bool> inref(no, false);
+        int r = 0;
+        for(size_t k=0; k < occ.n_elem; k++)
+        {
+            if(occ(k) < no) inref[occ(k)] = true;
+            else parts[r++] = label(occ(k), ket, spin == 0);
+        }
+        assert(r <= kmax);
+        int nh = 0, hsum = 0;
+        for(size_t k=0; k < no; k++)
+        {
+            if(not inref[k]) { holes[nh++] = k; hsum += k; }
+        }
+        assert(nh == r);
+        d[spin == 0 ? WICK_DRA : WICK_DRB] = r;
+
+        // Annihilating the holes (descending) and creating the particles (ascending) on the 
+        // reference string
+        odd += hsum + r * (no - r) + r * (r - 1) / 2;
+    }
+    d[WICK_DSIGN] = (odd & 1) ? -1 : 1;
 }
 
 template<typename Tc, typename Tb>
@@ -449,6 +494,60 @@ void wick_pair<Tc,Tb>::evaluate(
         wick_kernels::hamiltonian_corner<Tc>(&h, &s, &env, info(c), scal(c), dx, dw);
         S += s; V += h;
     }
+}
+
+template<typename Tc, typename Tb>
+void wick_pair<Tc,Tb>::evaluate(
+    bitset &bxa, bitset &bxb, bitset &bwa, bitset &bwb, Tc &S, Tc &V) const
+{
+    const int kmax = std::max(std::max(std::max(rank(bxa, false, true), rank(bxb, false, false)),
+                                       std::max(rank(bwa, true, true), rank(bwb, true, false))), 1);
+    int dx[WICK_DHEAD + 4 * WICK_MAXMO], dw[WICK_DHEAD + 4 * WICK_MAXMO];
+    record(dx, kmax, bxa, bxb, false);
+    record(dw, kmax, bwa, bwb, true);
+    wick_kernels::wick_env env = environment(m_info, m_slab, m_scal, m_Vc, kmax);
+
+    S = 0.0; V = 0.0;
+    for(size_t c=0; c < ncorner(); c++)
+    {
+        Tc h, s;
+        wick_kernels::hamiltonian_corner<Tc>(&h, &s, &env, info(c), scal(c), dx, dw);
+        S += s; V += h;
+    }
+}
+
+template<typename Tc, typename Tb>
+void wick_pair<Tc,Tb>::evaluate_dense(
+    std::vector<bitset> &bxa, std::vector<bitset> &bxb,
+    std::vector<bitset> &bwa, std::vector<bitset> &bwb,
+    arma::Mat<Tc> &S, arma::Mat<Tc> &H) const
+{
+    const size_t nx = bxa.size(), nw = bwa.size();
+    assert(bxb.size() == nx and bwb.size() == nw);
+
+    // Determinant records of the bra and ket
+    int kmax = 1;
+    for(size_t i=0; i < nx; i++)
+        kmax = std::max(kmax, std::max(rank(bxa[i], false, true), rank(bxb[i], false, false)));
+    for(size_t j=0; j < nw; j++)
+        kmax = std::max(kmax, std::max(rank(bwa[j], true, true), rank(bwb[j], true, false)));
+    const size_t dstride = WICK_DHEAD + 4 * kmax;
+    std::vector<int> rx(nx * dstride), rw(nw * dstride);
+    for(size_t i=0; i < nx; i++) record(rx.data() + i * dstride, kmax, bxa[i], bxb[i], false);
+    for(size_t j=0; j < nw; j++) record(rw.data() + j * dstride, kmax, bwa[j], bwb[j], true);
+    wick_kernels::wick_env env = environment(m_info, m_slab, m_scal, m_Vc, kmax);
+    env.simd = wick_kernels::simd_level();
+
+    // The row of each bra determinant is stored contiguously, which is the transpose of the 
+    // column-major matrix
+    H.set_size(nw, nx);
+    S.set_size(nw, nx);
+    #pragma omp parallel for schedule(dynamic, 1)
+    for(size_t i=0; i < nx; i++)
+        wick_kernels::pair_row<Tc>(H.colptr(i), S.colptr(i), &env, 0, rx.data() + i * dstride,
+                                   rw.data(), nw);
+    arma::inplace_strans(H);
+    arma::inplace_strans(S);
 }
 
 template<typename Tc, typename Tb>

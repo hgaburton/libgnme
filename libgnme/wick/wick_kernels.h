@@ -133,7 +133,7 @@ struct wick_env
     int nref;
     int kmax;    /* largest per-spin excitation rank of a record */
     int dstride; /* WICK_DHEAD + 4*kmax */
-    int simd;    /* 0: scalar only; 1: allow SIMD packets */
+    int simd;    /* WICK_SIMD_* packed kernels to use */
     double enuc;
     const int64_t *pairinfo;
     const void *slab;
@@ -1430,6 +1430,16 @@ void hamiltonian_general(DT *hout, DT *sout, const wick_env *env, const int *dx,
                                               const int *);
 WICK_ENTRY_POINTS(extern, double)
 WICK_ENTRY_POINTS(extern, std::complex<double>)
+
+/* Packed kernels supported by the CPU, as WICK_SIMD_NONE, WICK_SIMD_AVX2 or WICK_SIMD_AVX512 */
+int simd_level();
+
+/* One row of the Hamiltonian block of the pair with primary pairinfo row k: the bra dx against
+ * the nw kets dws, summed over the corner combinations of the pair.  Pairs without zero-overlap
+ * orbitals use the packed kernels selected by env->simd. */
+template<typename DT>
+void pair_row(DT *hrow, DT *srow, const wick_env *env, size_t k, const int *dx, const int *dws,
+              int nw);
 
 } // namespace wick_kernels
 

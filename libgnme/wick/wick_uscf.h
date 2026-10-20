@@ -93,6 +93,21 @@ public:
         bitset &bwa, bitset &bwb,
         Tc &S, Tc &V);
 
+    /** \brief Evaluate the overlap and Hamiltonian matrices between sets of bra and ket 
+               determinants using bitset representation. Each row is evaluated together, so
+               this is much faster than evaluating each element separately.
+        \param bxa Bitsets for bra alpha excitations
+        \param bxb Bitsets for bra beta  excitations
+        \param bwa Bitsets for ket alpha excitations
+        \param bwb Bitsets for ket beta  excitations
+        \param S   Output overlap matrix [nbra,nket]
+        \param V   Output matrix [nbra,nket]
+     **/
+    virtual void evaluate_dense(
+        std::vector<bitset> &bxa, std::vector<bitset> &bxb, 
+        std::vector<bitset> &bwa, std::vector<bitset> &bwb,
+        arma::Mat<Tc> &S, arma::Mat<Tc> &V);
+
     /** \brief Compute 1RDM using bitset representation
         \param bxa Bitset for bra alpha excitation
         \param bxb Bitset for bra beta  excitation

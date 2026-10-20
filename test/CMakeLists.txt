@@ -8,6 +8,7 @@ set(TESTS
     wick_rscf_one_body_test
     wick_rscf_two_body_test
     wick_matrix_test
+    wick_dense_test
 )
 
 foreach(TEST ${TESTS})

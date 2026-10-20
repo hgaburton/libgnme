@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <armadillo>
+#include <libgnme/utils/bitset.h>
 #include "reference_state.h"
 
 namespace libgnme {
@@ -101,6 +102,30 @@ public:
         const arma::umat &wa_hp, const arma::umat &wb_hp,
         Tc &S, Tc &V) const;
 
+    /** \brief Evaluate the overlap and matrix element using bitset representation
+        \param bxa Bitset for bra alpha excitation
+        \param bxb Bitset for bra beta  excitation
+        \param bwa Bitset for ket alpha excitation
+        \param bwb Bitset for ket beta  excitation
+        \param S Output overlap matrix element
+        \param V Output matrix element
+     **/
+    void evaluate(bitset &bxa, bitset &bxb, bitset &bwa, bitset &bwb, Tc &S, Tc &V) const;
+
+    /** \brief Evaluate the overlap and Hamiltonian matrices between sets of bra and ket 
+               determinants using bitset representation
+        \param bxa Bitsets for bra alpha excitations
+        \param bxb Bitsets for bra beta  excitations
+        \param bwa Bitsets for ket alpha excitations
+        \param bwb Bitsets for ket beta  excitations
+        \param S Output overlap matrix [nbra,nket]
+        \param H Output Hamiltonian matrix [nbra,nket]
+     **/
+    void evaluate_dense(
+        std::vector<bitset> &bxa, std::vector<bitset> &bxb,
+        std::vector<bitset> &bwa, std::vector<bitset> &bwb,
+        arma::Mat<Tc> &S, arma::Mat<Tc> &H) const;
+
     /** \brief Evaluate the overlap using particle-hole representation **/
     void evaluate_overlap(
         const arma::umat &xa_hp, const arma::umat &xb_hp,
@@ -146,6 +171,23 @@ private:
         \param ket True for an excitation of the ket; False for the bra
      **/
     void record(int *d, int kmax, const arma::umat &ahp, const arma::umat &bhp, bool ket) const;
+
+    /** \brief Excitation rank of a bitset of the bra or ket
+        \param b Bitset over the active orbitals of the reference
+        \param ket True for an excitation of the ket; False for the bra
+        \param alpha True for high-spin; False for low-spin
+     **/
+    int rank(bitset &b, bool ket, bool alpha) const;
+
+    /** \brief Determinant record from bitsets, with the sign of the excitation operators that 
+               create the determinant from the reference
+        \param d Output record of WICK_DHEAD + 4 * kmax entries
+        \param kmax Largest excitation rank of a record
+        \param ba High-spin bitset
+        \param bb Low-spin bitset
+        \param ket True for an excitation of the ket; False for the bra
+     **/
+    void record(int *d, int kmax, bitset &ba, bitset &bb, bool ket) const;
 
     /** \brief Offsets of the intermediates of one corner combination **/
     size_t layout(int64_t *info, size_t c, size_t start) const;

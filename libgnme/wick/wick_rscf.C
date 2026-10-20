@@ -58,23 +58,19 @@ void wick_rscf<Tc,Tf,Tb>::evaluate(
     bitset &bwa, bitset &bwb,
     Tc &S, Tc &V)
 {
-    // Get excitation indices
-    arma::umat xahp, xbhp, wahp, wbhp; 
-    int pxa, pxb, pwa, pwb;
-    m_orba.m_refx.m_bs.excitation(bxa, xahp, pxa);
-    m_orbb.m_refx.m_bs.excitation(bxb, xbhp, pxb);
-    m_orba.m_refw.m_bs.excitation(bwa, wahp, pwa);
-    m_orbb.m_refw.m_bs.excitation(bwb, wbhp, pwb);
+    if(m_pair == nullptr) init_pair();
+    m_pair->evaluate(bxa, bxb, bwa, bwb, S, V);
+}
 
-    // Call original functionality
-    evaluate(xahp, xbhp, wahp, wbhp, S, V);
 
-    // Get parity 
-    int parity = pxa * pxb * pwa * pwb;
-               
-    // Multiply matrix elements by parity
-    S *= ((Tc) parity);
-    V *= ((Tc) parity);
+template<typename Tc, typename Tf, typename Tb>
+void wick_rscf<Tc,Tf,Tb>::evaluate_dense(
+    std::vector<bitset> &bxa, std::vector<bitset> &bxb, 
+    std::vector<bitset> &bwa, std::vector<bitset> &bwb,
+    arma::Mat<Tc> &S, arma::Mat<Tc> &V)
+{
+    if(m_pair == nullptr) init_pair();
+    m_pair->evaluate_dense(bxa, bxb, bwa, bwb, S, V);
 }
 
 
