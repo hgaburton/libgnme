@@ -95,7 +95,7 @@ void wick_base<Tc,Tf,Tb>::spin_rdm1(
             size_t nzero;
             arma::Mat<Tc> adjDtmp; 
             adjoint_matrix(Dtmp, adjDtmp, detDtmp, nzero);
-            adjDtmp = adjDtmp.t(); // Transpose makes row access easier later
+            adjDtmp = adjDtmp.st(); // Transpose makes row access easier later
             
             // Get the overlap contributions 
             P.submat(wocc,xocc) += wxP(m[0]).submat(wocc,xocc) * detDtmp;
@@ -108,7 +108,7 @@ void wick_base<Tc,Tf,Tb>::spin_rdm1(
                 arma::Col<Tc> a(adjDtmp.colptr(i), nx+nw, false, true); 
                 // Additional constant
                 Tc shift = arma::dot(a, Dtmp.col(i));
-                P.submat(wocc,xocc) -= Qvec * (detDtmp - shift + a.t() * Rtmp(m[i+1]));
+                P.submat(wocc,xocc) -= Qvec * (detDtmp - shift + a.st() * Rtmp(m[i+1]));
             }
         } while(std::prev_permutation(m.begin(), m.end()));
     }
@@ -245,7 +245,7 @@ void wick_base<Tc,Tf,Tb>::same_spin_rdm2(
             size_t nzero;
             arma::Mat<Tc> adjDtmp; 
             adjoint_matrix(Dtmp, adjDtmp, detDtmp, nzero);
-            adjDtmp = adjDtmp.t(); // Transpose makes row access easier later
+            adjDtmp = adjDtmp.st(); // Transpose makes row access easier later
 
             // Get first-order contribution
             // Temporary 1RDM
@@ -259,7 +259,7 @@ void wick_base<Tc,Tf,Tb>::same_spin_rdm2(
                 arma::Col<Tc> a(adjDtmp.colptr(i), nx+nw, false, true); 
                 // Additional constant
                 Tc shift = arma::dot(a, Dtmp.col(i));
-                P1tmp -= Qvec * (detDtmp - shift + a.t() * Rtmp(m[i+2]));
+                P1tmp -= Qvec * (detDtmp - shift + a.st() * Rtmp(m[i+2]));
             }
             
             // Get the overlap contributions 
@@ -304,7 +304,7 @@ void wick_base<Tc,Tf,Tb>::same_spin_rdm2(
                 size_t nzero2;
                 arma::Mat<Tc> adjDtmp2; 
                 adjoint_matrix(Dtmp2, adjDtmp2, detDtmp2, nzero2);
-                adjDtmp2 = adjDtmp2.t(); // Transpose makes row access faster
+                adjDtmp2 = adjDtmp2.st(); // Transpose makes row access faster
 
                 // Get the phase factor
                 double phase = (i % 2) xor (a % 2) ? -1.0 : 1.0;
@@ -321,7 +321,7 @@ void wick_base<Tc,Tf,Tb>::same_spin_rdm2(
                     arma::Col<Tc> a(adjDtmp2.colptr(j), nx+nw-1, false, true); 
                     // Additional constant
                     Tc shift = arma::dot(a, Dtmp2.col(j));
-                    P2tmp -= Qvec * (detDtmp2 - shift + a.t() * Rtmp2(m[j+3]));
+                    P2tmp -= Qvec * (detDtmp2 - shift + a.st() * Rtmp2(m[j+3]));
                 }
             
                 for(size_t ip=0; ip<xocc.n_elem; ip++)
