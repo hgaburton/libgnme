@@ -21,6 +21,10 @@ void wick_uscf<Tc,Tf,Tb>::add_one_body(arma::Mat<Tf> &Fa, arma::Mat<Tf> &Fb)
     m_one_body = true;
     // Define new integral object
     m_one_body_int = new one_body_uscf<Tc,Tf,Tb>(m_orba, m_orbb, Fa, Fb);
+
+    // Add to the other near-zero corners
+    for(size_t k=0; k < m_corners.size(); k++)
+        m_corners[k]->add_one_body(Fa, Fb);
 }
 
 
@@ -31,6 +35,41 @@ void wick_uscf<Tc,Tf,Tb>::add_two_body(arma::Mat<Tb> &V)
     m_two_body = true;
     // Define new integral object
     m_two_body_int = new two_body_uscf<Tc,Tf,Tb>(m_orba, m_orbb, V);
+
+    // Add to the other near-zero corners
+    for(size_t k=0; k < m_corners.size(); k++)
+        m_corners[k]->add_two_body(V);
+}
+
+template<typename Tc, typename Tf, typename Tb>
+void wick_uscf<Tc,Tf,Tb>::init_corners()
+{
+    // Nothing to do without near-zero overlaps
+    size_t na = m_orba.m_ncorner, nb = m_orbb.m_ncorner;
+    if(na * nb == 1) return;
+
+    // Corner orbitals for each spin. The first corner is evaluated by this object.
+    std::vector<wick_orbitals<Tc,Tb> *> orba(na), orbb(nb);
+    for(size_t ia=0; ia < na; ia++)
+    {
+        orba[ia] = new wick_orbitals<Tc,Tb>(m_orba, ia);
+        m_corner_orbs.push_back(orba[ia]);
+    }
+    for(size_t ib=0; ib < nb; ib++)
+    {
+        orbb[ib] = new wick_orbitals<Tc,Tb>(m_orbb, ib);
+        m_corner_orbs.push_back(orbb[ib]);
+    }
+
+    // Evaluators for the other combinations of alpha and beta corners
+    for(size_t ia=0; ia < na; ia++)
+    for(size_t ib=0; ib < nb; ib++)
+    {
+        if(ia == 0 and ib == 0) continue;
+        m_corners.push_back(new wick_uscf<Tc,Tf,Tb>(*orba[ia], *orbb[ib], m_Vc));
+        m_corner_a.push_back(ia);
+        m_corner_b.push_back(ib);
+    }
 }
 
 
@@ -96,6 +135,15 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_rdm1(
     // Multiply matrix elements by parity
     Pa *= ((Tc) parity) * m_orba.m_redS * m_orbb.m_redS * sb; 
     Pb *= ((Tc) parity) * m_orba.m_redS * m_orbb.m_redS * sa; 
+
+    // Add the other near-zero corners
+    for(size_t k=0; k < m_corners.size(); k++)
+    {
+        Tc Sk = 0.0;
+        arma::Mat<Tc> Pak(m_nmo, m_nmo), Pbk(m_nmo, m_nmo);
+        m_corners[k]->evaluate_rdm1(bxa, bxb, bwa, bwb, Sk, Pak, Pbk);
+        S += Sk; Pa += Pak; Pb += Pbk;
+    }
 }
 
 
@@ -148,6 +196,17 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_rdm12(
     P2aa *= ((Tc) parity) * m_orba.m_redS * m_orbb.m_redS * sb;
     P2bb *= ((Tc) parity) * m_orba.m_redS * m_orbb.m_redS * sa;
     P2ab *= ((Tc) parity) * m_orba.m_redS * m_orbb.m_redS;
+
+    // Add the other near-zero corners
+    for(size_t k=0; k < m_corners.size(); k++)
+    {
+        Tc Sk = 0.0;
+        arma::Mat<Tc> P1ak(m_nmo, m_nmo), P1bk(m_nmo, m_nmo);
+        arma::Mat<Tc> P2aak(m_nmo*m_nmo, m_nmo*m_nmo), P2bbk(m_nmo*m_nmo, m_nmo*m_nmo);
+        arma::Mat<Tc> P2abk(m_nmo*m_nmo, m_nmo*m_nmo);
+        m_corners[k]->evaluate_rdm12(bxa, bxb, bwa, bwb, Sk, P1ak, P1bk, P2aak, P2bbk, P2abk);
+        S += Sk; P1a += P1ak; P1b += P1bk; P2aa += P2aak; P2bb += P2bbk; P2ab += P2abk;
+    }
 }
 
 
@@ -165,6 +224,14 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_overlap(
     this->spin_overlap(xbhp, wbhp, sb, false);
     // Save total overlap
     S = m_orba.m_redS * m_orbb.m_redS * sa * sb;
+
+    // Add the other near-zero corners
+    for(size_t k=0; k < m_corners.size(); k++)
+    {
+        Tc Sk = 0.0;
+        m_corners[k]->evaluate_overlap(xahp, xbhp, wahp, wbhp, Sk);
+        S += Sk;
+    }
 }
 
 template<typename Tc, typename Tf, typename Tb>
@@ -188,6 +255,15 @@ void wick_uscf<Tc,Tf,Tb>::evaluate_one_body_spin(
     this->spin_one_body(xhp, whp, Vspin, alpha);
     // Recombine and increment output
     V = redS * Vspin;
+
+    // Add the other near-zero corners of this spin
+    for(size_t k=0; k < m_corners.size(); k++)
+    {
+        if((alpha ? m_corner_b[k] : m_corner_a[k]) != 0) continue;
+        Tc Sk = 0.0, Vk = 0.0;
+        m_corners[k]->evaluate_one_body_spin(xhp, whp, Sk, Vk, alpha);
+        S += Sk; V += Vk;
+    }
 }
 
 template<typename Tc, typename Tf, typename Tb>
@@ -230,6 +306,14 @@ void wick_uscf<Tc,Tf,Tb>::evaluate(
         this->diff_spin_two_body(xahp, xbhp, wahp, wbhp, Vab);
         // Recombine
         V += 0.5 * m_orba.m_redS * m_orbb.m_redS * (Vaa * sb + Vbb * sa + 2.0 * Vab);
+    }
+
+    // Add the other near-zero corners
+    for(size_t k=0; k < m_corners.size(); k++)
+    {
+        Tc Sk = 0.0, Vk = 0.0;
+        m_corners[k]->evaluate(xahp, xbhp, wahp, wbhp, Sk, Vk);
+        S += Sk; V += Vk;
     }
 }
 

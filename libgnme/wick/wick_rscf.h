@@ -1,10 +1,12 @@
 #ifndef LIBGNME_WICK_RSCF_H 
 #define LIBGNME_WICK_RSCF_H
 
+#include <vector>
 #include <armadillo>
 #include <libgnme/utils/bitset.h>
 #include "wick_base.h"
 #include "wick_orbitals.h"
+#include "wick_uscf.h"
 
 namespace libgnme {
 
@@ -30,6 +32,12 @@ private:
     bool m_one_body = false; //!< Control variable if one-body elements are required
     bool m_two_body = false; //!< Control variable if two-body elements are required
 
+    /* Combinations of alpha and beta near-zero corners differ between the spins, so the 
+       other combinations are evaluated with spin-unrestricted evaluators */
+    std::vector<wick_orbitals<Tc,Tb> *> m_corner_orbs; //!< Near-zero corner orbitals
+    std::vector<wick_uscf<Tc,Tf,Tb> *> m_corners; //!< Other near-zero corner combinations
+    std::vector<size_t> m_corner_b; //!< Beta corner of each combination
+
 public:
     /** \brief Constructor for the object from set of orbital pairs
         \param orb wick_orbitals containing Lowdin-paired set of orbitals
@@ -37,13 +45,17 @@ public:
      **/
     wick_rscf(wick_orbitals<Tc,Tb> &orb, double Vc=0):
         wick_base<Tc,Tf,Tb>(orb, orb), m_Vc(Vc)
-    { } 
+    { 
+        init_corners();
+    } 
 
     /** \brief Destructor **/
     virtual ~wick_rscf() 
     { 
         if(m_one_body) delete m_one_body_int;
         if(m_two_body) delete m_two_body_int;
+        for(size_t k=0; k < m_corners.size(); k++) delete m_corners[k];
+        for(size_t k=0; k < m_corner_orbs.size(); k++) delete m_corner_orbs[k];
     }
 
     /** \name Routines to add one- or two-body operators to the object **/
@@ -137,6 +149,12 @@ public:
     void evaluate_one_body_spin(
         arma::umat &xhp, arma::umat &whp,
         Tc &S, Tc &V);
+
+private:
+    /** \brief Construct the evaluators for the other combinations of alpha and beta 
+               near-zero corners
+     **/
+    void init_corners();
 };
 
 } // namespace libgnme
