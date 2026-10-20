@@ -8,6 +8,7 @@ set(SRC
     wick_base_one_body.C
     wick_base_two_body.C
     wick_orbitals.C
+    wick_matrix.C
     wick_rscf.C
     wick_uscf.C
 )
