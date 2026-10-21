@@ -406,10 +406,19 @@ ALWAYS_INLINE void hs_m0_pkt(DT *hout, DT *sout, const wick_kernels::wick_env *e
     packet<DT>::store(sout, pmul(deta, detb));
 }
 
+/* One kernel for each (L_a, L_b) */
+template<typename DT, int LA, int LB>
+__attribute__((noinline)) void hs_m0_fixed_pkt(DT *h, DT *s, const wick_kernels::wick_env *env,
+                                               const int64_t *info, const DT *scal, size_t n,
+                                               const labels_t<DT> *lba, const labels_t<DT> *lbb)
+{
+    hs_m0_pkt<DT>(h, s, env, info, scal, n, lba, LA, lbb, LB);
+}
+
 /* (L_a, L_b) with L_a + L_b <= WICK_MAXL */
 #define PKT_CASE(LA, LB)                                                                           \
     case LA * (WICK_MAXL + 1) + LB:                                                                 \
-        hs_m0_pkt<DT>(h, s, env, info, scal, n, lba, LA, lbb, LB);                                 \
+        hs_m0_fixed_pkt<DT, LA, LB>(h, s, env, info, scal, n, lba, lbb);                           \
         break;
 
 template<typename DT>
@@ -450,6 +459,15 @@ void hs_row(DT *hrow, DT *srow, const wick_kernels::wick_env *env, const int64_t
     labels_t<DT> lba, lbb;
     DT h[WICK_NLANE], s[WICK_NLANE];
     int j, k, key, la, lb, cnt;
+
+    /* The bra labels are shared by every lane of the row */
+    for(k = 0; k < WICK_NLANE; k++)
+    {
+        wick_kernels::labels<DT>(lba.rows[k], lba.cols[k], dx + WICK_DHEAD, dx + WICK_DHEAD + kmax,
+                                 rxa, NULL, NULL, 0, nocca, n);
+        wick_kernels::labels<DT>(lbb.rows[k], lbb.cols[k], dx + WICK_DHEAD + 2 * kmax,
+                                 dx + WICK_DHEAD + 3 * kmax, rxb, NULL, NULL, 0, noccb, n);
+    }
 
     memset(counts, 0, sizeof(counts));
     for(j = 0; j <= nw; j++)
@@ -497,12 +515,18 @@ void hs_row(DT *hrow, DT *srow, const wick_kernels::wick_env *env, const int64_t
         for(k = 0; k < WICK_NLANE; k++)
         {
             dw = dws + (size_t) bins[key][k] * stride;
-            wick_kernels::labels<DT>(lba.rows[k], lba.cols[k], dx + WICK_DHEAD,
-                                     dx + WICK_DHEAD + kmax, rxa, dw + WICK_DHEAD,
-                                     dw + WICK_DHEAD + kmax, dw[WICK_DRA], nocca, n);
-            wick_kernels::labels<DT>(lbb.rows[k], lbb.cols[k], dx + WICK_DHEAD + 2 * kmax,
-                                     dx + WICK_DHEAD + 3 * kmax, rxb, dw + WICK_DHEAD + 2 * kmax,
-                                     dw + WICK_DHEAD + 3 * kmax, dw[WICK_DRB], noccb, n);
+            /* Ket labels of the lane, after the bra labels */
+            const int *ha = dw + WICK_DHEAD, *pa = ha + kmax, *hb = pa + kmax, *pb = hb + kmax;
+            for(int i = 0; i < la - rxa; i++)
+            {
+                lba.rows[k][rxa + i] = (int) n - nocca + ha[i];
+                lba.cols[k][rxa + i] = pa[i];
+            }
+            for(int i = 0; i < lb - rxb; i++)
+            {
+                lbb.rows[k][rxb + i] = (int) n - noccb + hb[i];
+                lbb.cols[k][rxb + i] = pb[i];
+            }
         }
         hs_m0_dispatch<DT>(h, s, env, info, scal, n, &lba, la, &lbb, lb);
         for(k = 0; k < cnt; k++)
