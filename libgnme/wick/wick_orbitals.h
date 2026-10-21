@@ -19,7 +19,7 @@ public:
     const size_t m_nbsf;  //!< Number of basis functions
     const size_t m_nmo;   //!< Number of (linearly independent) MOs
     const size_t m_nelec; //!< Number of electrons
-    const arma::Mat<Tb> &m_metric; //!< Basis overlap metric
+    const arma::Mat<Tb> m_metric; //!< Basis overlap metric
 
     /* Information about this pair */
     size_t m_nz; //!< Number of zero-overlap orbitals

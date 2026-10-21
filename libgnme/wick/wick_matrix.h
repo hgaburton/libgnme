@@ -37,7 +37,7 @@ private:
     const size_t m_nmo;    //!< Number of (linearly independent) MOs
     const size_t m_nalpha; //!< Number of high-spin electrons
     const size_t m_nbeta;  //!< Number of low-spin electrons
-    const arma::Mat<Tb> &m_metric; //!< Overlap matrix of the basis functions
+    const arma::Mat<Tb> m_metric; //!< Overlap matrix of the basis functions
     double m_Vc; //!< Constant component
 
     /* Reference determinants */
