@@ -1,10 +1,12 @@
 #ifndef LIBGNME_WICK_USCF_H 
 #define LIBGNME_WICK_USCF_H
 
+#include <vector>
 #include <armadillo>
 #include <libgnme/utils/bitset.h>
 #include "wick_base.h"
 #include "wick_orbitals.h"
+#include "wick_pair.h"
 
 namespace libgnme {
 
@@ -19,15 +21,20 @@ class wick_uscf : public wick_base<Tc,Tf,Tb>
 {
 protected:
     using wick_base<Tc,Tf,Tb>::m_nmo;
-    using wick_base<Tc,Tf,Tb>::m_one_body_int;
-    using wick_base<Tc,Tf,Tb>::m_two_body_int;
     using wick_base<Tc,Tf,Tb>::m_orba;
     using wick_base<Tc,Tf,Tb>::m_orbb;
 
 private:
     double m_Vc; //!< Constant component
-    bool m_one_body = false; //!< Control variable if one-body elements are required
-    bool m_two_body = false; //!< Control variable if two-body elements are required
+
+    /* Intermediates of the matrix elements, constructed when first required */
+    wick_pair<Tc,Tb> *m_pair = nullptr; //!< Intermediates of the pair of reference states
+
+    /* Density matrices are evaluated for other near-zero corner combinations separately */
+    std::vector<wick_orbitals<Tc,Tb> *> m_corner_orbs; //!< Near-zero corner orbitals
+    std::vector<wick_uscf<Tc,Tf,Tb> *> m_corners; //!< Other near-zero corner combinations
+    std::vector<size_t> m_corner_a; //!< Alpha corner of each combination
+    std::vector<size_t> m_corner_b; //!< Beta corner of each combination
 
 public:
     /** \brief Constructor for the object from set of orbital pairs
@@ -36,17 +43,20 @@ public:
         \param Vc Constant contribution [default=0]
      **/
     wick_uscf(
-        wick_orbitals<Tc,Tb> &orba, 
-        wick_orbitals<Tc,Tb> &orbb, 
+        wick_orbitals<Tc,Tb> &orba,
+        wick_orbitals<Tc,Tb> &orbb,
         double Vc=0) :
         wick_base<Tc,Tf,Tb>(orba, orbb), m_Vc(Vc)
-    { } 
-        
+    {
+        init_corners();
+    }
+
     /** \brief Destructor **/
-    virtual ~wick_uscf() 
-    { 
-        if(m_one_body) delete m_one_body_int;
-        if(m_two_body) delete m_two_body_int;
+    virtual ~wick_uscf()
+    {
+        delete m_pair;
+        for(size_t k=0; k < m_corners.size(); k++) delete m_corners[k];
+        for(size_t k=0; k < m_corner_orbs.size(); k++) delete m_corner_orbs[k];
     }
 
     /** \name Routines to add one- or two-body operators to the object **/
@@ -82,6 +92,21 @@ public:
         bitset &bxa, bitset &bxb, 
         bitset &bwa, bitset &bwb,
         Tc &S, Tc &V);
+
+    /** \brief Evaluate the overlap and Hamiltonian matrices between sets of bra and ket 
+               determinants using bitset representation. Each row is evaluated together, so
+               this is much faster than evaluating each element separately.
+        \param bxa Bitsets for bra alpha excitations
+        \param bxb Bitsets for bra beta  excitations
+        \param bwa Bitsets for ket alpha excitations
+        \param bwb Bitsets for ket beta  excitations
+        \param S   Output overlap matrix [nbra,nket]
+        \param V   Output matrix [nbra,nket]
+     **/
+    virtual void evaluate_dense(
+        std::vector<bitset> &bxa, std::vector<bitset> &bxb, 
+        std::vector<bitset> &bwa, std::vector<bitset> &bwb,
+        arma::Mat<Tc> &S, arma::Mat<Tc> &V);
 
     /** \brief Compute 1RDM using bitset representation
         \param bxa Bitset for bra alpha excitation
@@ -153,6 +178,15 @@ public:
     virtual void evaluate_one_body_spin(
         arma::umat &xhp, arma::umat &whp,
         Tc &S, Tc &V, bool alpha);
+
+private:
+    /** \brief Construct the evaluators for the other combinations of alpha and beta 
+               near-zero corners
+     **/
+    void init_corners();
+
+    /** \brief Construct the intermediates of the pair of reference states **/
+    void init_pair();
 };
 
 } // namespace libgnme

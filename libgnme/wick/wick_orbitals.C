@@ -34,6 +34,26 @@ void wick_orbitals<Tc,Tb>::init()
     lowdin_pair(Cx_tmp, Cw_tmp, Sxx, m_metric, 1e-20);
     reduced_overlap(Sxx, inv_Sxx, m_redS, m_nz, zeros, 1e-8);
 
+    // Near-zero overlaps enter with unit weight in place of 1/S_k if their bit in m_corner is
+    // set, and are otherwise removed with weight S_k - 1 in the reduced overlap
+    m_nnear = 0;
+    for(size_t k=0; k < m_nelec; k++)
+    {
+        if(std::abs(Sxx(k)) <= 1e-8 or std::abs(Sxx(k)) >= 1e-1) continue;
+        if((m_corner >> m_nnear) & 1)
+        {
+            m_redS /= Sxx(k);
+            inv_Sxx(k) = 1.0;
+        }
+        else
+        {
+            m_redS *= (Sxx(k) - 1.0) / Sxx(k);
+            inv_Sxx(k) = 0.0;
+        }
+        m_nnear++;
+    }
+    m_ncorner = 1 << m_nnear;
+
     // Construct co-density
     m_M.set_size(2);
     m_M(0).set_size(m_nbsf, m_nbsf); m_M(0).zeros();
