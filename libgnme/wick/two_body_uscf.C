@@ -71,19 +71,17 @@ void two_body_uscf<Tc,Tf,Tb>::initialise(
     // Alpha-Alpha V terms
     m_Vaa.resize(3); m_Vaa.zeros();
     m_Vaa(0) = arma::dot(Ja(0).st() - Ka(0).st(), orba.m_M(0));
+    if(orba.m_nz > 0)
+        m_Vaa(1) = arma::dot(Ja(0).st() - Ka(0).st(), orba.m_M(1));
     if(orba.m_nz > 1)
-    {
-        m_Vaa(1) = 2.0 * arma::dot(Ja(0).st() - Ka(0).st(), orba.m_M(1));
         m_Vaa(2) = arma::dot(Ja(1).st() - Ka(1).st(), orba.m_M(1));
-    }
     // Beta-Beta V terms
     m_Vbb.resize(3); m_Vbb.zeros();
     m_Vbb(0) = arma::dot(Jb(0).st() - Kb(0).st(), orbb.m_M(0));
+    if(orbb.m_nz > 0)
+        m_Vbb(1) = arma::dot(Jb(0).st() - Kb(0).st(), orbb.m_M(1));
     if(orbb.m_nz > 1)
-    {
-        m_Vbb(1) = 2.0 * arma::dot(Jb(0).st() - Kb(0).st(), orbb.m_M(1));
         m_Vbb(2) = arma::dot(Jb(1).st() - Kb(1).st(), orbb.m_M(1));
-    }
     // Alpha-Beta V terms
     m_Vab.resize(da,db); m_Vab.zeros();
     for(size_t i=0; i<da; i++)

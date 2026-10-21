@@ -65,7 +65,9 @@ void wick_base<Tc,Tf,Tb>::same_spin_two_body(
     // No excitations, so return simple overlap
     if(nx == 0 and nw == 0)
     {   
-        V = V0(nz);
+        // Zeros are distributed over the 2 operator contractions, 
+        // giving two equivalent distributions for a single zero
+        V = (nz == 1 ? 2.0 : 1.0) * V0(nz);
     }
     // One excitation doesn't require one-body determinant
     else if((nx+nw) == 1)
@@ -110,7 +112,7 @@ void wick_base<Tc,Tf,Tb>::same_spin_two_body(
             size_t nzero;
             arma::Mat<Tc> adjDtmp; 
             adjoint_matrix(Dtmp, adjDtmp, detDtmp, nzero);
-            adjDtmp = adjDtmp.t(); // Transpose makes row access easier later
+            adjDtmp = adjDtmp.st(); // Transpose makes row access easier later
             
             // Get the overlap contributions 
             V += V0(m[0]+m[1]) * detDtmp;
@@ -154,7 +156,7 @@ void wick_base<Tc,Tf,Tb>::same_spin_two_body(
                 size_t nzero2;
                 arma::Mat<Tc> adjDtmp2; 
                 adjoint_matrix(Dtmp2, adjDtmp2, detDtmp2, nzero2);
-                adjDtmp2 = adjDtmp2.t(); // Transpose makes row access faster
+                adjDtmp2 = adjDtmp2.st(); // Transpose makes row access faster
 
                 // Get the phase factor
                 double phase = (i % 2) xor (j % 2) ? -1.0 : 1.0;
@@ -315,8 +317,8 @@ void wick_base<Tc,Tf,Tb>::diff_spin_two_body(
         arma::Mat<Tc> adjDa, adjDb; 
         adjoint_matrix(tmpDa, adjDa, detDa, nzDa);
         adjoint_matrix(tmpDb, adjDb, detDb, nzDb);
-        adjDa = adjDa.t(); // Transpose makes row access easier later
-        adjDb = adjDb.t(); // Transpose makes row access easier later
+        adjDa = adjDa.st(); // Transpose makes row access easier later
+        adjDb = adjDb.st(); // Transpose makes row access easier later
         
         // Get the zeroth-order contributions 
         V += Vab(ma[0],mb[0]) * detDa * detDb;

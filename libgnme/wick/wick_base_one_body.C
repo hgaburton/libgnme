@@ -94,7 +94,7 @@ void wick_base<Tc,Tf,Tb>::spin_one_body(
             size_t nzero;
             arma::Mat<Tc> adjDtmp; 
             adjoint_matrix(Dtmp, adjDtmp, detDtmp, nzero);
-            adjDtmp = adjDtmp.t(); // Transpose makes row access easier later
+            adjDtmp = adjDtmp.st(); // Transpose makes row access easier later
 
             // Get the overlap contributions 
             F += F0(m[0]) * detDtmp;

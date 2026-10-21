@@ -50,11 +50,10 @@ void two_body_rscf<Tc,Tf,Tb>::initialise(
     // Alpha-Alpha V terms
     m_Vss.resize(3); m_Vss.zeros();
     m_Vss(0) = arma::dot(J(0).st() - K(0).st(), orb.m_M(0));
+    if(orb.m_nz > 0)
+        m_Vss(1) = arma::dot(J(0).st() - K(0).st(), orb.m_M(1));
     if(orb.m_nz > 1)
-    {
-        m_Vss(1) = 2.0 * arma::dot(J(0).st() - K(0).st(), orb.m_M(1));
         m_Vss(2) = arma::dot(J(1).st() - K(1).st(), orb.m_M(1));
-    }
     // Alpha-Beta V terms
     m_Vst.resize(d,d); m_Vst.zeros();
     for(size_t i=0; i<d; i++)
