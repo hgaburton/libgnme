@@ -2,6 +2,7 @@
 #define LIBGNME_WICK_MATRIX_H
 
 #include <cassert>
+#include <stdexcept>
 #include <vector>
 #include <cstdint>
 #include <armadillo>
@@ -69,7 +70,8 @@ public:
         const arma::Mat<Tb> &metric, double Vc=0) :
         m_nbsf(nbsf), m_nmo(nmo), m_nalpha(nalpha), m_nbeta(nbeta), m_metric(metric), m_Vc(Vc)
     {
-        assert(nmo <= 128);
+        if(nmo > 128)
+            throw std::runtime_error("wick_matrix: At most 128 molecular orbitals are supported");
         assert(metric.n_rows == nbsf);
         assert(metric.n_cols == nbsf);
     }

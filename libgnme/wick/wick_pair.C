@@ -1,6 +1,7 @@
 #include <cassert>
 #include <complex>
 #include <algorithm>
+#include <stdexcept>
 #include <libgnme/utils/eri_ao2mo.h>
 #include "wick_pair.h"
 #include "wick_kernels.h"
@@ -110,7 +111,6 @@ wick_pair<Tc,Tb>::wick_pair(
         nvir[spin] = std::max(x.m_ncore + x.m_nact, w.m_ncore + w.m_nact) - x.m_nelec;
     }
     m_n = std::max(m_nocc[0] + nvir[0], m_nocc[1] + nvir[1]);
-    assert(m_n <= WICK_MAXMO);
 
     for(size_t spin=0; spin < 2; spin++)
     {
@@ -228,6 +228,8 @@ template<typename Tc, typename Tb>
 void wick_pair<Tc,Tb>::record(
     int *d, int kmax, const arma::umat &ahp, const arma::umat &bhp, bool ket) const
 {
+    if(kmax > WICK_MAXMO)
+        throw std::runtime_error("wick_pair::record: Excitation rank exceeds 128");
     assert(ahp.n_rows <= (size_t) kmax and bhp.n_rows <= (size_t) kmax);
     d[WICK_DPARENT] = 0;
     d[WICK_DRA] = ahp.n_rows;
@@ -258,6 +260,8 @@ int wick_pair<Tc,Tb>::rank(bitset &b, bool ket, bool alpha) const
 template<typename Tc, typename Tb>
 void wick_pair<Tc,Tb>::record(int *d, int kmax, bitset &ba, bitset &bb, bool ket) const
 {
+    if(kmax > WICK_MAXMO)
+        throw std::runtime_error("wick_pair::record: Excitation rank exceeds 128");
     d[WICK_DPARENT] = 0;
     d[WICK_DOSIGN] = 1;
     int odd = 0;
